@@ -1,0 +1,15 @@
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\bin\Debug\net8.0\MotorCare.Application.deps.json
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\bin\Debug\net8.0\MotorCare.Application.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\bin\Debug\net8.0\MotorCare.Application.pdb
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\bin\Debug\net8.0\MotorCare.Domain.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\bin\Debug\net8.0\MotorCare.Domain.pdb
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.csproj.AssemblyReference.cache
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.AssemblyInfoInputs.cache
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.AssemblyInfo.cs
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.csproj.CoreCompileInputs.cache
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCar.546EA601.Up2Date
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\refint\MotorCare.Application.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.pdb
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\ref\MotorCare.Application.dll

@@ -1,0 +1,11 @@
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\bin\Debug\net8.0\MotorCare.Domain.deps.json
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\bin\Debug\net8.0\MotorCare.Domain.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\bin\Debug\net8.0\MotorCare.Domain.pdb
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.AssemblyInfoInputs.cache
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.AssemblyInfo.cs
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.csproj.CoreCompileInputs.cache
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\refint\MotorCare.Domain.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.pdb
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\ref\MotorCare.Domain.dll
