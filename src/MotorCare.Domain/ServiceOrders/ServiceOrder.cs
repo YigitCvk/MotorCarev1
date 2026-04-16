@@ -1,4 +1,4 @@
-﻿using MotorCare.Domain.Common;
+using MotorCare.Domain.Common;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.ServiceOrders.Entities;
 
@@ -28,20 +28,23 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public decimal RemainingTotal => GrandTotal - PaidTotal;
 
     private readonly List<ServiceOperationItem> _operations = new();
-    public IReadOnlyCollection<ServiceOperationItem> Operations => _operations.AsReadOnly();
+    public IReadOnlyCollection<ServiceOperationItem> Operations => _operations;
 
     private readonly List<ServicePartItem> _parts = new();
-    public IReadOnlyCollection<ServicePartItem> Parts => _parts.AsReadOnly();
+    public IReadOnlyCollection<ServicePartItem> Parts => _parts;
 
     private readonly List<ServicePayment> _payments = new();
-    public IReadOnlyCollection<ServicePayment> Payments => _payments.AsReadOnly();
+    public IReadOnlyCollection<ServicePayment> Payments => _payments;
 
     private ServiceOrder() { }
 
     public ServiceOrder(string tenantId, string orderNo, Guid vehicleId, Guid customerId, int vehicleKm, string? complaint)
     {
-        if (string.IsNullOrWhiteSpace(tenantId)) throw new ArgumentException("Tenant ID is required.");
-        if (string.IsNullOrWhiteSpace(orderNo)) throw new ArgumentException("Order number is required.");
+        if (string.IsNullOrWhiteSpace(tenantId)) throw new DomainException("Tenant ID is required.");
+        if (string.IsNullOrWhiteSpace(orderNo)) throw new DomainException("Order number is required.");
+        if (vehicleId == Guid.Empty) throw new DomainException("Vehicle ID is required.");
+        if (customerId == Guid.Empty) throw new DomainException("Customer ID is required.");
+        if (vehicleKm < 0) throw new DomainException("Vehicle km cannot be negative.");
         
         Id = Guid.NewGuid();
         TenantId = tenantId;
@@ -57,6 +60,8 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public void AddOperation(string description, decimal price)
     {
         EnsureModifiable();
+        if (string.IsNullOrWhiteSpace(description)) throw new DomainException("Description is required.");
+        if (price < 0) throw new DomainException("Price cannot be negative.");
         _operations.Add(new ServiceOperationItem(description, price));
         RecalculateTotals();
     }
@@ -64,6 +69,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public void AddPart(string partName, string? partNumber, decimal unitPrice, int quantity)
     {
         EnsureModifiable();
+        if (string.IsNullOrWhiteSpace(partName)) throw new DomainException("Part name is required.");
+        if (unitPrice < 0) throw new DomainException("Unit price cannot be negative.");
+        if (quantity <= 0) throw new DomainException("Quantity must be greater than zero.");
         _parts.Add(new ServicePartItem(partName, partNumber, unitPrice, quantity));
         RecalculateTotals();
     }

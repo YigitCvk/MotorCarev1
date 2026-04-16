@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MotorCare.Domain.Vehicles;
 
@@ -16,16 +16,18 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
             
         builder.HasIndex(v => v.TenantId);
 
-        builder.Property(v => v.Brand).HasMaxLength(100);
-        builder.Property(v => v.Model).HasMaxLength(100);
+        builder.Property(v => v.Brand).IsRequired().HasMaxLength(100);
+        builder.Property(v => v.Model).IsRequired().HasMaxLength(100);
         builder.Property(v => v.ChassisNumber).HasMaxLength(100);
         builder.Property(v => v.Color).HasMaxLength(50);
 
-        builder.OwnsOne(v => v.Plate, p =>
+        builder.ComplexProperty(v => v.Plate, p =>
         {
             p.Property(pp => pp.OriginalValue).HasColumnName("PlateOriginal").HasMaxLength(20).IsRequired();
             p.Property(pp => pp.NormalizedValue).HasColumnName("PlateNormalized").HasMaxLength(20).IsRequired();
         });
+
+        builder.HasIndex(v => new { v.TenantId, v.Plate.NormalizedValue }).IsUnique();
 
         builder.OwnsMany(v => v.Notes, nb =>
         {
@@ -43,5 +45,8 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
             pb.Property(p => p.Description).HasMaxLength(500);
             pb.WithOwner().HasForeignKey("VehicleId");
         });
+
+        builder.Navigation(v => v.Notes).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(v => v.Photos).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

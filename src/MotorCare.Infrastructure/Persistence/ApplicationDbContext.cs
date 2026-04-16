@@ -1,4 +1,4 @@
-﻿using MotorCare.Application.Common.Interfaces;
+using MotorCare.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Domain.Common;
 using MotorCare.Domain.Customers;
@@ -10,13 +10,17 @@ namespace MotorCare.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext
 {
-    private readonly ITenantProvider _tenantProvider;
+    private readonly ITenantProvider? _tenantProvider;
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantProvider tenantProvider)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantProvider? tenantProvider = null)
         : base(options)
     {
         _tenantProvider = tenantProvider;
     }
+
+    // EF Core query filters capture this as an expression referencing a DbContext member,
+    // so the filter re-evaluates per query using the current tenant context.
+    private string CurrentTenantId => _tenantProvider?.GetTenantId() ?? string.Empty;
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Customer> Customers => Set<Customer>();
@@ -30,16 +34,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         
         // Apply Global Query Filters for Tenancy automatically for all ITenantEntity implementing types
-        var tenantId = _tenantProvider.GetTenantId();
-        
-        modelBuilder.Entity<Customer>().HasQueryFilter(c => c.TenantId == tenantId);
-        modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == tenantId);
-        modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == tenantId);
+        modelBuilder.Entity<Customer>().HasQueryFilter(c => c.TenantId == CurrentTenantId);
+        modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == CurrentTenantId);
     }
     
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var tenantId = _tenantProvider.GetTenantId();
+        var tenantId = CurrentTenantId;
         
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
@@ -56,9 +58,9 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
         {
-            if (entry.State == EntityState.Added)
+            if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
             {
-                if (entry.Entity.TenantId != tenantId)
+                if (!string.IsNullOrEmpty(tenantId) && entry.Entity.TenantId != tenantId)
                 {
                     throw new InvalidOperationException("Entity TenantId does not match the current context TenantId.");
                 }

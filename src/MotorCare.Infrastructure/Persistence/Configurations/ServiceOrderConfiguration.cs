@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MotorCare.Domain.ServiceOrders;
 
@@ -35,6 +35,8 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
         builder.Property(o => o.GrandTotal).HasPrecision(18, 2);
         builder.Property(o => o.PaidTotal).HasPrecision(18, 2);
 
+        builder.Ignore(o => o.RemainingTotal);
+
         // Child Collections
         builder.OwnsMany(o => o.Operations, ob =>
         {
@@ -63,5 +65,9 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             payb.Property(p => p.Method).HasConversion<string>().HasMaxLength(30);
             payb.WithOwner().HasForeignKey("ServiceOrderId");
         });
+
+        builder.Navigation(o => o.Operations).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(o => o.Parts).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(o => o.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
