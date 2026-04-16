@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 
 namespace MotorCare.Application.Vehicles.Queries.GetVehicleByPlate;
 

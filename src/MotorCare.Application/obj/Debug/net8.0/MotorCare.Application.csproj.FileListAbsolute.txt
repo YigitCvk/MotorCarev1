@@ -13,3 +13,4 @@ C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\Moto
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\refint\MotorCare.Application.dll
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.pdb
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\ref\MotorCare.Application.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Application\obj\Debug\net8.0\MotorCare.Application.sourcelink.json

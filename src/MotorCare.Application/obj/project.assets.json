@@ -531,8 +531,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.Domain\\MotorCare.Domain.csproj": {
-              "projectPath": "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.Domain\\MotorCare.Domain.csproj"
+            "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.Domain\\MotorCare.Domain.csproj": {
+              "projectPath": "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.Domain\\MotorCare.Domain.csproj"
             }
           }
         }

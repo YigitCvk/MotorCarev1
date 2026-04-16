@@ -9,3 +9,4 @@ C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\refint\MotorCare.Domain.dll
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.pdb
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\ref\MotorCare.Domain.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Domain\obj\Debug\net8.0\MotorCare.Domain.sourcelink.json

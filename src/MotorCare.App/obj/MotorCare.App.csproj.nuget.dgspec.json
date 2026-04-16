@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj": {}
+    "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj": {
+    "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj",
+        "projectUniqueName": "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj",
         "projectName": "MotorCare.App",
-        "projectPath": "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj",
+        "projectPath": "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\MotorCare.App.csproj",
         "packagesPath": "C:\\Users\\yigit\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\obj\\",
+        "outputPath": "c:\\Users\\yigit\\Desktop\\MotorCare\\src\\MotorCare.App\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

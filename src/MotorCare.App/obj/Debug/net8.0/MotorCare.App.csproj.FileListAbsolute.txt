@@ -30,3 +30,4 @@ C:\Users\yigit\Desktop\MotorCare\src\MotorCare.App\obj\Debug\net8.0\refint\Motor
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.App\obj\Debug\net8.0\MotorCare.App.pdb
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.App\obj\Debug\net8.0\MotorCare.App.genruntimeconfig.cache
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.App\obj\Debug\net8.0\ref\MotorCare.App.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.App\obj\Debug\net8.0\MotorCare.App.sourcelink.json

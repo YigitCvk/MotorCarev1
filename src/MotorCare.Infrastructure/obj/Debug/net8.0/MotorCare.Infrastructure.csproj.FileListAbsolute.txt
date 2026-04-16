@@ -15,3 +15,4 @@ C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Infrastructure\obj\Debug\net8.0\M
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Infrastructure\obj\Debug\net8.0\refint\MotorCare.Infrastructure.dll
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Infrastructure\obj\Debug\net8.0\MotorCare.Infrastructure.pdb
 C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Infrastructure\obj\Debug\net8.0\ref\MotorCare.Infrastructure.dll
+C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Infrastructure\obj\Debug\net8.0\MotorCare.Infrastructure.sourcelink.json

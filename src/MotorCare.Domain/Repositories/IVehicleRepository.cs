@@ -1,4 +1,4 @@
-using MotorCare.Domain.Entities;
+﻿using MotorCare.Domain.Vehicles;
 
 namespace MotorCare.Domain.Repositories;
 

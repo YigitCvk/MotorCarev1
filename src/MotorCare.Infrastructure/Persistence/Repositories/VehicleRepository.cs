@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using MotorCare.Domain.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.Repositories;
 
 namespace MotorCare.Infrastructure.Persistence.Repositories;

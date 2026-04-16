@@ -1,6 +1,8 @@
+﻿using MotorCare.Domain.Common;
+
 namespace MotorCare.Domain.ValueObjects;
 
-public class PlateNumber
+public class PlateNumber : ValueObject
 {
     public string OriginalValue { get; private set; }
     public string NormalizedValue { get; private set; }
@@ -25,12 +27,8 @@ public class PlateNumber
         return new PlateNumber(plate, normalized);
     }
 
-    public override bool Equals(object? obj)
+    protected override IEnumerable<object> GetEqualityComponents()
     {
-        if (obj is PlateNumber other)
-            return NormalizedValue == other.NormalizedValue;
-        return false;
+        yield return NormalizedValue;
     }
-
-    public override int GetHashCode() => NormalizedValue.GetHashCode();
 }

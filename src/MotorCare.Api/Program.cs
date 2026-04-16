@@ -1,4 +1,4 @@
-using MotorCare.Application;
+﻿using MotorCare.Application;
 using MotorCare.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);

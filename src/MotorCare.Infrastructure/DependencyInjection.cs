@@ -1,3 +1,4 @@
+﻿using MotorCare.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,9 +17,8 @@ public static class DependencyInjection
         services.AddScoped<MotorCare.Domain.Repositories.IVehicleRepository, MotorCare.Infrastructure.Persistence.Repositories.VehicleRepository>();
 
         services.AddDbContext<ApplicationDbContext>(options =>
-            // Using In-Memory db for MVP skeleton as no connection string is strictly required yet, or SqlServer
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection") ?? "Server=(localdb)\\mssqllocaldb;Database=MotorCareDb;Trusted_Connection=True;Encrypt=False",
+            options.UseNpgsql(
+                configuration.GetConnectionString("DefaultConnection") ?? "Host=localhost;Database=MotorCareDb;Username=postgres;Password=postgres",
                 b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
 
         return services;

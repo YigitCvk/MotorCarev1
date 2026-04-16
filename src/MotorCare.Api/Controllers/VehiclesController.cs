@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MotorCare.Application.Vehicles.Commands.CreateVehicle;
 using MotorCare.Application.Vehicles.Queries.GetVehicleByPlate;
