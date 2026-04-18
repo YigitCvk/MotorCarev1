@@ -1,5 +1,6 @@
 using Carter;
 using MediatR;
+using MotorCare.Api.Authorization;
 using MotorCare.Application.Vehicles.Commands.CreateVehicle;
 using MotorCare.Application.Vehicles.Queries.GetVehicleByPlate;
 
@@ -19,8 +20,10 @@ public sealed class VehiclesModule : ICarterModule
             return Results.CreatedAtRoute("GetVehicleByPlate", new { plate = command.Plate }, id);
         })
         .WithName("CreateVehicle")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapGet("/{plate}", async (string plate, IMediator mediator, CancellationToken ct) =>
@@ -29,7 +32,9 @@ public sealed class VehiclesModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetVehicleByPlate")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<VehicleDto>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }

@@ -2,8 +2,12 @@ using System.Text;
 using Carter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MotorCare.Api.Authorization;
 using MotorCare.Api.Middleware;
+using MotorCare.Api.Swagger;
 using MotorCare.Application;
+using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
 using MotorCare.Infrastructure.Security;
 
@@ -14,7 +18,20 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddCarter();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the JWT access token here. Example: Bearer eyJ..."
+    });
+
+    options.OperationFilter<AuthorizeOperationFilter>();
+});
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
 if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
@@ -35,6 +52,47 @@ if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
             };
         });
 }
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
+        policy.RequireRole(UserRole.Owner.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.TenantManagement, policy =>
+        policy.RequireRole(UserRole.Owner.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.CustomerOperations, policy =>
+        policy.RequireRole(
+            UserRole.Owner.ToString(),
+            UserRole.Admin.ToString(),
+            UserRole.Receptionist.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.ServiceOrderRead, policy =>
+        policy.RequireRole(
+            UserRole.Owner.ToString(),
+            UserRole.Admin.ToString(),
+            UserRole.Receptionist.ToString(),
+            UserRole.Technician.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.ServiceOrderWrite, policy =>
+        policy.RequireRole(
+            UserRole.Owner.ToString(),
+            UserRole.Admin.ToString(),
+            UserRole.Receptionist.ToString(),
+            UserRole.Technician.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.ServiceOrderPayments, policy =>
+        policy.RequireRole(
+            UserRole.Owner.ToString(),
+            UserRole.Admin.ToString(),
+            UserRole.Receptionist.ToString()));
+
+    options.AddPolicy(AuthorizationPolicies.DashboardRead, policy =>
+        policy.RequireRole(
+            UserRole.Owner.ToString(),
+            UserRole.Admin.ToString(),
+            UserRole.Receptionist.ToString()));
+});
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

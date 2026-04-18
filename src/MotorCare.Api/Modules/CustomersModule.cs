@@ -1,5 +1,6 @@
 using Carter;
 using MediatR;
+using MotorCare.Api.Authorization;
 using MotorCare.Application.Customers.Commands.CreateCustomer;
 using MotorCare.Application.Customers.Commands.UpdateCustomer;
 using MotorCare.Application.Customers.Queries.GetCustomerById;
@@ -21,8 +22,10 @@ public sealed class CustomersModule : ICarterModule
             return Results.CreatedAtRoute("GetCustomerById", new { id }, id);
         })
         .WithName("CreateCustomer")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapPut("/{id:guid}", async (Guid id, UpdateCustomerRequest request, IMediator mediator, CancellationToken ct) =>
@@ -39,9 +42,11 @@ public sealed class CustomersModule : ICarterModule
             return Results.NoContent();
         })
         .WithName("UpdateCustomer")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapGet("/{id:guid}", async (Guid id, IMediator mediator, CancellationToken ct) =>
@@ -50,8 +55,10 @@ public sealed class CustomersModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetCustomerById")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<CustomerDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapGet("/", async (string? q, IMediator mediator, CancellationToken ct) =>
@@ -60,7 +67,9 @@ public sealed class CustomersModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("SearchCustomers")
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<IReadOnlyList<CustomerDto>>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
     }
 

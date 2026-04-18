@@ -1,5 +1,6 @@
 using Carter;
 using MediatR;
+using MotorCare.Api.Authorization;
 using MotorCare.Application.Dashboard.Queries.GetDailySummary;
 
 namespace MotorCare.Api.Modules;
@@ -18,7 +19,9 @@ public sealed class DashboardModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("GetDailySummary")
+        .RequireAuthorization(AuthorizationPolicies.DashboardRead)
         .Produces<DailySummaryDto>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
 }

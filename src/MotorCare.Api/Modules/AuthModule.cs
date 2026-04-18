@@ -1,6 +1,7 @@
 using Carter;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using MotorCare.Api.Authorization;
 using MotorCare.Application.Auth;
 using MotorCare.Application.Auth.Commands.Login;
 using MotorCare.Application.Auth.Commands.Logout;
@@ -43,6 +44,7 @@ public sealed class AuthModule : ICarterModule
             return Results.NoContent();
         })
         .WithName("Logout")
+        .RequireAuthorization()
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -53,6 +55,7 @@ public sealed class AuthModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("GetCurrentUser")
+        .RequireAuthorization()
         .Produces<CurrentUserDto>()
         .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
