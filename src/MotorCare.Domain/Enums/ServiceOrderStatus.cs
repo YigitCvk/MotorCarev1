@@ -1,4 +1,4 @@
-﻿namespace MotorCare.Domain.Enums;
+namespace MotorCare.Domain.Enums;
 
 public enum ServiceOrderStatus
 {
@@ -6,5 +6,6 @@ public enum ServiceOrderStatus
     InProgress = 2,
     WaitingForParts = 3,
     Completed = 4,
-    Cancelled = 5
+    Cancelled = 5,
+    Delivered = 6
 }

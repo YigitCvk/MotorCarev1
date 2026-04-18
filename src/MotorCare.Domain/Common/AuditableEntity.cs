@@ -2,6 +2,6 @@
 
 public abstract class AuditableEntity : BaseEntity
 {
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; internal set; }
+    public DateTimeOffset? UpdatedAt { get; internal set; }
 }

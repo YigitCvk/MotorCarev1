@@ -1,5 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using MotorCare.Application.Common.Behaviors;
 
 namespace MotorCare.Application;
 
@@ -12,6 +13,8 @@ public static class DependencyInjection
         services.AddMediatR(config =>
         {
             config.RegisterServicesFromAssembly(assembly);
+            // Register ValidationBehavior in MediatR pipeline
+            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(assembly);

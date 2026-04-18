@@ -1,0 +1,29 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+
+## MAUI
+*.apk
+*.aab
+*.ipa
+*.msix
+*.appx
+
+## IDE
+.idea/
+.vscode/
+*.swp
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Antigravity
+# Keep agents config in git, ignore runtime
+.antigravity/cache/

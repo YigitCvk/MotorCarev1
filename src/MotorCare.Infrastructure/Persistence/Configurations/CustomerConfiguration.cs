@@ -1,6 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using MotorCare.Domain.Common;
 using MotorCare.Domain.Customers;
 
 namespace MotorCare.Infrastructure.Persistence.Configurations;
@@ -27,6 +26,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.Property(c => c.Notes)
             .HasMaxLength(1000);
 
+        // Value Objects mapped consistently with OwnsOne
         builder.OwnsOne(c => c.Phone, p =>
         {
             p.Property(pp => pp.Value).HasColumnName("Phone").HasMaxLength(20);
@@ -36,5 +36,14 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         {
             p.Property(pp => pp.Value).HasColumnName("Whatsapp").HasMaxLength(20);
         });
+
+        // Unique index: TenantId + Phone (normalized) — prevents duplicate phone per tenant  
+        builder.HasIndex("TenantId", "Phone_Value")
+            .IsUnique()
+            .HasFilter("\"Phone_Value\" IS NOT NULL");
+
+        // Concurrency token
+        builder.Property(c => c.RowVersion)
+            .IsRowVersion();
     }
 }

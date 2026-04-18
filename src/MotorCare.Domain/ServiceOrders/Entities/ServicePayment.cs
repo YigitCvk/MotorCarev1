@@ -1,4 +1,4 @@
-﻿using MotorCare.Domain.Common;
+using MotorCare.Domain.Common;
 using MotorCare.Domain.Enums;
 
 namespace MotorCare.Domain.ServiceOrders.Entities;
@@ -13,7 +13,7 @@ public class ServicePayment : AuditableEntity
 
     internal ServicePayment(decimal amount, PaymentMethod method, DateTimeOffset paymentDate)
     {
-        if (amount <= 0) throw new ArgumentException("Payment amount must be greater than zero.");
+        if (amount <= 0) throw new DomainException("Payment amount must be greater than zero.");
 
         Id = Guid.NewGuid();
         Amount = amount;

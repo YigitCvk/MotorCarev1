@@ -1,6 +1,6 @@
-﻿using MotorCare.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
-using MotorCare.Domain.Common;
+using MotorCare.Application.Common.Interfaces;
+using MotorCare.Infrastructure.Security;
 
 namespace MotorCare.Infrastructure.Tenancy;
 
@@ -20,6 +20,6 @@ public class HeaderTenantProvider : ITenantProvider
             return tenantId.ToString();
         }
 
-        return null;
+        return _httpContextAccessor.HttpContext?.User.FindFirst(JwtTokenGenerator.TenantIdentifierClaim)?.Value;
     }
 }

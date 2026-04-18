@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MotorCare.Domain.Tenants;
 
@@ -19,5 +19,9 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .HasMaxLength(150);
 
         builder.HasIndex(t => t.Identifier).IsUnique();
+
+        // Concurrency token
+        builder.Property(t => t.RowVersion)
+            .IsRowVersion();
     }
 }

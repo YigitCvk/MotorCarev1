@@ -53,6 +53,12 @@ public class Vehicle : AggregateRoot, ITenantEntity
         Color = color;
     }
 
+    public void SetChassisAndColor(string? chassisNumber, string? color)
+    {
+        ChassisNumber = chassisNumber;
+        Color = color;
+    }
+
     public void UpdateMileage(int km)
     {
         if (km < 0) throw new DomainException("Mileage cannot be negative.");

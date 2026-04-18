@@ -28,13 +28,14 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
 
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(30);
 
-        // Map Decimals
+        // Map Decimals with precision
         builder.Property(o => o.LaborTotal).HasPrecision(18, 2);
         builder.Property(o => o.PartsTotal).HasPrecision(18, 2);
         builder.Property(o => o.DiscountTotal).HasPrecision(18, 2);
         builder.Property(o => o.GrandTotal).HasPrecision(18, 2);
         builder.Property(o => o.PaidTotal).HasPrecision(18, 2);
 
+        // Computed property — do not map to database
         builder.Ignore(o => o.RemainingTotal);
 
         // Child Collections
@@ -54,6 +55,8 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             pb.Property(pi => pi.PartName).IsRequired().HasMaxLength(200);
             pb.Property(pi => pi.PartNumber).HasMaxLength(100);
             pb.Property(pi => pi.UnitPrice).HasPrecision(18, 2);
+            // TotalPrice is a computed property — do not map to database
+            pb.Ignore(pi => pi.TotalPrice);
             pb.WithOwner().HasForeignKey("ServiceOrderId");
         });
 
@@ -69,5 +72,9 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
         builder.Navigation(o => o.Operations).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Parts).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Concurrency token
+        builder.Property(o => o.RowVersion)
+            .IsRowVersion();
     }
 }

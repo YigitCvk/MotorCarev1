@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.Repositories;
 
@@ -13,20 +13,28 @@ public class VehicleRepository : IVehicleRepository
         _context = context;
     }
 
-    public async Task<Vehicle?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Vehicle?> GetByIdAsync(Guid id, string tenantId, CancellationToken cancellationToken = default)
     {
-        return await _context.Set<Vehicle>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return await _context.Vehicles
+            .Include(v => v.Notes)
+            .Include(v => v.Photos)
+            .FirstOrDefaultAsync(v => v.Id == id && v.TenantId == tenantId, cancellationToken);
     }
 
     public async Task<Vehicle?> GetByPlateAsync(string tenantId, string normalizedPlate, CancellationToken cancellationToken = default)
     {
-        return await _context.Set<Vehicle>()
+        return await _context.Vehicles
             .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.Plate.NormalizedValue == normalizedPlate, cancellationToken);
     }
 
     public async Task AddAsync(Vehicle vehicle, CancellationToken cancellationToken = default)
     {
-        await _context.Set<Vehicle>().AddAsync(vehicle, cancellationToken);
+        await _context.Vehicles.AddAsync(vehicle, cancellationToken);
+    }
+
+    public void Update(Vehicle vehicle)
+    {
+        _context.Vehicles.Update(vehicle);
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
