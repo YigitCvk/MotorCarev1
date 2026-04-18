@@ -32,7 +32,7 @@ public sealed class VehiclesModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetVehicleByPlate")
-        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
         .Produces<VehicleDto>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);

@@ -55,7 +55,7 @@ public sealed class CustomersModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetCustomerById")
-        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
         .Produces<CustomerDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
