@@ -1,0 +1,138 @@
+@page "/dashboard"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1 class="mb-4">Dashboard</h1>
+
+@if (_isLoading)
+{
+    <p class="text-muted">Loading dashboard...</p>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_user is null)
+{
+    <div class="alert alert-warning">You need to login first.</div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-12 col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Current User</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-4">Name</dt>
+                        <dd class="col-8">@_user.FullName</dd>
+                        <dt class="col-4">Email</dt>
+                        <dd class="col-8">@_user.Email</dd>
+                        <dt class="col-4">Role</dt>
+                        <dd class="col-8">@_user.Role</dd>
+                        <dt class="col-4">Tenant</dt>
+                        <dd class="col-8">@_user.TenantIdentifier</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Daily Summary</h2>
+
+                    @if (_summary is null)
+                    {
+                        <p class="text-muted mb-0">Daily summary is not available.</p>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Orders Today</div>
+                                    <div class="fs-4 fw-semibold">@_summary.TotalServiceOrdersToday</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Open Orders</div>
+                                    <div class="fs-4 fw-semibold">@_summary.OpenServiceOrders</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Completed</div>
+                                    <div class="fs-4 fw-semibold">@_summary.CompletedServiceOrdersToday</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Payments</div>
+                                    <div class="fs-4 fw-semibold">@_summary.TotalPaymentsToday.ToString("N2")</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Revenue</div>
+                                    <div class="fs-4 fw-semibold">@_summary.TotalRevenueToday.ToString("N2")</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <div class="border rounded p-3">
+                                    <div class="text-muted small">Pending</div>
+                                    <div class="fs-4 fw-semibold">@_summary.PendingAmount.ToString("N2")</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isLoading = true;
+    private string? _error;
+    private CurrentUserResponse? _user;
+    private DailySummaryResponse? _summary;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            _user = await AuthService.GetCurrentUserAsync();
+            if (_user is null)
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            _summary = await AuthService.GetDailySummaryAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

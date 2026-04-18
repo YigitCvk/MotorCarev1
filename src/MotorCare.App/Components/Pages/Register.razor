@@ -1,0 +1,81 @@
+@page "/register"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Register</PageTitle>
+
+<h1 class="mb-4">Register Workshop</h1>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <EditForm Model="_model" OnValidSubmit="RegisterAsync" class="card shadow-sm">
+            <DataAnnotationsValidator />
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label class="form-label">Tenant Identifier</label>
+                    <InputText class="form-control" @bind-Value="_model.TenantIdentifier" />
+                    <ValidationMessage For="@(() => _model.TenantIdentifier)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tenant Name</label>
+                    <InputText class="form-control" @bind-Value="_model.TenantName" />
+                    <ValidationMessage For="@(() => _model.TenantName)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Owner Full Name</label>
+                    <InputText class="form-control" @bind-Value="_model.OwnerFullName" />
+                    <ValidationMessage For="@(() => _model.OwnerFullName)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Owner Email</label>
+                    <InputText class="form-control" @bind-Value="_model.OwnerEmail" />
+                    <ValidationMessage For="@(() => _model.OwnerEmail)" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Owner Password</label>
+                    <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" />
+                    <ValidationMessage For="@(() => _model.OwnerPassword)" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger">@_error</div>
+                }
+
+                <button type="submit" class="btn btn-primary w-100" disabled="@_isSubmitting">
+                    @(_isSubmitting ? "Registering..." : "Register")
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly RegisterRequest _model = new();
+    private bool _isSubmitting;
+    private string? _error;
+
+    private async Task RegisterAsync()
+    {
+        _isSubmitting = true;
+        _error = null;
+
+        try
+        {
+            await AuthService.RegisterAsync(_model);
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}
