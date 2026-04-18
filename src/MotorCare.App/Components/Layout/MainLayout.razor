@@ -1,24 +1,90 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
 
-<div class="page">
-    <div class="sidebar">
+<div class="app-shell">
+    <aside class="sidebar">
         <NavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4 border-bottom d-flex align-items-center justify-content-between">
-            <div class="fw-semibold">MotorCare</div>
-            <div class="text-muted small">Workshop Operations MVP</div>
-        </div>
+    <div class="workspace">
+        <header class="app-topbar">
+            <div>
+                <div class="eyebrow">MotorCare SaaS</div>
+                <div class="topbar-title">Servis Operasyon Merkezi</div>
+            </div>
 
-        <article class="content px-4">
+            <div class="topbar-meta">
+                @if (_currentUser is not null)
+                {
+                    <div class="tenant-chip">
+                        <div class="tenant-chip-label">@_currentUser.TenantIdentifier</div>
+                        <div class="tenant-chip-value">@_currentUser.FullName (@_currentUser.Role)</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="tenant-chip tenant-chip-muted">
+                        <div class="tenant-chip-label">Oturum</div>
+                        <div class="tenant-chip-value">Bağlı değil</div>
+                    </div>
+                }
+            </div>
+        </header>
+
+        <main class="workspace-main">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
 </div>
+
+<nav class="mobile-bottom-nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/service-orders">Servis</a>
+    <a href="/customers">Müşteriler</a>
+    <a href="/settings">Ayarlar</a>
+</nav>
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
+    <a class="dismiss">x</a>
 </div>
+
+@code {
+    private CurrentUserResponse? _currentUser;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
+        await RefreshCurrentUserAsync();
+    }
+
+    private async void HandleAuthenticationStateChanged()
+    {
+        await RefreshCurrentUserAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshCurrentUserAsync()
+    {
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            _currentUser = null;
+            return;
+        }
+
+        _currentUser = await AuthService.GetCurrentUserAsync();
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+}

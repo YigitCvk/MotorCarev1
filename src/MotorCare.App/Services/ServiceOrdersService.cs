@@ -15,7 +15,7 @@ public sealed class ServiceOrdersService
         _apiClient = apiClient;
     }
 
-    public Task<IReadOnlyList<ServiceOrderListItemResponse>?> GetServiceOrdersAsync(
+    public Task<IReadOnlyList<ServiceOrderResponse>?> GetServiceOrdersAsync(
         string? searchText,
         string? status,
         DateTime? openedFrom,
@@ -50,7 +50,7 @@ public sealed class ServiceOrdersService
             uriBuilder.Append('?').Append(string.Join('&', query));
         }
 
-        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderListItemResponse>>(uriBuilder.ToString(), authorized: true, cancellationToken);
+        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderResponse>>(uriBuilder.ToString(), authorized: true, cancellationToken);
     }
 
     public Task<IReadOnlyList<CustomerLookupResponse>?> SearchCustomersAsync(string? searchText, CancellationToken cancellationToken = default)
@@ -67,8 +67,13 @@ public sealed class ServiceOrdersService
         return _apiClient.GetAsync<VehicleLookupResponse>($"/api/vehicles/{Uri.EscapeDataString(plate)}", authorized: true, cancellationToken);
     }
 
-    public Task<Guid?> CreateServiceOrderAsync(CreateServiceOrderRequest request, CancellationToken cancellationToken = default)
+    public Task<Guid> CreateServiceOrderAsync(CreateServiceOrderRequest request, CancellationToken cancellationToken = default)
     {
-        return _apiClient.PostAsync<CreateServiceOrderRequest, Guid>("/api/service-orders", request, authorized: true, cancellationToken);
+        return _apiClient.PostAsync<CreateServiceOrderRequest, Guid>("/api/service-orders", request, authorized: true, cancellationToken)!;
+    }
+
+    public Task<ServiceOrderResponse?> GetServiceOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<ServiceOrderResponse>($"/api/service-orders/{id}", authorized: true, cancellationToken);
     }
 }

@@ -1,0 +1,206 @@
+@page "/service-orders"
+@inject AuthService AuthService
+@inject ServiceOrdersService ServiceOrdersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Servis Islemleri</PageTitle>
+
+<div class="page-shell">
+    <section class="hero-panel compact">
+        <div>
+            <div class="eyebrow">Ana ekran</div>
+            <h1 class="page-title">Servis Islemleri</h1>
+            <p class="page-description">
+                Plaka, musteri veya order numarasina gore ara. Durum ve tarih filtreleri ile kayit kabul akisini hizlandir.
+            </p>
+        </div>
+
+        <div class="quick-actions">
+            <a class="btn btn-primary" href="/service-orders/create">Yeni Servis Kaydi</a>
+        </div>
+    </section>
+
+    <section class="surface-card">
+        <div class="filter-grid">
+            <div>
+                <label class="form-label">Arama</label>
+                <InputText class="form-control" @bind-Value="_searchText" placeholder="Plaka, musteri veya order no" />
+            </div>
+            <div>
+                <label class="form-label">Durum</label>
+                <InputSelect class="form-select" @bind-Value="_status">
+                    <option value="">Tum durumlar</option>
+                    <option value="Open">Open</option>
+                    <option value="InProgress">InProgress</option>
+                    <option value="WaitingForParts">WaitingForParts</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Delivered">Delivered</option>
+                </InputSelect>
+            </div>
+            <div>
+                <label class="form-label">Baslangic</label>
+                <InputDate class="form-control" @bind-Value="_openedFrom" />
+            </div>
+            <div>
+                <label class="form-label">Bitis</label>
+                <InputDate class="form-control" @bind-Value="_openedTo" />
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="btn btn-dark" @onclick="LoadOrdersAsync" disabled="@_isLoading">
+                    @(_isLoading ? "Yukleniyor..." : "Filtrele")
+                </button>
+            </div>
+        </div>
+    </section>
+
+    @if (_isLoading)
+    {
+        <div class="surface-card mt-3 text-muted">Servis kayitlari yukleniyor...</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger mt-3">@_error</div>
+    }
+
+    <section class="surface-card mt-3 d-none d-lg-block">
+        <div class="table-responsive">
+            <table class="table modern-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Order No</th>
+                        <th>Durum</th>
+                        <th>Kabul</th>
+                        <th>KM</th>
+                        <th>Sikayet</th>
+                        <th>Tutar</th>
+                        <th>Kalan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_orders.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-muted py-4">Kayit bulunamadi.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in _orders)
+                        {
+                            <tr class="clickable-row" @onclick="@(() => OpenDetail(order.Id))">
+                                <td class="fw-semibold">@order.OrderNo</td>
+                                <td><span class="@GetStatusBadgeClass(order.Status)">@order.Status</span></td>
+                                <td>@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@order.VehicleKm</td>
+                                <td>@(string.IsNullOrWhiteSpace(order.Complaint) ? "-" : order.Complaint)</td>
+                                <td>@order.GrandTotal.ToString("N2")</td>
+                                <td>@order.RemainingTotal.ToString("N2")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card-list d-lg-none">
+        @if (_orders.Count == 0)
+        {
+            <div class="surface-card text-muted">Kayit bulunamadi.</div>
+        }
+        else
+        {
+            @foreach (var order in _orders)
+            {
+                <div class="surface-card order-card clickable-card" @onclick="@(() => OpenDetail(order.Id))">
+                    <div class="order-card-top">
+                        <div>
+                            <div class="order-no">@order.OrderNo</div>
+                            <div class="text-muted small">@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
+                        </div>
+                        <span class="@GetStatusBadgeClass(order.Status)">@order.Status</span>
+                    </div>
+                    <div class="order-card-body">
+                        <div><strong>KM:</strong> @order.VehicleKm</div>
+                        <div><strong>Sikayet:</strong> @(string.IsNullOrWhiteSpace(order.Complaint) ? "-" : order.Complaint)</div>
+                        <div class="order-money-row">
+                            <span>Tutar @order.GrandTotal.ToString("N2")</span>
+                            <span>Kalan @order.RemainingTotal.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+</div>
+
+@code {
+    private readonly List<ServiceOrderResponse> _orders = [];
+    private bool _isLoading = true;
+    private string? _searchText;
+    private string? _status;
+    private DateTime? _openedFrom;
+    private DateTime? _openedTo;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadOrdersAsync();
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _error = null;
+            _orders.Clear();
+
+            var response = await ServiceOrdersService.GetServiceOrdersAsync(_searchText, _status, _openedFrom, _openedTo);
+            if (response is not null)
+            {
+                _orders.AddRange(response);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenDetail(Guid id)
+    {
+        NavigationManager.NavigateTo($"/service-orders/{id}");
+    }
+
+    private static string GetStatusBadgeClass(string status) =>
+        status switch
+        {
+            "Open" => "status-badge badge-open",
+            "InProgress" => "status-badge badge-progress",
+            "WaitingForParts" => "status-badge badge-waiting",
+            "Completed" => "status-badge badge-completed",
+            "Delivered" => "status-badge badge-delivered",
+            "Cancelled" => "status-badge badge-cancelled",
+            _ => "status-badge"
+        };
+}

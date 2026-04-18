@@ -1,79 +1,92 @@
-.page {
-    position: relative;
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
+        linear-gradient(180deg, #f7fbfa 0%, #eef4f6 100%);
+}
+
+.sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #0f172a 0%, #12263f 100%);
+    color: #e2e8f0;
+    border-right: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.workspace {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-main {
-    flex: 1;
-}
-
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
-}
-
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
-    height: 3.5rem;
+.app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(247, 251, 250, 0.88);
+    backdrop-filter: blur(14px);
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-    }
-
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
-
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
+.eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f766e;
+    font-weight: 700;
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
+.topbar-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
+.topbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
 
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
+.tenant-chip {
+    min-width: 220px;
+    padding: 0.75rem 0.9rem;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
 
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
+.tenant-chip-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
 
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
-    }
+.tenant-chip-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.tenant-chip-muted .tenant-chip-value {
+    color: #475569;
+}
+
+.workspace-main {
+    padding: 1.5rem;
+    padding-bottom: 5rem;
+}
+
+.mobile-bottom-nav {
+    display: none;
 }
 
 #blazor-error-ui {
@@ -88,9 +101,63 @@ main {
     z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .app-shell {
+        display: block;
     }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+    }
+
+    .app-topbar {
+        padding: 1rem;
+    }
+
+    .tenant-chip {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .topbar-meta {
+        display: none;
+    }
+
+    .workspace-main {
+        padding: 1rem;
+        padding-bottom: 6rem;
+    }
+
+    .mobile-bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.25rem;
+        padding: 0.7rem;
+        background: rgba(15, 23, 42, 0.96);
+        border-top: 1px solid rgba(148, 163, 184, 0.12);
+    }
+
+    .mobile-bottom-nav a {
+        text-decoration: none;
+        text-align: center;
+        color: #e2e8f0;
+        font-size: 0.78rem;
+        padding: 0.7rem 0.3rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+    }
+}

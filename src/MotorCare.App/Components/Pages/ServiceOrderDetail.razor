@@ -1,0 +1,171 @@
+@page "/service-orders/{Id:guid}"
+@inject AuthService AuthService
+@inject ServiceOrdersService ServiceOrdersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Servis Detayi</PageTitle>
+
+<div class="page-shell">
+    @if (_isLoading)
+    {
+        <div class="surface-card text-muted">Servis detayi yukleniyor...</div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+    else if (_order is null)
+    {
+        <div class="alert alert-warning">Servis kaydi bulunamadi.</div>
+    }
+    else
+    {
+        <section class="hero-panel compact">
+            <div>
+                <div class="eyebrow">Servis detayi</div>
+                <h1 class="page-title">@_order.OrderNo</h1>
+                <p class="page-description">
+                    Durum: <span class="@GetStatusBadgeClass(_order.Status)">@_order.Status</span>
+                </p>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="surface-card">
+                <div class="section-title">Temel Bilgiler</div>
+                <dl class="detail-list mt-3">
+                    <dt>Acilis</dt>
+                    <dd>@_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                    <dt>KM</dt>
+                    <dd>@_order.VehicleKm</dd>
+                    <dt>Sikayet</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(_order.Complaint) ? "-" : _order.Complaint)</dd>
+                    <dt>Aciklama</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(_order.WorkDescription) ? "-" : _order.WorkDescription)</dd>
+                </dl>
+            </div>
+
+            <div class="surface-card">
+                <div class="section-title">Finans</div>
+                <dl class="detail-list mt-3">
+                    <dt>Iscilik</dt>
+                    <dd>@_order.LaborTotal.ToString("N2")</dd>
+                    <dt>Parca</dt>
+                    <dd>@_order.PartsTotal.ToString("N2")</dd>
+                    <dt>Indirim</dt>
+                    <dd>@_order.DiscountTotal.ToString("N2")</dd>
+                    <dt>Toplam</dt>
+                    <dd>@_order.GrandTotal.ToString("N2")</dd>
+                    <dt>Odenen</dt>
+                    <dd>@_order.PaidTotal.ToString("N2")</dd>
+                    <dt>Kalan</dt>
+                    <dd>@_order.RemainingTotal.ToString("N2")</dd>
+                </dl>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="surface-card">
+                <div class="section-title">Islemler</div>
+                <div class="summary-list mt-3">
+                    @if (_order.Operations.Count == 0)
+                    {
+                        <div class="text-muted small">Islem eklenmemis.</div>
+                    }
+                    else
+                    {
+                        @foreach (var operation in _order.Operations)
+                        {
+                            <div class="summary-list-item">
+                                <strong>@operation.Description</strong>
+                                <span>@operation.Price.ToString("N2")</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="surface-card">
+                <div class="section-title">Parca ve Odemeler</div>
+                <div class="summary-list mt-3">
+                    @if (_order.Parts.Count == 0 && _order.Payments.Count == 0)
+                    {
+                        <div class="text-muted small">Parca veya odeme kaydi yok.</div>
+                    }
+                    else
+                    {
+                        @foreach (var part in _order.Parts)
+                        {
+                            <div class="summary-list-item">
+                                <strong>@part.PartName</strong>
+                                <span>@part.Quantity x @part.UnitPrice.ToString("N2") = @part.TotalPrice.ToString("N2")</span>
+                            </div>
+                        }
+
+                        @foreach (var payment in _order.Payments)
+                        {
+                            <div class="summary-list-item">
+                                <strong>Odeme - @payment.Method</strong>
+                                <span>@payment.Amount.ToString("N2") (@payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy HH:mm"))</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _isLoading = true;
+    private string? _error;
+    private ServiceOrderResponse? _order;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _error = null;
+            _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string GetStatusBadgeClass(string status) =>
+        status switch
+        {
+            "Open" => "status-badge badge-open",
+            "InProgress" => "status-badge badge-progress",
+            "WaitingForParts" => "status-badge badge-waiting",
+            "Completed" => "status-badge badge-completed",
+            "Delivered" => "status-badge badge-delivered",
+            "Cancelled" => "status-badge badge-cancelled",
+            _ => "status-badge"
+        };
+}

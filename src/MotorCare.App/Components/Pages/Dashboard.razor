@@ -4,94 +4,115 @@
 
 <PageTitle>Dashboard</PageTitle>
 
-<h1 class="mb-4">Dashboard</h1>
-
 @if (_isLoading)
 {
-    <p class="text-muted">Loading dashboard...</p>
+    <div class="page-shell">
+        <p class="text-muted">Dashboard yukleniyor...</p>
+    </div>
 }
 else if (!string.IsNullOrWhiteSpace(_error))
 {
-    <div class="alert alert-danger">@_error</div>
+    <div class="page-shell">
+        <div class="alert alert-danger">@_error</div>
+    </div>
 }
 else if (_user is null)
 {
-    <div class="alert alert-warning">You need to login first.</div>
+    <div class="page-shell">
+        <div class="alert alert-warning">Devam etmek icin giris yapin.</div>
+    </div>
 }
 else
 {
-    <div class="row g-4">
-        <div class="col-12 col-lg-5">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h2 class="h5 mb-3">Current User</h2>
-                    <dl class="row mb-0">
-                        <dt class="col-4">Name</dt>
-                        <dd class="col-8">@_user.FullName</dd>
-                        <dt class="col-4">Email</dt>
-                        <dd class="col-8">@_user.Email</dd>
-                        <dt class="col-4">Role</dt>
-                        <dd class="col-8">@_user.Role</dd>
-                        <dt class="col-4">Tenant</dt>
-                        <dd class="col-8">@_user.TenantIdentifier</dd>
-                    </dl>
+    <div class="page-shell">
+        <section class="hero-panel">
+            <div>
+                <div class="eyebrow">Gunluk operasyon ozeti</div>
+                <h1 class="page-title">Servis gununuzu tek ekrandan yonetin</h1>
+                <p class="page-description">
+                    @(_user.TenantIdentifier) icin bugunku hareketleri, tahsilatlari ve acik isleri hizlica gorun.
+                </p>
+            </div>
+
+            <div class="quick-actions">
+                <a class="btn btn-primary" href="/service-orders/create">Yeni Servis Kaydi</a>
+                <a class="btn btn-outline-dark" href="/customers">Musteri Ekle</a>
+                <a class="btn btn-outline-secondary" href="/vehicles">Arac Ekle</a>
+            </div>
+        </section>
+
+        <section class="metric-grid">
+            <div class="metric-card">
+                <div class="metric-label">Bugunku Servisler</div>
+                <div class="metric-value">@(_summary?.TotalServiceOrdersToday ?? 0)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Acik Servisler</div>
+                <div class="metric-value">@(_summary?.OpenServiceOrders ?? 0)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Tamamlananlar</div>
+                <div class="metric-value">@(_summary?.CompletedServiceOrdersToday ?? 0)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Gunluk Tahsilat</div>
+                <div class="metric-value">@((_summary?.TotalPaymentsToday ?? 0).ToString("N2"))</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Gunluk Ciro</div>
+                <div class="metric-value">@((_summary?.TotalRevenueToday ?? 0).ToString("N2"))</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Bekleyen Tutar</div>
+                <div class="metric-value">@((_summary?.PendingAmount ?? 0).ToString("N2"))</div>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Operasyon Notlari</div>
+                        <div class="section-subtitle">Hizli takip icin bugunun odak alanlari</div>
+                    </div>
+                </div>
+
+                <div class="summary-list">
+                    <div class="summary-list-item">
+                        <strong>Servis Islemleri</strong>
+                        <span>Yeni kayit acmak ve mevcut kayitlari filtrelemek icin servis ekranini kullanin.</span>
+                    </div>
+                    <div class="summary-list-item">
+                        <strong>Tahsilatlar</strong>
+                        <span>Gunluk tahsilat ve bekleyen tutar, onboard ekip icin ana KPI olarak hazir.</span>
+                    </div>
+                    <div class="summary-list-item">
+                        <strong>Musteri Akisi</strong>
+                        <span>Kayit kabul sirasinda once musteri, sonra arac, sonra servis kaydi akisini izleyin.</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-12 col-lg-7">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h2 class="h5 mb-3">Daily Summary</h2>
-
-                    @if (_summary is null)
-                    {
-                        <p class="text-muted mb-0">Daily summary is not available.</p>
-                    }
-                    else
-                    {
-                        <div class="row g-3">
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Orders Today</div>
-                                    <div class="fs-4 fw-semibold">@_summary.TotalServiceOrdersToday</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Open Orders</div>
-                                    <div class="fs-4 fw-semibold">@_summary.OpenServiceOrders</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Completed</div>
-                                    <div class="fs-4 fw-semibold">@_summary.CompletedServiceOrdersToday</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Payments</div>
-                                    <div class="fs-4 fw-semibold">@_summary.TotalPaymentsToday.ToString("N2")</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Revenue</div>
-                                    <div class="fs-4 fw-semibold">@_summary.TotalRevenueToday.ToString("N2")</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <div class="border rounded p-3">
-                                    <div class="text-muted small">Pending</div>
-                                    <div class="fs-4 fw-semibold">@_summary.PendingAmount.ToString("N2")</div>
-                                </div>
-                            </div>
-                        </div>
-                    }
+            <div class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Aktif Oturum</div>
+                        <div class="section-subtitle">Yetkili kullanici bilgisi</div>
+                    </div>
                 </div>
+
+                <dl class="detail-list">
+                    <dt>Kullanici</dt>
+                    <dd>@_user.FullName</dd>
+                    <dt>E-posta</dt>
+                    <dd>@_user.Email</dd>
+                    <dt>Rol</dt>
+                    <dd>@_user.Role</dd>
+                    <dt>Tenant</dt>
+                    <dd>@_user.TenantIdentifier</dd>
+                </dl>
             </div>
-        </div>
+        </section>
     </div>
 }
 
