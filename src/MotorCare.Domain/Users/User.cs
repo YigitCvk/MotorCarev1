@@ -47,9 +47,11 @@ public class User : AggregateRoot, ITenantEntity
         LastLoginAt = loggedInAt;
     }
 
-    public void AddRefreshToken(string tokenHash, DateTimeOffset expiresAt, DateTimeOffset createdAt)
+    public RefreshToken AddRefreshToken(string tokenHash, DateTimeOffset expiresAt, DateTimeOffset createdAt)
     {
-        _refreshTokens.Add(new RefreshToken(tokenHash, expiresAt, createdAt));
+        var token = new RefreshToken(Id, tokenHash, expiresAt, createdAt);
+        _refreshTokens.Add(token);
+        return token;
     }
 
     public void RevokeRefreshToken(string tokenHash, DateTimeOffset revokedAt)

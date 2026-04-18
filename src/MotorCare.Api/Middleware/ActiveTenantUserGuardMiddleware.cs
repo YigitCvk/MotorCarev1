@@ -9,6 +9,7 @@ public sealed class ActiveTenantUserGuardMiddleware
     private static readonly (string Method, string Path)[] PublicEndpoints =
     [
         ("POST", "/api/auth/login"),
+        ("POST", "/api/auth/register"),
         ("POST", "/api/auth/refresh-token"),
         ("POST", "/api/onboarding/tenant"),
         ("GET", "/health")

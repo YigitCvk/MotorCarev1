@@ -21,17 +21,14 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(v => v.ChassisNumber).HasMaxLength(100);
         builder.Property(v => v.Color).HasMaxLength(50);
 
-        // PlateNumber value object: use OwnsOne (consistent with PhoneNumber in Customer)
+        // PlateNumber value object stored in the same Vehicles row
         builder.OwnsOne(v => v.Plate, p =>
         {
             p.Property(pp => pp.OriginalValue).HasColumnName("PlateOriginal").HasMaxLength(20).IsRequired();
             p.Property(pp => pp.NormalizedValue).HasColumnName("PlateNormalized").HasMaxLength(20).IsRequired();
+            p.HasIndex(pp => pp.NormalizedValue)
+                .HasDatabaseName("IX_Vehicles_PlateNormalized");
         });
-
-        // Unique index: TenantId + PlateNormalized
-        builder.HasIndex("TenantId", "Plate_NormalizedValue")
-            .IsUnique()
-            .HasDatabaseName("IX_Vehicles_TenantId_PlateNormalized");
 
         // Child entities
         builder.OwnsMany(v => v.Notes, nb =>
@@ -54,8 +51,5 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Navigation(v => v.Notes).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(v => v.Photos).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // Concurrency token
-        builder.Property(v => v.RowVersion)
-            .IsRowVersion();
     }
 }

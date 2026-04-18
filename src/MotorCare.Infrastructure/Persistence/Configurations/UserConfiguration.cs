@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MotorCare.Domain.Users;
-using MotorCare.Domain.Users.Entities;
-
 namespace MotorCare.Infrastructure.Persistence.Configurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<User>
@@ -36,20 +34,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => new { u.TenantId, u.Email })
             .IsUnique();
 
-        builder.OwnsMany(u => u.RefreshTokens, rt =>
-        {
-            rt.ToTable("UserRefreshTokens");
-            rt.HasKey(t => t.Id);
-            rt.Property(t => t.TokenHash).IsRequired().HasMaxLength(200);
-            rt.Property(t => t.ExpiresAt).IsRequired();
-            rt.Property(t => t.RevokedAt);
-            rt.WithOwner().HasForeignKey("UserId");
-            rt.HasIndex(t => t.TokenHash).IsUnique();
-        });
+        builder.HasMany(u => u.RefreshTokens)
+            .WithOne()
+            .HasForeignKey("UserId")
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(u => u.RefreshTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.Property(u => u.RowVersion)
-            .IsRowVersion();
     }
 }

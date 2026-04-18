@@ -6,6 +6,7 @@ using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.ServiceOrders;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
+using MotorCare.Domain.Users.Entities;
 using MotorCare.Infrastructure.Persistence.Entities;
 
 namespace MotorCare.Infrastructure.Persistence;
@@ -30,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
     public DbSet<ServiceOrderNumberCounter> ServiceOrderNumberCounters => Set<ServiceOrderNumberCounter>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

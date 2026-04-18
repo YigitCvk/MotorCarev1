@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MotorCare.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MotorCare.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418223317_FixPostgresRowVersionConcurrency")]
+    partial class FixPostgresRowVersionConcurrency
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,6 +64,12 @@ namespace MotorCare.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("Whatsapp");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -147,6 +156,12 @@ namespace MotorCare.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId");
@@ -182,48 +197,18 @@ namespace MotorCare.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Identifier")
                         .IsUnique();
 
                     b.ToTable("Tenants");
-                });
-
-            modelBuilder.Entity("MotorCare.Domain.Users.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserRefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("MotorCare.Domain.Users.User", b =>
@@ -268,6 +253,12 @@ namespace MotorCare.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -322,6 +313,12 @@ namespace MotorCare.Infrastructure.Migrations
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -468,13 +465,48 @@ namespace MotorCare.Infrastructure.Migrations
                     b.Navigation("Payments");
                 });
 
-            modelBuilder.Entity("MotorCare.Domain.Users.Entities.RefreshToken", b =>
+            modelBuilder.Entity("MotorCare.Domain.Users.User", b =>
                 {
-                    b.HasOne("MotorCare.Domain.Users.User", null)
-                        .WithMany("RefreshTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.OwnsMany("MotorCare.Domain.Users.Entities.RefreshToken", "RefreshTokens", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTimeOffset>("CreatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTimeOffset>("ExpiresAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTimeOffset?>("RevokedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<string>("TokenHash")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)");
+
+                            b1.Property<DateTimeOffset?>("UpdatedAt")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uuid");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("TokenHash")
+                                .IsUnique();
+
+                            b1.HasIndex("UserId");
+
+                            b1.ToTable("UserRefreshTokens", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserId");
+                        });
+
+                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("MotorCare.Domain.Vehicles.Vehicle", b =>
@@ -577,11 +609,6 @@ namespace MotorCare.Infrastructure.Migrations
 
                     b.Navigation("Plate")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("MotorCare.Domain.Users.User", b =>
-                {
-                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

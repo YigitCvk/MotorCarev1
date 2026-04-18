@@ -81,9 +81,13 @@ Open Swagger:
 
 Use the actual URLs shown by the API startup output.
 
-## 5. Onboard the first tenant owner
+## 5. Register the first tenant owner
 
-In Swagger, call:
+Frontend-friendly public endpoint:
+
+- `POST /api/auth/register`
+
+Alternative onboarding endpoint:
 
 - `POST /api/onboarding/tenant`
 
@@ -103,6 +107,12 @@ Expected result:
 
 - `201 Created`
 - response contains `tenantId`, `tenantIdentifier`, `ownerId`, and `ownerEmail`
+
+Both endpoints use the same command and create:
+
+- the tenant
+- the first owner user
+- a hashed password only
 
 ## 6. Login and get tokens
 

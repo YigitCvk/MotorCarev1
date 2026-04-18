@@ -20,8 +20,5 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 
         builder.HasIndex(t => t.Identifier).IsUnique();
 
-        // Concurrency token
-        builder.Property(t => t.RowVersion)
-            .IsRowVersion();
     }
 }

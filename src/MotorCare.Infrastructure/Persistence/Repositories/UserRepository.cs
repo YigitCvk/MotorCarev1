@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.Users;
+using MotorCare.Domain.Users.Entities;
 
 namespace MotorCare.Infrastructure.Persistence.Repositories;
 
@@ -17,7 +18,6 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .IgnoreQueryFilters()
-            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId, cancellationToken);
     }
 
@@ -25,7 +25,6 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .IgnoreQueryFilters()
-            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Email == normalizedEmail, cancellationToken);
     }
 
@@ -42,9 +41,21 @@ public class UserRepository : IUserRepository
         await _context.Users.AddAsync(user, cancellationToken);
     }
 
+    public void AddRefreshToken(RefreshToken refreshToken)
+    {
+        _context.RefreshTokens.Add(refreshToken);
+    }
+
     public void Update(User user)
     {
-        _context.Users.Update(user);
+        var entry = _context.Entry(user);
+
+        // The aggregate is typically loaded and tracked in the same DbContext scope.
+        // Re-attaching it with Update() resets state for the whole graph unnecessarily.
+        if (entry.State == EntityState.Detached)
+        {
+            _context.Users.Update(user);
+        }
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -73,8 +73,5 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
         builder.Navigation(o => o.Parts).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // Concurrency token
-        builder.Property(o => o.RowVersion)
-            .IsRowVersion();
     }
 }

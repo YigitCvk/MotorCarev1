@@ -7,6 +7,7 @@ using MotorCare.Application.Auth.Commands.Login;
 using MotorCare.Application.Auth.Commands.Logout;
 using MotorCare.Application.Auth.Commands.RefreshToken;
 using MotorCare.Application.Auth.Queries.GetCurrentUser;
+using MotorCare.Application.Tenants.Commands.CreateTenantWithOwner;
 
 namespace MotorCare.Api.Modules;
 
@@ -26,6 +27,16 @@ public sealed class AuthModule : ICarterModule
         .WithName("Login")
         .Produces<AuthResponseDto>()
         .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/register", async (CreateTenantWithOwnerCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Created($"/api/tenants/{result.TenantIdentifier}", result);
+        })
+        .WithName("RegisterTenantWithOwner")
+        .Produces<CreateTenantWithOwnerResultDto>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
         group.MapPost("/refresh-token", async (RefreshTokenCommand command, IMediator mediator, CancellationToken ct) =>
