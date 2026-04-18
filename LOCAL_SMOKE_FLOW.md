@@ -16,18 +16,37 @@ docker compose up -d
 
 This starts PostgreSQL on `localhost:5432` with:
 
-- Database: `MotorCareDb`
-- Username: `postgres`
-- Password: `postgres`
+- Database: `motorcare`
+- Username: `motorcare`
+- Password: `motorcare_dev_password`
 
-## 2. Set the local connection string
-
-`MotorCare.Api` expects `ConnectionStrings:DefaultConnection`, but that value is not checked into `appsettings`.
-
-For the current PowerShell session:
+Equivalent one-off Docker run:
 
 ```powershell
-$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=MotorCareDb;Username=postgres;Password=postgres"
+docker run --name motorcare-postgres `
+  -e POSTGRES_DB=motorcare `
+  -e POSTGRES_USER=motorcare `
+  -e POSTGRES_PASSWORD=motorcare_dev_password `
+  -p 5432:5432 `
+  -d postgres:16-alpine
+```
+
+## 2. Local connection string
+
+`MotorCare.Api` now reads the local development connection string from:
+
+- `src/MotorCare.Api/appsettings.Development.json`
+
+Current value:
+
+```powershell
+Host=localhost;Port=5432;Database=motorcare;Username=motorcare;Password=motorcare_dev_password
+```
+
+If you need to override it temporarily in PowerShell:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=motorcare;Username=motorcare;Password=motorcare_dev_password"
 ```
 
 ## 3. Update the database schema
@@ -191,7 +210,8 @@ Use the `refreshToken` returned by login.
 ## 10. Common failure points
 
 - `Connection string 'DefaultConnection' is not configured`
-  - set `ConnectionStrings__DefaultConnection` in the shell before running the API
+  - verify `src/MotorCare.Api/appsettings.Development.json` is being loaded
+  - or set `ConnectionStrings__DefaultConnection` in the shell before running the API
 - `relation "ServiceOrderNumberCounters" does not exist`
   - the database schema is behind the current model; apply/update migrations
 - `401 Unauthorized`
