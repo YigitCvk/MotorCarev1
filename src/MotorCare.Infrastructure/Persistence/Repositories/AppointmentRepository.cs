@@ -30,6 +30,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
         CancellationToken cancellationToken = default)
     {
         var query = _context.Appointments
+            .AsNoTracking()
             .Where(x => x.TenantId == tenantId);
 
         if (startFrom.HasValue)
@@ -39,7 +40,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
 
         if (endTo.HasValue)
         {
-            query = query.Where(x => x.EndAt <= endTo.Value);
+            query = query.Where(x => x.StartAt < endTo.Value);
         }
 
         if (status.HasValue)
@@ -85,7 +86,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
             query = query.Where(x => x.StartAt >= startFrom.Value);
 
         if (endTo.HasValue)
-            query = query.Where(x => x.EndAt <= endTo.Value);
+            query = query.Where(x => x.StartAt < endTo.Value);
 
         if (status.HasValue)
             query = query.Where(x => x.Status == status.Value);
@@ -116,6 +117,7 @@ public sealed class AppointmentRepository : IAppointmentRepository
     public async Task<List<Appointment>> GetByCustomerIdAsync(string tenantId, Guid customerId, CancellationToken cancellationToken = default)
     {
         return await _context.Appointments
+            .AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.CustomerId == customerId)
             .OrderByDescending(x => x.StartAt)
             .ToListAsync(cancellationToken);

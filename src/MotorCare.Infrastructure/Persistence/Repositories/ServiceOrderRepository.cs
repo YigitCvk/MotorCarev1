@@ -44,24 +44,31 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
     public async Task<ServiceOrderDailySummary> GetDailySummaryAsync(string tenantId, CancellationToken cancellationToken = default)
     {
-        var todayStart = DateTimeOffset.UtcNow.Date;
-        var todayEnd = todayStart.AddDays(1);
+        var (todayStart, todayEnd) = GetIstanbulDayRange();
 
         var totalServiceOrdersToday = await _context.ServiceOrders
             .Where(o => o.TenantId == tenantId && o.OpenedAt >= todayStart && o.OpenedAt < todayEnd)
             .CountAsync(cancellationToken);
 
-        var openServiceOrders = await _context.ServiceOrders
-            .Where(o => o.TenantId == tenantId && o.Status == ServiceOrderStatus.Open)
+        var activeServiceOrders = await _context.ServiceOrders
+            .Where(o =>
+                o.TenantId == tenantId &&
+                (o.Status == ServiceOrderStatus.Open ||
+                 o.Status == ServiceOrderStatus.InProgress ||
+                 o.Status == ServiceOrderStatus.WaitingForParts))
             .CountAsync(cancellationToken);
 
         var completedServiceOrdersToday = await _context.ServiceOrders
             .Where(o =>
                 o.TenantId == tenantId &&
-                o.Status == ServiceOrderStatus.Completed &&
+                (o.Status == ServiceOrderStatus.Completed || o.Status == ServiceOrderStatus.Delivered) &&
                 o.ClosedAt.HasValue &&
                 o.ClosedAt.Value >= todayStart &&
                 o.ClosedAt.Value < todayEnd)
+            .CountAsync(cancellationToken);
+
+        var deliveryWaitingCount = await _context.ServiceOrders
+            .Where(o => o.TenantId == tenantId && o.Status == ServiceOrderStatus.Completed)
             .CountAsync(cancellationToken);
 
         var totalPaymentsToday = await _context.ServiceOrders
@@ -83,11 +90,37 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
         return new ServiceOrderDailySummary(
             totalServiceOrdersToday,
-            openServiceOrders,
+            activeServiceOrders,
             completedServiceOrdersToday,
+            deliveryWaitingCount,
             totalPaymentsToday,
             totalRevenueToday,
             pendingAmount);
+    }
+
+    private static (DateTimeOffset Start, DateTimeOffset End) GetIstanbulDayRange()
+    {
+        var zone = ResolveIstanbulTimeZone();
+        var nowInZone = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone);
+        var localDate = nowInZone.Date;
+        var startLocal = new DateTime(localDate.Year, localDate.Month, localDate.Day, 0, 0, 0, DateTimeKind.Unspecified);
+        var endLocal = startLocal.AddDays(1);
+
+        var startUtc = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(startLocal, zone));
+        var endUtc = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(endLocal, zone));
+        return (startUtc, endUtc);
+    }
+
+    private static TimeZoneInfo ResolveIstanbulTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        }
     }
 
     public async Task<List<ServiceOrder>> GetFilteredAsync(
@@ -100,6 +133,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
         CancellationToken cancellationToken = default)
     {
         var query = _context.ServiceOrders
+            .AsNoTracking()
             .Where(o => o.TenantId == tenantId);
 
         if (customerId.HasValue)

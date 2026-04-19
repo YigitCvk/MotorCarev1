@@ -1,16 +1,15 @@
 @page "/dashboard"
 @inject AuthService AuthService
-@inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Dashboard — MotorCare</PageTitle>
+<PageTitle>Dashboard - BakimSuite</PageTitle>
 
 @if (_isLoading)
 {
     <div class="page-shell">
         <section class="loading-state">
-            <strong>Dashboard yükleniyor</strong>
-            <p>Lütfen bekleyin.</p>
+            <strong>Dashboard yukleniyor</strong>
+            <p>Lutfen bekleyin.</p>
         </section>
     </div>
 }
@@ -18,7 +17,7 @@ else if (!string.IsNullOrWhiteSpace(_error))
 {
     <div class="page-shell">
         <section class="error-state">
-            <strong>Dashboard alınamadı</strong>
+            <strong>Dashboard alinamadi</strong>
             <p>@_error</p>
         </section>
     </div>
@@ -27,8 +26,8 @@ else if (_user is null)
 {
     <div class="page-shell">
         <section class="empty-state">
-            <strong>Oturum bulunamadı</strong>
-            <p>Devam etmek için tekrar giriş yapın.</p>
+            <strong>Oturum bulunamadi</strong>
+            <p>Devam etmek icin tekrar giris yapin.</p>
         </section>
     </div>
 }
@@ -37,63 +36,64 @@ else
     <div class="page-shell">
         <section class="hero-panel">
             <div>
-                <div class="eyebrow">Günlük operasyon</div>
-                <h1 class="page-title">Günaydın, @_user.FullName</h1>
+                <div class="eyebrow">Gunluk operasyon</div>
+                <h1 class="page-title">Gunaydin, @_user.FullName</h1>
                 <p class="page-description">
-                    <strong>@_user.TenantIdentifier</strong> — bugünkü yoğunluğu, tahsilatları ve açık işleri anlık takip edin.
+                    <strong>@_user.TenantIdentifier</strong> - bugunku randevu yogunlugunu, aktif is emirlerini ve ciroyu tek ekrandan takip edin.
                 </p>
             </div>
 
             <div class="quick-actions action-bar">
+                <a class="app-btn-primary" href="/appointments/create">+ Yeni Randevu</a>
                 <a class="app-btn-primary" href="/service-orders/create">+ Yeni Servis</a>
-                <a class="app-btn-secondary" href="/customers/create">Müşteri Ekle</a>
-                <a class="app-btn-secondary" href="/vehicles/create">Araç Ekle</a>
+                <a class="app-btn-secondary" href="/customers/create">Musteri Ekle</a>
+                <a class="app-btn-secondary" href="/vehicles/create">Arac Ekle</a>
             </div>
         </section>
 
         <section class="metric-grid">
             <div class="metric-card mc-primary">
-                <div class="metric-label">Bugünkü Servisler</div>
-                <div class="metric-value">@(_summary?.TotalServiceOrdersToday ?? 0)</div>
-                <div class="metric-sub">Bugün açılan kayıt</div>
+                <div class="metric-label">Bugunku Randevular</div>
+                <div class="metric-value">@(_summary?.TodayAppointmentsCount ?? 0)</div>
+                <div class="metric-sub">Bugun baslayan planlar</div>
             </div>
             <div class="metric-card mc-warning">
-                <div class="metric-label">Açık İşler</div>
-                <div class="metric-value">@(_summary?.OpenServiceOrders ?? 0)</div>
-                <div class="metric-sub">İşlemde veya bekleyen</div>
+                <div class="metric-label">Aktif Is Emirleri</div>
+                <div class="metric-value">@(_summary?.ActiveServiceOrdersCount ?? 0)</div>
+                <div class="metric-sub">Acik, islemde veya parca bekliyor</div>
             </div>
             <div class="metric-card mc-success">
-                <div class="metric-label">Tamamlanan</div>
-                <div class="metric-value">@(_summary?.CompletedServiceOrdersToday ?? 0)</div>
-                <div class="metric-sub">Bugün kapanan</div>
+                <div class="metric-label">Teslim Bekleyen</div>
+                <div class="metric-value">@(_summary?.DeliveryWaitingCount ?? 0)</div>
+                <div class="metric-sub">Tamamlandi ama teslim edilmedi</div>
             </div>
             <div class="metric-card mc-teal">
-                <div class="metric-label">Bugünkü Tahsilat</div>
-                <div class="metric-value">@((_summary?.TotalPaymentsToday ?? 0).ToString("N0")) ₺</div>
-                <div class="metric-sub">Nakit + kart + EFT</div>
+                <div class="metric-label">Gunluk Ciro</div>
+                <div class="metric-value">@((_summary?.DailyRevenue ?? 0).ToString("N0")) ₺</div>
+                <div class="metric-sub">Bugun tahsil edilen tutar</div>
             </div>
         </section>
 
         <section class="quick-link-grid">
+            <a class="quick-link-card" href="/appointments/create">
+                <span class="quick-link-icon">R</span>
+                <div class="quick-link-title">Yeni Randevu</div>
+                <div class="quick-link-copy">Bugun icin servis plani olustur</div>
+            </a>
             <a class="quick-link-card" href="/service-orders/create">
-                <span class="quick-link-icon">⚙</span>
-                <div class="quick-link-title">Yeni Servis Kaydı</div>
-                <div class="quick-link-copy">Araç kabulünü hızla başlat</div>
+                <span class="quick-link-icon">S</span>
+                <div class="quick-link-title">Yeni Servis Kaydi</div>
+                <div class="quick-link-copy">Arac kabulu ve is emri baslat</div>
             </a>
-            <a class="quick-link-card" href="/customers">
-                <span class="quick-link-icon">◎</span>
-                <div class="quick-link-title">Müşteriler</div>
-                <div class="quick-link-copy">Müşteri kartlarını görüntüle</div>
+            <a class="quick-link-card" href="/customers/create">
+                <span class="quick-link-icon">M</span>
+                <div class="quick-link-title">Musteri Ekle</div>
+                <div class="quick-link-copy">Yeni musteri karti olustur</div>
             </a>
-            <a class="quick-link-card" href="/vehicles">
-                <span class="quick-link-icon">◈</span>
-                <div class="quick-link-title">Araç Sorgula</div>
-                <div class="quick-link-copy">Plakaya göre araç bul</div>
-            </a>
-            <a class="quick-link-card" href="/service-orders">
-                <span class="quick-link-icon">▤</span>
-                <div class="quick-link-title">Servis Listesi</div>
-                <div class="quick-link-copy">Tüm işleri filtrele ve izle</div>
+            <a class="quick-link-card" href="/vehicles/create">
+                <span class="quick-link-icon">A</span>
+                <div class="quick-link-title">Arac Ekle</div>
+                <div class="quick-link-copy">Yeni arac veya motosiklet kaydet</div>
             </a>
         </section>
 
@@ -101,30 +101,37 @@ else
             <div class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">Son Servis Kayıtları</div>
-                        <div class="section-subtitle">Servis operasyonlarının son akışı</div>
+                        <div class="section-title">Bugunun Randevulari</div>
+                        <div class="section-subtitle">Bugun planlanan servis akisiniz</div>
                     </div>
-                    <a class="app-btn-secondary" href="/service-orders">Tümünü Gör</a>
+                    <a class="app-btn-secondary" href="/appointments">Tumunu Gor</a>
                 </div>
 
                 <div class="summary-list">
-                    @if (_recentOrders.Count == 0)
+                    @if (_summary?.TodayAppointments.Count is not > 0)
                     {
                         <div class="summary-list-item">
-                            <strong>Henüz servis kaydı yok</strong>
-                            <span class="text-muted">İlk kayıt için "Yeni Servis Kaydı" butonunu kullanın.</span>
+                            <strong>Bugun icin randevu yok</strong>
+                            <span class="text-muted">Yeni randevu olusturdugunuzda burada listelenecek.</span>
                         </div>
                     }
                     else
                     {
-                        @foreach (var order in _recentOrders)
+                        @foreach (var appointment in _summary.TodayAppointments.OrderBy(x => x.StartAt))
                         {
-                            <a class="summary-list-item summary-link" href="/service-orders/@order.Id">
+                            <a class="summary-list-item summary-link" href="/appointments/@appointment.Id">
                                 <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <strong>@order.OrderNo</strong>
-                                    <span class="@GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span>
+                                    <strong>@appointment.CustomerName</strong>
+                                    <span class="@GetAppointmentStatusBadgeClass(appointment.Status)">@appointment.StatusText</span>
                                 </div>
-                                <span class="text-muted" style="font-size:0.82rem">@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</span>
+                                <span class="text-muted" style="font-size:0.82rem">
+                                    @appointment.StartAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                                    @if (!string.IsNullOrWhiteSpace(appointment.Plate))
+                                    {
+                                        <span> · @appointment.Plate</span>
+                                    }
+                                    <span> · @appointment.TypeText</span>
+                                </span>
                             </a>
                         }
                     }
@@ -134,13 +141,59 @@ else
             <div class="surface-card">
                 <div class="section-header">
                     <div>
+                        <div class="section-title">Son Servis Kayitlari</div>
+                        <div class="section-subtitle">En son acilan is emirleri</div>
+                    </div>
+                    <a class="app-btn-secondary" href="/service-orders">Tumunu Gor</a>
+                </div>
+
+                <div class="summary-list">
+                    @if (_summary?.RecentServiceOrders.Count is not > 0)
+                    {
+                        <div class="summary-list-item">
+                            <strong>Henuz servis kaydi yok</strong>
+                            <span class="text-muted">Ilk is emri olustugunda burada gorunecek.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var order in _summary.RecentServiceOrders)
+                        {
+                            <a class="summary-list-item summary-link" href="/service-orders/@order.Id">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <strong>@order.OrderNo</strong>
+                                    <span class="@GetStatusBadgeClass(order.Status)">@order.StatusText</span>
+                                </div>
+                                <span class="text-muted" style="font-size:0.82rem">
+                                    @if (!string.IsNullOrWhiteSpace(order.CustomerName))
+                                    {
+                                        <span>@order.CustomerName</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(order.VehiclePlate))
+                                    {
+                                        <span> · @order.VehiclePlate</span>
+                                    }
+                                    <span> · @order.OpenedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                    <span> · @order.GrandTotal.ToString("N0") ₺</span>
+                                </span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="content-grid mt-4">
+            <div class="surface-card">
+                <div class="section-header">
+                    <div>
                         <div class="section-title">Aktif Oturum</div>
-                        <div class="section-subtitle">Yetkili kullanıcı bilgisi</div>
+                        <div class="section-subtitle">Yetkili kullanici bilgisi</div>
                     </div>
                 </div>
 
                 <dl class="detail-list">
-                    <dt>Kullanıcı</dt>
+                    <dt>Kullanici</dt>
                     <dd>@_user.FullName</dd>
                     <dt>E-posta</dt>
                     <dd>@_user.Email</dd>
@@ -159,7 +212,6 @@ else
     private string? _error;
     private CurrentUserResponse? _user;
     private DailySummaryResponse? _summary;
-    private readonly List<ServiceOrderListItem> _recentOrders = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -184,13 +236,6 @@ else
             }
 
             _summary = await AuthService.GetDailySummaryAsync();
-
-            var orders = await ServiceOrdersService.GetServiceOrdersAsync(null, null, null, null);
-            if (orders is not null)
-            {
-                _recentOrders.Clear();
-                _recentOrders.AddRange(orders.OrderByDescending(x => x.OpenedAt).Take(5));
-            }
         }
         catch (Exception ex)
         {
@@ -214,14 +259,15 @@ else
         _ => "status-badge"
     };
 
-    private static string GetStatusLabel(string status) => status switch
+    private static string GetAppointmentStatusBadgeClass(int status) => status switch
     {
-        "Open" => "Açık",
-        "InProgress" => "İşlemde",
-        "WaitingForParts" => "Parça Bekliyor",
-        "Completed" => "Tamamlandı",
-        "Delivered" => "Teslim Edildi",
-        "Cancelled" => "İptal",
-        _ => status
+        1 => "status-badge appt-scheduled",
+        2 => "status-badge appt-confirmed",
+        3 => "status-badge appt-checkedin",
+        4 => "status-badge appt-converted",
+        5 => "status-badge appt-cancelled",
+        6 => "status-badge appt-noshow",
+        7 => "status-badge appt-completed",
+        _ => "status-badge"
     };
 }

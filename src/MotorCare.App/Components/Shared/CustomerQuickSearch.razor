@@ -76,7 +76,7 @@
             _hasSearched = false;
             _results.Clear();
             var result = await CustomersService.SearchCustomersAsync(_searchText);
-            if (result is not null) _results.AddRange(result);
+            if (result is not null) _results.AddRange(result.Items);
             _hasSearched = true;
         }
         catch

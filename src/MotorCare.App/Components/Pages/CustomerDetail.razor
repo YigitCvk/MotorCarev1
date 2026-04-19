@@ -1,4 +1,5 @@
 @page "/customers/{Id:guid}"
+@using System.Net
 @inject AuthService AuthService
 @inject CustomersService CustomersService
 @inject NavigationManager NavigationManager
@@ -583,6 +584,21 @@ else if (!_loading && string.IsNullOrWhiteSpace(_error))
         {
             _summary = await CustomersService.GetCustomerSummaryAsync(Id);
             _notFound = _summary is null;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _notFound = true;
+            _errorDetail = $"Endpoint: {ex.Endpoint}";
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorDetail = $"Endpoint: {ex.Endpoint}";
         }
         catch (Exception ex)
         {

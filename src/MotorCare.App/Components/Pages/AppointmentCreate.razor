@@ -1,5 +1,6 @@
 @page "/appointments/create"
 @using System.Net
+@using MotorCare.App.Models.Appointments
 @using MotorCare.App.Models.Customers
 @using MotorCare.App.Models.Vehicles
 @inject AppointmentsService AppointmentsService
@@ -317,7 +318,7 @@
             var result = await CustomersService.SearchCustomersAsync(_customerSearchText);
             if (result is not null)
             {
-                _customerResults.AddRange(result);
+                _customerResults.AddRange(result.Items);
             }
 
             if (_customerResults.Count == 0)

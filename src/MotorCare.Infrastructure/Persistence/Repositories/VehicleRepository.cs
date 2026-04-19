@@ -31,6 +31,7 @@ public class VehicleRepository : IVehicleRepository
     public async Task<IReadOnlyList<Vehicle>> GetByCustomerIdAsync(string tenantId, Guid customerId, CancellationToken cancellationToken = default)
     {
         return await _context.Vehicles
+            .AsNoTracking()
             .Where(v => v.TenantId == tenantId && v.CurrentCustomerId == customerId)
             .OrderBy(v => v.Brand)
             .ThenBy(v => v.Model)

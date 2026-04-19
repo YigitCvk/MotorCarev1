@@ -4,32 +4,32 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Randevu Detayı</PageTitle>
+<PageTitle>Randevu Detayi</PageTitle>
 
 <div class="page-shell">
     @if (_loading)
     {
         <section class="loading-state">
-            <strong>Randevu yükleniyor</strong>
-            <p>Lütfen bekleyin.</p>
+            <strong>Randevu yukleniyor</strong>
+            <p>Lutfen bekleyin.</p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
-            <strong>Randevu detayı alınamadı</strong>
+            <strong>Randevu detayi alinamadi</strong>
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
             }
         </section>
     }
     else if (_appointment is null)
     {
         <section class="empty-state">
-            <strong>Randevu bulunamadı</strong>
-            <p>Listeye dönüp tekrar deneyin.</p>
+            <strong>Randevu bulunamadi</strong>
+            <p>Listeye donup tekrar deneyin.</p>
         </section>
     }
     else
@@ -43,10 +43,10 @@
                 </p>
             </div>
             <div class="action-bar">
-                <a href="/appointments" class="app-btn-secondary">Listeye Dön</a>
+                <a href="/appointments" class="app-btn-secondary">Listeye Don</a>
                 @if (_appointment.ServiceOrderId.HasValue)
                 {
-                    <a href="@($"/service-orders/{_appointment.ServiceOrderId}")" class="app-btn-primary">İş Emrini Aç</a>
+                    <a href="@($"/service-orders/{_appointment.ServiceOrderId}")" class="app-btn-primary">Is Emrini Ac</a>
                 }
             </div>
         </section>
@@ -54,7 +54,7 @@
         @if (!string.IsNullOrWhiteSpace(_successMessage))
         {
             <section class="empty-state">
-                <strong>İşlem başarılı</strong>
+                <strong>Islem basarili</strong>
                 <p>@_successMessage</p>
             </section>
         }
@@ -63,23 +63,23 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">Randevu Özeti</div>
-                        <div class="section-subtitle">Müşteri, araç ve planlama bilgileri</div>
+                        <div class="section-title">Randevu Ozeti</div>
+                        <div class="section-subtitle">Musteri, arac ve planlama bilgileri</div>
                     </div>
                 </div>
 
                 <dl class="detail-list">
-                    <dt>Müşteri</dt>
+                    <dt>Musteri</dt>
                     <dd>@_appointment.CustomerName</dd>
                     <dt>Telefon</dt>
                     <dd>@_appointment.Phone</dd>
                     <dt>Plaka</dt>
                     <dd>@(string.IsNullOrWhiteSpace(_appointment.Plate) ? "-" : _appointment.Plate)</dd>
-                    <dt>Başlangıç</dt>
+                    <dt>Baslangic</dt>
                     <dd>@_appointment.StartAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
-                    <dt>Bitiş</dt>
+                    <dt>Bitis</dt>
                     <dd>@_appointment.EndAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
-                    <dt>Şikayet</dt>
+                    <dt>Sikayet</dt>
                     <dd>@(string.IsNullOrWhiteSpace(_appointment.Complaint) ? "-" : _appointment.Complaint)</dd>
                     <dt>Not</dt>
                     <dd>@(string.IsNullOrWhiteSpace(_appointment.Note) ? "-" : _appointment.Note)</dd>
@@ -90,7 +90,7 @@
                 <div class="section-header">
                     <div>
                         <div class="section-title">Aksiyonlar</div>
-                        <div class="section-subtitle">Durum güncelle veya iş emrine dönüştür</div>
+                        <div class="section-subtitle">Durum guncelle veya is emrine donustur</div>
                     </div>
                 </div>
 
@@ -105,18 +105,23 @@
                                 }
                             </InputSelect>
                             <button type="button" class="app-btn-secondary" @onclick="UpdateStatusAsync" disabled="@_working">
-                                Durumu Güncelle
+                                Durumu Guncelle
                             </button>
                         </div>
                     </div>
 
                     <div>
-                        <label class="form-label">Araç KM</label>
+                        <label class="form-label">Arac KM</label>
                         <InputNumber class="form-control" @bind-Value="_vehicleKm" />
                     </div>
 
-                    <button type="button" class="app-btn-primary" @onclick="ConvertAsync" disabled="@_working || _appointment.ServiceOrderId.HasValue">
-                        İş Emrine Dönüştür
+                    @if (!_hasRequiredLinksForConversion)
+                    {
+                        <p class="text-muted small mb-0">Randevuyu is emrine donusturmek icin musteri ve arac baglantisi zorunludur.</p>
+                    }
+
+                    <button type="button" class="app-btn-primary" @onclick="ConvertAsync" disabled="@_working || _appointment.ServiceOrderId.HasValue || !_hasRequiredLinksForConversion">
+                        Is Emrine Donustur
                     </button>
                 </div>
             </section>
@@ -130,6 +135,7 @@
     private AppointmentDto? _appointment;
     private bool _loading = true;
     private bool _working;
+    private bool _hasRequiredLinksForConversion;
     private string? _error;
     private string? _errorEndpoint;
     private string? _successMessage;
@@ -173,6 +179,7 @@
             if (_appointment is not null)
             {
                 _statusRequest.Status = _appointment.Status;
+                _hasRequiredLinksForConversion = _appointment.CustomerId.HasValue && _appointment.VehicleId.HasValue;
                 if (_vehicleKm <= 0)
                 {
                     _vehicleKm = 0;
@@ -206,7 +213,7 @@
 
         await ExecuteAsync(
             async () => await AppointmentsService.UpdateStatusAsync(Id, _statusRequest.Status),
-            $"Randevu durumu \"{selectedStatusText}\" olarak güncellendi.");
+            $"Randevu durumu \"{selectedStatusText}\" olarak guncellendi.");
     }
 
     private async Task ConvertAsync()
@@ -220,7 +227,13 @@
 
             if (_vehicleKm < 0)
             {
-                _error = "Araç KM değeri negatif olamaz.";
+                _error = "Arac KM degeri negatif olamaz.";
+                return;
+            }
+
+            if (_appointment is null || !_hasRequiredLinksForConversion)
+            {
+                _error = "Randevuyu is emrine donusturmek icin musteri ve arac secili olmalidir.";
                 return;
             }
 
@@ -233,7 +246,7 @@
                 return;
             }
 
-            _successMessage = "Randevu iş emrine dönüştürüldü.";
+            _successMessage = "Randevu is emrine donusturuldu.";
             NavigationManager.NavigateTo("/service-orders");
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
@@ -292,24 +305,24 @@
 
     private static string GetTypeText(AppointmentType type) => type switch
     {
-        AppointmentType.Maintenance => "Bakım",
-        AppointmentType.Repair => "Onarım",
+        AppointmentType.Maintenance => "Bakim",
+        AppointmentType.Repair => "Onarim",
         AppointmentType.Cleaning => "Temizlik",
-        AppointmentType.Washing => "Yıkama",
+        AppointmentType.Washing => "Yikama",
         AppointmentType.Inspection => "Kontrol",
-        AppointmentType.TireChange => "Lastik Değişimi",
-        _ => "Diğer"
+        AppointmentType.TireChange => "Lastik Degisimi",
+        _ => "Diger"
     };
 
     private static string GetStatusText(AppointmentStatus status) => status switch
     {
-        AppointmentStatus.Scheduled => "Planlandı",
-        AppointmentStatus.Confirmed => "Onaylandı",
+        AppointmentStatus.Scheduled => "Planlandi",
+        AppointmentStatus.Confirmed => "Onaylandi",
         AppointmentStatus.CheckedIn => "Servise Geldi",
-        AppointmentStatus.ConvertedToOrder => "İş Emrine Dönüştü",
-        AppointmentStatus.Cancelled => "İptal",
+        AppointmentStatus.ConvertedToOrder => "Is Emrine Donustu",
+        AppointmentStatus.Cancelled => "Iptal",
         AppointmentStatus.NoShow => "Gelmedi",
-        AppointmentStatus.Completed => "Tamamlandı",
+        AppointmentStatus.Completed => "Tamamlandi",
         _ => status.ToString()
     };
 
