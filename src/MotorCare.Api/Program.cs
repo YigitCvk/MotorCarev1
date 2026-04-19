@@ -1,6 +1,8 @@
+using System.IO;
 using System.Text;
 using Carter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
@@ -12,6 +14,16 @@ using MotorCare.Infrastructure;
 using MotorCare.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+    Directory.CreateDirectory(dataProtectionPath);
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("MotorCare.Api")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+}
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

@@ -1,14 +1,186 @@
 @page "/"
+@layout Layout.PublicLayout
 
-<PageTitle>MotorCare</PageTitle>
+<PageTitle>BakımSuite</PageTitle>
 
-<div class="py-4">
-    <h1 class="display-6 fw-semibold">MotorCare Frontend MVP</h1>
-    <p class="lead text-muted">Register your first workshop, sign in, and open the dashboard.</p>
+<div class="landing-page">
+    <div class="landing-grid"></div>
 
-    <div class="d-flex gap-2 mt-4">
-        <a class="btn btn-primary" href="/register">Register</a>
-        <a class="btn btn-outline-secondary" href="/login">Login</a>
-        <a class="btn btn-outline-dark" href="/dashboard">Dashboard</a>
+    <div class="landing-container">
+        <header class="landing-topbar">
+            <a class="landing-brand" href="/">
+                <span class="landing-brand-mark">BS</span>
+                <span>BakımSuite</span>
+            </a>
+
+            <nav class="landing-nav" aria-label="Public">
+                <a href="/">Ana Sayfa</a>
+                <a href="#features">Özellikler</a>
+                <a href="#appointments">Randevu</a>
+                <a href="#services">Servisler</a>
+                <a href="#pricing">Fiyatlar</a>
+            </nav>
+
+            <div class="landing-actions">
+                <a class="landing-link-button" href="/login">Giriş Yap</a>
+                <a class="landing-btn landing-btn-primary" href="/register">Demo Al</a>
+            </div>
+        </header>
+
+        <main>
+            <section class="landing-hero">
+                <div class="landing-hero-copy">
+                    <div class="landing-eyebrow">Araç servis, yıkama ve randevu yönetimi</div>
+                    <h1>Araç bakım operasyonunu tek panelden yönetin.</h1>
+                    <p>
+                        BakımSuite ile randevu alın, aracı kabul edin, servis emri oluşturun,
+                        işçilik/parça takibi yapın ve müşteriye teslim sürecini profesyonel şekilde yönetin.
+                    </p>
+
+                    <div class="landing-hero-actions">
+                        <a class="landing-btn landing-btn-primary landing-btn-lg" href="/register">Ücretsiz Demo Planla</a>
+                        <a class="landing-btn landing-btn-secondary" href="#features">Özellikleri İncele</a>
+                    </div>
+
+                    <div class="landing-trust-grid">
+                        <article class="landing-trust-card">
+                            <strong>5 dk</strong>
+                            <span>Hızlı randevu oluşturma akışı</span>
+                        </article>
+                        <article class="landing-trust-card">
+                            <strong>360°</strong>
+                            <span>Araç, müşteri ve servis geçmişi</span>
+                        </article>
+                        <article class="landing-trust-card">
+                            <strong>Mobil</strong>
+                            <span>Telefon ve tablette uyumlu kullanım</span>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="landing-hero-visual">
+                    <div class="landing-car-stage" aria-hidden="true">
+                        <div class="landing-car-glow"></div>
+                        <div class="landing-car-body">
+                            <div class="landing-car-window landing-car-window-front"></div>
+                            <div class="landing-car-window landing-car-window-rear"></div>
+                            <div class="landing-car-light"></div>
+                        </div>
+                        <div class="landing-car-wheel landing-car-wheel-front"></div>
+                        <div class="landing-car-wheel landing-car-wheel-rear"></div>
+                    </div>
+
+                    <aside class="landing-booking-card" id="appointments">
+                        <div class="landing-booking-header">
+                            <div>
+                                <div class="landing-booking-eyebrow">Hızlı Randevu</div>
+                                <h2>Hızlı Randevu</h2>
+                            </div>
+                            <span class="landing-badge-soft">Aktif</span>
+                        </div>
+
+                        <p>
+                            Müşteri, araç ve hizmet tipini seçerek dakikalar içinde randevu oluştur.
+                        </p>
+
+                        <div class="landing-booking-field">
+                            <label>Plaka</label>
+                            <div class="landing-booking-value">34 ABC 123</div>
+                        </div>
+
+                        <div class="landing-booking-field">
+                            <label>Hizmet</label>
+                            <div class="landing-booking-value landing-booking-value-stack">
+                                <span>Periyodik Bakım</span>
+                                <div class="landing-booking-tags">
+                                    <span>Periyodik Bakım</span>
+                                    <span>Oto Yıkama</span>
+                                    <span>Detailing</span>
+                                    <span>Lastik Değişimi</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="landing-booking-field">
+                            <label>Saat</label>
+                            <div class="landing-booking-value">10:30</div>
+                        </div>
+
+                        <button type="button" class="landing-btn landing-btn-primary landing-btn-block">Randevu Oluştur</button>
+                    </aside>
+                </div>
+            </section>
+
+            <section class="landing-section" id="features">
+                <div class="landing-section-heading">
+                    <div class="landing-eyebrow">Operasyonun tamamı tek akışta</div>
+                    <h2>Servis kabulden teslimata kadar modern bir çalışma alanı</h2>
+                    <p>
+                        Masaüstü programların dağınık menülerini değil; hız, görünürlük ve mobil erişimi öncelikleyen
+                        bir operasyon merkezi.
+                    </p>
+                </div>
+
+                <div class="landing-service-grid">
+                    <article class="landing-service-card">
+                        <div class="landing-service-icon">SE</div>
+                        <h3>Servis Emri</h3>
+                        <p>Araç kabulden teslimata kadar tüm operasyonu durum bazlı takip edin.</p>
+                    </article>
+
+                    <article class="landing-service-card">
+                        <div class="landing-service-icon">RP</div>
+                        <h3>Randevu Planlama</h3>
+                        <p>Bakım, yıkama, detailing ve lastik işlemlerini kapasiteye göre planlayın.</p>
+                    </article>
+
+                    <article class="landing-service-card">
+                        <div class="landing-service-icon">AG</div>
+                        <h3>Araç Geçmişi</h3>
+                        <p>Plaka bazlı bakım, parça, kilometre ve müşteri geçmişini saklayın.</p>
+                    </article>
+
+                    <article class="landing-service-card">
+                        <div class="landing-service-icon">MB</div>
+                        <h3>Müşteri Bildirimi</h3>
+                        <p>Randevu onayı, araç hazır ve teslim mesajlarını kolayca yönetin.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="landing-section landing-highlight-section" id="services">
+                <div class="landing-highlight-card">
+                    <div class="landing-highlight-copy">
+                        <div class="landing-eyebrow">Servisler</div>
+                        <h2>Bakım, onarım, yıkama ve hızlı kabul için tek operasyon paneli</h2>
+                        <p>
+                            Servis emirleri, tahsilatlar, randevular ve müşteri geçmişi aynı veri akışında birleşir.
+                            Ön büro ve usta aynı resmi görür.
+                        </p>
+                    </div>
+                    <div class="landing-highlight-metrics">
+                        <div>
+                            <strong>Günlük Akış</strong>
+                            <span>Randevu → Kabul → İş Emri → Tahsilat</span>
+                        </div>
+                        <div>
+                            <strong>Hızlı Erişim</strong>
+                            <span>Tablet ve mobil ekranlarda operasyon takibi</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="landing-section landing-pricing-section" id="pricing">
+                <div class="landing-pricing-card">
+                    <div>
+                        <div class="landing-eyebrow">Fiyatlar</div>
+                        <h2>Küçük ve orta ölçekli servisler için erişilebilir başlangıç</h2>
+                        <p>Canlı demo ile akışı görün, servisinize uygun kurulum planını birlikte netleştirelim.</p>
+                    </div>
+                    <a class="landing-btn landing-btn-primary landing-btn-lg" href="/register">Demo Al</a>
+                </div>
+            </section>
+        </main>
     </div>
 </div>

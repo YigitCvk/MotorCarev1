@@ -17,6 +17,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
     public async Task<ServiceOrder?> GetByIdAsync(Guid id, string tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.ServiceOrders
+            .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
             .Include(o => o.Payments)
@@ -26,6 +27,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
     public async Task<ServiceOrder?> GetByOrderNoAsync(string tenantId, string orderNo, CancellationToken cancellationToken = default)
     {
         return await _context.ServiceOrders
+            .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
             .Include(o => o.Payments)
@@ -129,6 +131,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
         }
 
         return await query
+            .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
             .Include(o => o.Payments)

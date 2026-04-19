@@ -3,55 +3,63 @@
 @inject NavigationManager NavigationManager
 
 <div class="brand-block">
-    <div class="brand-mark">MC</div>
+    <div class="brand-mark">BS</div>
     <div>
-        <div class="brand-title">MotorCare</div>
-        <div class="brand-subtitle">Modern servis yönetimi</div>
+        <div class="brand-title">BakımSuite</div>
+        <div class="brand-subtitle">Servis Operasyon Merkezi</div>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable">
     <nav class="menu-stack">
         <NavLink class="menu-link" href="/dashboard" Match="NavLinkMatch.All">
-            <span class="nav-icon">◉</span>
-            Dashboard
-        </NavLink>
-
-        <NavLink class="menu-link" href="/service-orders">
-            <span class="nav-icon">⚙</span>
-            Servis İşlemleri
+            <span class="nav-icon">DB</span>
+            <span>Dashboard</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/appointments">
-            <span class="nav-icon">◷</span>
-            Randevular
+            <span class="nav-icon">RD</span>
+            <span>Randevular</span>
+        </NavLink>
+
+        <NavLink class="menu-link" href="/service-orders">
+            <span class="nav-icon">SE</span>
+            <span>Servis Emirleri</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/customers">
-            <span class="nav-icon">◎</span>
-            Müşteriler
+            <span class="nav-icon">MS</span>
+            <span>Müşteriler</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/vehicles">
-            <span class="nav-icon">◈</span>
-            Araçlar
+            <span class="nav-icon">AR</span>
+            <span>Araçlar</span>
+        </NavLink>
+
+        <NavLink class="menu-link" href="/appointments/create">
+            <span class="nav-icon">HZ</span>
+            <span>Hizmetler</span>
+        </NavLink>
+
+        <NavLink class="menu-link" href="/service-orders/create">
+            <span class="nav-icon">ST</span>
+            <span>Stok / Parça</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/collections">
-            <span class="nav-icon">◇</span>
-            Tahsilatlar
+            <span class="nav-icon">KS</span>
+            <span>Finans / Kasa</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/reports">
-            <span class="nav-icon">▤</span>
-            Raporlar
+            <span class="nav-icon">RP</span>
+            <span>Raporlar</span>
         </NavLink>
 
         <NavLink class="menu-link" href="/settings">
-            <span class="nav-icon">≡</span>
-            Ayarlar
+            <span class="nav-icon">AY</span>
+            <span>Ayarlar</span>
         </NavLink>
 
         <div class="menu-divider"></div>
@@ -59,19 +67,19 @@
         @if (_isAuthenticated)
         {
             <button type="button" class="logout-button" @onclick="LogoutAsync">
-                <span class="nav-icon">→</span>
-                Çıkış Yap
+                <span class="nav-icon">CI</span>
+                <span>Çıkış Yap</span>
             </button>
         }
         else
         {
             <NavLink class="menu-link subtle-link" href="/login">
-                <span class="nav-icon">→</span>
-                Giriş Yap
+                <span class="nav-icon">GY</span>
+                <span>Giriş Yap</span>
             </NavLink>
             <NavLink class="menu-link subtle-link" href="/register">
-                <span class="nav-icon">+</span>
-                Kayıt Ol
+                <span class="nav-icon">DA</span>
+                <span>Demo Al</span>
             </NavLink>
         }
     </nav>
@@ -82,7 +90,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
         AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
         _isAuthenticated = await AuthService.IsAuthenticatedAsync();

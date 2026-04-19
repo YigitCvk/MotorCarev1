@@ -1,166 +1,134 @@
-/* ── Brand Block ─────────────────────────────────────────────────── */
 .brand-block {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1.25rem 1rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    gap: 0.85rem;
+    padding: 1.5rem 1.25rem 1.15rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .brand-mark {
-    width: 2.4rem;
-    height: 2.4rem;
+    width: 2.8rem;
+    height: 2.8rem;
     display: grid;
     place-items: center;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: #f8fafc;
+    border-radius: 0.95rem;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #fff;
     font-weight: 800;
-    font-size: 0.88rem;
-    letter-spacing: -0.02em;
+    font-size: 0.92rem;
+    letter-spacing: -0.03em;
+    box-shadow: 0 1rem 2.4rem rgba(249, 115, 22, 0.26);
     flex-shrink: 0;
 }
 
 .brand-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
 }
 
 .brand-subtitle {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin-top: 0.1rem;
+    margin-top: 0.12rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
 }
 
-/* ── Mobile Toggle ───────────────────────────────────────────────── */
-.navbar-toggler {
-    appearance: none;
-    cursor: pointer;
-    width: 2.5rem;
-    height: 2.2rem;
-    position: absolute;
-    top: 1.1rem;
-    right: 1rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.07);
-    transition: background 0.15s;
+.nav-scrollable {
+    display: block;
+    overflow-y: auto;
+    height: calc(100vh - 5rem);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
-.navbar-toggler:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-/* ── Nav Section Header ──────────────────────────────────────────── */
-.nav-section-label {
-    padding: 0.75rem 1rem 0.3rem;
-    font-size: 0.67rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #475569;
-}
-
-/* ── Menu Stack ──────────────────────────────────────────────────── */
 .menu-stack {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.75rem;
+    gap: 0.28rem;
+    padding: 1rem 0.85rem 1.4rem;
+}
+
+.menu-link,
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 0.78rem;
+    width: 100%;
+    padding: 0.82rem 0.95rem;
+    border-radius: 1rem;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }
 
 .menu-link {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    color: #94a3b8;
-    text-decoration: none;
-    border-radius: 12px;
-    padding: 0.7rem 0.875rem;
-    font-size: 0.88rem;
-    font-weight: 500;
-    transition: background 0.12s, color 0.12s;
+    color: #cbd5e1;
+    border: 1px solid transparent;
 }
 
-.menu-link .nav-icon {
-    font-size: 1rem;
-    line-height: 1;
-    flex-shrink: 0;
-    width: 1.2rem;
-    text-align: center;
+.menu-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
 }
 
 .menu-link.active {
     color: #fff;
-    background: rgba(99, 102, 241, 0.22);
-    font-weight: 600;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(249, 115, 22, 0.18));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .menu-link.active .nav-icon {
-    opacity: 1;
+    background: linear-gradient(135deg, #2563eb, #f97316);
+    color: #fff;
 }
 
-.menu-link:hover {
+.nav-icon {
+    width: 2rem;
+    height: 2rem;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
     color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.07);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
 }
 
 .subtle-link {
-    color: #64748b;
+    color: #94a3b8;
 }
 
-/* ── Menu Divider ────────────────────────────────────────────────── */
 .menu-divider {
-    margin: 0.5rem 0.75rem 0.25rem;
-    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    margin: 0.75rem 0.25rem 0.35rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
 }
 
-/* ── Logout Button ───────────────────────────────────────────────── */
 .logout-button {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    width: 100%;
-    border: none;
-    border-radius: 12px;
-    padding: 0.7rem 0.875rem;
-    text-align: left;
-    background: rgba(239, 68, 68, 0.12);
-    color: #fca5a5;
-    font-weight: 600;
-    font-size: 0.88rem;
+    border: 1px solid rgba(220, 38, 38, 0.24);
+    background: rgba(220, 38, 38, 0.08);
+    color: #fecaca;
     cursor: pointer;
-    transition: background 0.12s;
 }
 
 .logout-button:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #fecaca;
+    background: rgba(220, 38, 38, 0.15);
+    color: #fff1f2;
 }
 
-/* ── Nav Scrollable ──────────────────────────────────────────────── */
-.nav-scrollable {
-    display: none;
-}
-
-.navbar-toggler:checked ~ .nav-scrollable {
-    display: block;
-}
-
-@media (min-width: 901px) {
-    .navbar-toggler {
-        display: none;
+@media (max-width: 960px) {
+    .brand-block {
+        padding-top: 1.15rem;
     }
 
     .nav-scrollable {
-        display: block;
-        height: calc(100vh - 4.5rem);
-        overflow-y: auto;
-        scrollbar-width: none;
-    }
-
-    .nav-scrollable::-webkit-scrollbar {
-        display: none;
+        height: auto;
+        overflow: visible;
     }
 }

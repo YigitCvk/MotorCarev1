@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Domain.Customers;
 using MotorCare.Domain.Repositories;
+using MotorCare.Domain.ValueObjects;
 
 namespace MotorCare.Infrastructure.Persistence.Repositories;
 
@@ -21,8 +22,10 @@ public class CustomerRepository : ICustomerRepository
 
     public async Task<Customer?> GetByPhoneAsync(string tenantId, string normalizedPhone, CancellationToken cancellationToken = default)
     {
+        var phone = PhoneNumber.Create(normalizedPhone);
+
         return await _context.Customers
-            .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Phone != null && c.Phone.Value == normalizedPhone, cancellationToken);
+            .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Phone == phone, cancellationToken);
     }
 
     public async Task<List<Customer>> SearchAsync(string tenantId, string? searchTerm, CancellationToken cancellationToken = default)
@@ -32,11 +35,20 @@ public class CustomerRepository : ICustomerRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.ToLower();
+            var term = searchTerm.Trim();
+            var termPattern = $"%{term}%";
+            var normalizedPhoneTerm = new string(term.Where(char.IsDigit).ToArray());
+            PhoneNumber? phoneTerm = null;
+
+            if (normalizedPhoneTerm.Length >= 10)
+            {
+                phoneTerm = PhoneNumber.Create(normalizedPhoneTerm);
+            }
+
             query = query.Where(c =>
-                c.FullName.ToLower().Contains(term) ||
-                (c.Email != null && c.Email.ToLower().Contains(term)) ||
-                (c.Phone != null && c.Phone.Value.Contains(term)));
+                EF.Functions.ILike(c.FullName, termPattern) ||
+                (c.Email != null && EF.Functions.ILike(c.Email, termPattern)) ||
+                (phoneTerm != null && c.Phone == phoneTerm));
         }
 
         return await query.OrderBy(c => c.FullName).ToListAsync(cancellationToken);

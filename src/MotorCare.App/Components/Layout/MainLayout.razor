@@ -4,43 +4,41 @@
 @inject NavigationManager NavigationManager
 
 <div class="app-shell">
-    <aside class="sidebar">
+    <aside class="app-sidebar">
         <NavMenu />
     </aside>
 
-    <div class="workspace">
+    <div class="app-main">
         <header class="app-topbar">
-            <div class="topbar-brand">
-                <div class="topbar-logo">MC</div>
-                <div>
-                    <div class="topbar-title">MotorCare</div>
-                    <div class="topbar-subtitle">Servis Operasyon Merkezi</div>
-                </div>
+            <div class="app-topbar-search">
+                <input type="text" class="app-search-input" placeholder="Ara, plaka, müşteri veya servis no" />
             </div>
 
-            <div class="topbar-actions">
+            <div class="app-topbar-actions">
+                <a class="app-btn-primary" href="/service-orders/create">+ Yeni</a>
+
                 @if (_currentUser is not null)
                 {
-                    <div class="tenant-chip">
-                        <div class="tenant-chip-label">@_currentUser.TenantIdentifier</div>
-                        <div class="tenant-chip-value">@_currentUser.FullName · @_currentUser.Role</div>
+                    <div class="app-user-chip">
+                        <div class="app-user-chip-label">@_currentUser.TenantIdentifier</div>
+                        <div class="app-user-chip-value">@_currentUser.FullName · @_currentUser.Role</div>
                     </div>
 
-                    <button type="button" class="btn btn-outline-secondary topbar-logout" @onclick="LogoutAsync">
+                    <button type="button" class="app-btn-secondary" @onclick="LogoutAsync">
                         Çıkış Yap
                     </button>
                 }
                 else
                 {
-                    <div class="tenant-chip tenant-chip-muted">
-                        <div class="tenant-chip-label">Oturum</div>
-                        <div class="tenant-chip-value">Bağlı değil</div>
+                    <div class="app-user-chip app-user-chip-muted">
+                        <div class="app-user-chip-label">Oturum</div>
+                        <div class="app-user-chip-value">Bağlı değil</div>
                     </div>
                 }
             </div>
         </header>
 
-        <main class="workspace-main">
+        <main class="app-content">
             @Body
         </main>
     </div>
@@ -48,27 +46,31 @@
 
 <nav class="mobile-bottom-nav">
     <a href="/dashboard">
-        <span class="nav-icon">◉</span>
+        <span class="nav-icon">DB</span>
         <span>Dashboard</span>
     </a>
-    <a href="/service-orders">
-        <span class="nav-icon">⚙</span>
-        <span>Servis</span>
+    <a href="/appointments">
+        <span class="nav-icon">RD</span>
+        <span>Randevu</span>
     </a>
-    <a href="/customers">
-        <span class="nav-icon">◎</span>
-        <span>Müşteriler</span>
+    <a href="/service-orders">
+        <span class="nav-icon">IS</span>
+        <span>İşler</span>
+    </a>
+    <a href="/vehicles">
+        <span class="nav-icon">AR</span>
+        <span>Araçlar</span>
     </a>
     <a href="/settings">
-        <span class="nav-icon">≡</span>
-        <span>Ayarlar</span>
+        <span class="nav-icon">MN</span>
+        <span>Menü</span>
     </a>
 </nav>
 
 <div id="blazor-error-ui">
     Beklenmedik bir hata oluştu.
     <a href="" class="reload">Yenile</a>
-    <a class="dismiss">✕</a>
+    <a class="dismiss">×</a>
 </div>
 
 @code {
@@ -76,7 +78,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
         AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
         await RefreshCurrentUserAsync();

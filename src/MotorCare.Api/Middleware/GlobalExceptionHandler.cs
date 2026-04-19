@@ -13,10 +13,12 @@ namespace MotorCare.Api.Middleware;
 public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
+    private readonly IHostEnvironment _environment;
 
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHostEnvironment environment)
     {
         _logger = logger;
+        _environment = environment;
     }
 
     public async ValueTask<bool> TryHandleAsync(
@@ -24,7 +26,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var (statusCode, title, detail, errors) = MapException(exception);
+        var (statusCode, title, detail, errors) = MapException(exception, _environment.IsDevelopment());
 
         _logger.LogError(exception, "Unhandled exception. StatusCode={StatusCode}, Title={Title}", statusCode, title);
 
@@ -47,7 +49,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         return true;
     }
 
-    private static (int StatusCode, string Title, string Detail, object? Errors) MapException(Exception exception)
+    private static (int StatusCode, string Title, string Detail, object? Errors) MapException(Exception exception, bool isDevelopment)
     {
         return exception switch
         {
@@ -111,7 +113,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             _ =>
                 (StatusCodes.Status500InternalServerError,
                  "Internal Server Error",
-                 "An unexpected error occurred. Please try again later.",
+                 isDevelopment ? exception.Message : "An unexpected error occurred. Please try again later.",
                  null)
         };
     }

@@ -16,6 +16,7 @@ public class VehicleRepository : IVehicleRepository
     public async Task<Vehicle?> GetByIdAsync(Guid id, string tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.Vehicles
+            .AsSplitQuery()
             .Include(v => v.Notes)
             .Include(v => v.Photos)
             .FirstOrDefaultAsync(v => v.Id == id && v.TenantId == tenantId, cancellationToken);
