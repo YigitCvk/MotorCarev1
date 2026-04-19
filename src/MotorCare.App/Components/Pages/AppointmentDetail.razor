@@ -105,7 +105,9 @@
                                     <option value="@status">@GetStatusText(status)</option>
                                 }
                             </InputSelect>
-                            <button type="button" class="app-btn-secondary" @onclick="UpdateStatusAsync" disabled="@_working">Durumu Güncelle</button>
+                            <button type="button" class="app-btn-secondary" @onclick="UpdateStatusAsync" disabled="@_working">
+                                Durumu Güncelle
+                            </button>
                         </div>
                     </div>
 
@@ -153,16 +155,29 @@
 
     private async Task LoadAsync()
     {
+        await LoadAsync(resetMessages: true);
+    }
+
+    private async Task LoadAsync(bool resetMessages)
+    {
         try
         {
             _loading = true;
             _error = null;
             _errorEndpoint = null;
-            _successMessage = null;
+            if (resetMessages)
+            {
+                _successMessage = null;
+            }
+
             _appointment = await AppointmentsService.GetByIdAsync(Id);
             if (_appointment is not null)
             {
                 _statusRequest.Status = _appointment.Status;
+                if (_vehicleKm <= 0)
+                {
+                    _vehicleKm = 0;
+                }
             }
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
@@ -188,11 +203,11 @@
 
     private async Task UpdateStatusAsync()
     {
-        await ExecuteAsync(async () =>
-        {
-            await AppointmentsService.UpdateStatusAsync(Id, _statusRequest.Status);
-            _successMessage = "Randevu durumu güncellendi.";
-        });
+        var selectedStatusText = GetStatusText(_statusRequest.Status);
+
+        await ExecuteAsync(
+            async () => await AppointmentsService.UpdateStatusAsync(Id, _statusRequest.Status),
+            $"Randevu durumu \"{selectedStatusText}\" olarak güncellendi.");
     }
 
     private async Task ConvertAsync()
@@ -204,10 +219,18 @@
             _errorEndpoint = null;
             _successMessage = null;
 
-            var result = await AppointmentsService.ConvertToServiceOrderAsync(Id, _vehicleKm);
-            if (result is not null && result.ServiceOrderId != Guid.Empty)
+            if (_vehicleKm < 0)
             {
-                NavigationManager.NavigateTo($"/service-orders/{result.ServiceOrderId}");
+                _error = "Araç KM değeri negatif olamaz.";
+                return;
+            }
+
+            var result = await AppointmentsService.ConvertToServiceOrderAsync(Id, _vehicleKm);
+            var serviceOrderId = result?.ResolveServiceOrderId() ?? Guid.Empty;
+
+            if (serviceOrderId != Guid.Empty)
+            {
+                NavigationManager.NavigateTo($"/service-orders/{serviceOrderId}");
                 return;
             }
 
@@ -234,7 +257,7 @@
         }
     }
 
-    private async Task ExecuteAsync(Func<Task> action)
+    private async Task ExecuteAsync(Func<Task> action, string? successMessage = null)
     {
         try
         {
@@ -242,8 +265,11 @@
             _error = null;
             _errorEndpoint = null;
             _successMessage = null;
+
             await action();
-            await LoadAsync();
+
+            _successMessage = successMessage;
+            await LoadAsync(resetMessages: false);
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
