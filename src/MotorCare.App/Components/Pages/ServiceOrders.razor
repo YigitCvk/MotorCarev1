@@ -24,18 +24,18 @@
         <div class="filter-grid">
             <div>
                 <label class="form-label">Arama</label>
-                <InputText class="form-control" @bind-Value="_searchText" placeholder="Plaka, musteri veya order no" />
+                <InputText class="form-control" @bind-Value="_searchText" placeholder="Plaka, musteri veya servis no ara" />
             </div>
             <div>
                 <label class="form-label">Durum</label>
                 <InputSelect class="form-select" @bind-Value="_status">
                     <option value="">Tum durumlar</option>
-                    <option value="Open">Open</option>
-                    <option value="InProgress">InProgress</option>
-                    <option value="WaitingForParts">WaitingForParts</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Delivered">Delivered</option>
+                    <option value="Open">Acik</option>
+                    <option value="InProgress">Islemde</option>
+                    <option value="WaitingForParts">Parca Bekliyor</option>
+                    <option value="Completed">Tamamlandi</option>
+                    <option value="Cancelled">Iptal</option>
+                    <option value="Delivered">Teslim Edildi</option>
                 </InputSelect>
             </div>
             <div>
@@ -49,6 +49,9 @@
             <div class="filter-actions">
                 <button type="button" class="btn btn-dark" @onclick="LoadOrdersAsync" disabled="@_isLoading">
                     @(_isLoading ? "Yukleniyor..." : "Filtrele")
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">
+                    Temizle
                 </button>
             </div>
         </div>
@@ -91,7 +94,7 @@
                         {
                             <tr class="clickable-row" @onclick="@(() => OpenDetail(order.Id))">
                                 <td class="fw-semibold">@order.OrderNo</td>
-                                <td><span class="@GetStatusBadgeClass(order.Status)">@order.Status</span></td>
+                                <td><span class="@GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span></td>
                                 <td>@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@order.VehicleKm</td>
                                 <td>@(string.IsNullOrWhiteSpace(order.Complaint) ? "-" : order.Complaint)</td>
@@ -120,7 +123,7 @@
                             <div class="order-no">@order.OrderNo</div>
                             <div class="text-muted small">@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
                         </div>
-                        <span class="@GetStatusBadgeClass(order.Status)">@order.Status</span>
+                        <span class="@GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span>
                     </div>
                     <div class="order-card-body">
                         <div><strong>KM:</strong> @order.VehicleKm</div>
@@ -137,7 +140,7 @@
 </div>
 
 @code {
-    private readonly List<ServiceOrderResponse> _orders = [];
+    private readonly List<ServiceOrderListItem> _orders = [];
     private bool _isLoading = true;
     private string? _searchText;
     private string? _status;
@@ -187,6 +190,15 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task ResetFiltersAsync()
+    {
+        _searchText = null;
+        _status = null;
+        _openedFrom = null;
+        _openedTo = null;
+        await LoadOrdersAsync();
+    }
+
     private void OpenDetail(Guid id)
     {
         NavigationManager.NavigateTo($"/service-orders/{id}");
@@ -202,5 +214,17 @@
             "Delivered" => "status-badge badge-delivered",
             "Cancelled" => "status-badge badge-cancelled",
             _ => "status-badge"
+        };
+
+    private static string GetStatusLabel(string status) =>
+        status switch
+        {
+            "Open" => "Acik",
+            "InProgress" => "Islemde",
+            "WaitingForParts" => "Parca Bekliyor",
+            "Completed" => "Tamamlandi",
+            "Delivered" => "Teslim Edildi",
+            "Cancelled" => "Iptal",
+            _ => status
         };
 }

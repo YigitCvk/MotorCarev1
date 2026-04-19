@@ -10,18 +10,25 @@
 
     <div class="workspace">
         <header class="app-topbar">
-            <div>
-                <div class="eyebrow">MotorCare SaaS</div>
-                <div class="topbar-title">Servis Operasyon Merkezi</div>
+            <div class="topbar-brand">
+                <div class="topbar-logo">MC</div>
+                <div>
+                    <div class="topbar-title">MotorCare</div>
+                    <div class="topbar-subtitle">Servis Operasyon Merkezi</div>
+                </div>
             </div>
 
-            <div class="topbar-meta">
+            <div class="topbar-actions">
                 @if (_currentUser is not null)
                 {
                     <div class="tenant-chip">
                         <div class="tenant-chip-label">@_currentUser.TenantIdentifier</div>
-                        <div class="tenant-chip-value">@_currentUser.FullName (@_currentUser.Role)</div>
+                        <div class="tenant-chip-value">@_currentUser.FullName · @_currentUser.Role</div>
                     </div>
+
+                    <button type="button" class="btn btn-outline-secondary topbar-logout" @onclick="LogoutAsync">
+                        Çıkış Yap
+                    </button>
                 }
                 else
                 {
@@ -40,16 +47,28 @@
 </div>
 
 <nav class="mobile-bottom-nav">
-    <a href="/dashboard">Dashboard</a>
-    <a href="/service-orders">Servis</a>
-    <a href="/customers">Müşteriler</a>
-    <a href="/settings">Ayarlar</a>
+    <a href="/dashboard">
+        <span class="nav-icon">◉</span>
+        <span>Dashboard</span>
+    </a>
+    <a href="/service-orders">
+        <span class="nav-icon">⚙</span>
+        <span>Servis</span>
+    </a>
+    <a href="/customers">
+        <span class="nav-icon">◎</span>
+        <span>Müşteriler</span>
+    </a>
+    <a href="/settings">
+        <span class="nav-icon">≡</span>
+        <span>Ayarlar</span>
+    </a>
 </nav>
 
 <div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">x</a>
+    Beklenmedik bir hata oluştu.
+    <a href="" class="reload">Yenile</a>
+    <a class="dismiss">✕</a>
 </div>
 
 @code {
@@ -57,10 +76,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
 
         AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
         await RefreshCurrentUserAsync();
@@ -81,6 +97,12 @@
         }
 
         _currentUser = await AuthService.GetCurrentUserAsync();
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/login");
     }
 
     public void Dispose()

@@ -15,11 +15,12 @@ public sealed class ServiceOrdersService
         _apiClient = apiClient;
     }
 
-    public Task<IReadOnlyList<ServiceOrderResponse>?> GetServiceOrdersAsync(
+    public Task<IReadOnlyList<ServiceOrderListItem>?> GetServiceOrdersAsync(
         string? searchText,
         string? status,
         DateTime? openedFrom,
         DateTime? openedTo,
+        Guid? customerId = null,
         CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
@@ -36,12 +37,19 @@ public sealed class ServiceOrdersService
 
         if (openedFrom.HasValue)
         {
-            query.Add($"openedFrom={Uri.EscapeDataString(openedFrom.Value.ToString("O", CultureInfo.InvariantCulture))}");
+            var startUtc = DateTime.SpecifyKind(openedFrom.Value.Date, DateTimeKind.Utc);
+            query.Add($"openedFrom={Uri.EscapeDataString(new DateTimeOffset(startUtc).ToString("O", CultureInfo.InvariantCulture))}");
         }
 
         if (openedTo.HasValue)
         {
-            query.Add($"openedTo={Uri.EscapeDataString(openedTo.Value.ToString("O", CultureInfo.InvariantCulture))}");
+            var endUtc = DateTime.SpecifyKind(openedTo.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            query.Add($"openedTo={Uri.EscapeDataString(new DateTimeOffset(endUtc).ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (customerId.HasValue)
+        {
+            query.Add($"customerId={customerId.Value}");
         }
 
         var uriBuilder = new StringBuilder("/api/service-orders");
@@ -50,7 +58,7 @@ public sealed class ServiceOrdersService
             uriBuilder.Append('?').Append(string.Join('&', query));
         }
 
-        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderResponse>>(uriBuilder.ToString(), authorized: true, cancellationToken);
+        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderListItem>>(uriBuilder.ToString(), authorized: true, cancellationToken);
     }
 
     public Task<IReadOnlyList<CustomerLookupResponse>?> SearchCustomersAsync(string? searchText, CancellationToken cancellationToken = default)
@@ -72,8 +80,35 @@ public sealed class ServiceOrdersService
         return _apiClient.PostAsync<CreateServiceOrderRequest, Guid>("/api/service-orders", request, authorized: true, cancellationToken)!;
     }
 
-    public Task<ServiceOrderResponse?> GetServiceOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<ServiceOrderDetail?> GetServiceOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<ServiceOrderResponse>($"/api/service-orders/{id}", authorized: true, cancellationToken);
+        return _apiClient.GetAsync<ServiceOrderDetail>($"/api/service-orders/{id}", authorized: true, cancellationToken);
+    }
+
+    public Task AddOperationAsync(Guid id, AddOperationRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync($"/api/service-orders/{id}/operations", request, authorized: true, cancellationToken);
+    }
+
+    public Task AddPartAsync(Guid id, AddPartRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync($"/api/service-orders/{id}/parts", request, authorized: true, cancellationToken);
+    }
+
+    public Task AddPaymentAsync(Guid id, AddPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        var payload = new AddPaymentRequest
+        {
+            Amount = request.Amount,
+            Method = request.Method,
+            PaymentDate = request.PaymentDate?.ToUniversalTime()
+        };
+
+        return _apiClient.PostAsync($"/api/service-orders/{id}/payments", payload, authorized: true, cancellationToken);
+    }
+
+    public Task UpdateStatusAsync(Guid id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PutAsync($"/api/service-orders/{id}/status", request, authorized: true, cancellationToken);
     }
 }

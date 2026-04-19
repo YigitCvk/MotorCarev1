@@ -1,0 +1,89 @@
+@inject VehiclesService VehiclesService
+
+<div class="vehicle-plate-lookup">
+    @if (_selected is not null)
+    {
+        <div class="selection-item selected">
+            <div>
+                <strong>@_selected.PlateOriginal</strong>
+                <span class="ms-2 text-muted small">@_selected.Brand @_selected.Model (@_selected.Year)</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearSelectionAsync">Değiştir</button>
+        </div>
+    }
+    else
+    {
+        <div class="input-group mb-2">
+            <InputText class="form-control"
+                       @bind-Value="_plate"
+                       placeholder="34ABC123"
+                       @onkeyup="OnKeyUpAsync" />
+            <button type="button" class="btn btn-outline-secondary" @onclick="LookupAsync" disabled="@_isSearching">
+                @(_isSearching ? "..." : "Bul")
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="text-danger small">
+                @_error <a href="/vehicles/create">Araç ekle →</a>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public VehicleLookupResponse? Value { get; set; }
+    [Parameter] public EventCallback<VehicleLookupResponse?> ValueChanged { get; set; }
+
+    private string? _plate;
+    private VehicleLookupResponse? _selected;
+    private bool _isSearching;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        _selected = Value;
+    }
+
+    private async Task OnKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await LookupAsync();
+    }
+
+    private async Task LookupAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_plate)) return;
+        try
+        {
+            _isSearching = true;
+            _error = null;
+            var result = await VehiclesService.GetByPlateAsync(_plate);
+            if (result is null)
+            {
+                _error = "Bu plakaya ait araç kaydı bulunamadı.";
+            }
+            else
+            {
+                _selected = result;
+                await ValueChanged.InvokeAsync(_selected);
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSearching = false;
+        }
+    }
+
+    private async Task ClearSelectionAsync()
+    {
+        _selected = null;
+        _plate = null;
+        _error = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+}

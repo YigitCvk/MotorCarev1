@@ -1,0 +1,99 @@
+@page "/customers/create"
+@inject AuthService AuthService
+@inject CustomersService CustomersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Yeni Müşteri</PageTitle>
+
+<div class="page-shell">
+    <section class="hero-panel compact">
+        <div>
+            <div class="eyebrow">Müşteri Ekle</div>
+            <h1 class="page-title">Yeni Müşteri</h1>
+        </div>
+        <div class="quick-actions">
+            <a class="btn btn-outline-secondary" href="/customers">Geri</a>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+
+    <section class="surface-card">
+        <div class="form-grid">
+            <div>
+                <label class="form-label">Ad Soyad *</label>
+                <InputText class="form-control" @bind-Value="_form.FullName" placeholder="Ahmet Yılmaz" />
+            </div>
+            <div>
+                <label class="form-label">Telefon *</label>
+                <InputText class="form-control" @bind-Value="_form.Phone" placeholder="05xx xxx xx xx" />
+            </div>
+            <div>
+                <label class="form-label">E-posta</label>
+                <InputText class="form-control" @bind-Value="_form.Email" placeholder="ornek@mail.com" />
+            </div>
+            <div>
+                <label class="form-label">WhatsApp</label>
+                <InputText class="form-control" @bind-Value="_form.Whatsapp" placeholder="WhatsApp numarası (boşsa telefon kullanılır)" />
+            </div>
+            <div class="full-span">
+                <label class="form-label">İç Not</label>
+                <InputTextArea class="form-control" @bind-Value="_form.Notes" rows="3" placeholder="Müşteriye özel iç not (müşteriye gösterilmez)" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="button" class="btn btn-primary" @onclick="SaveAsync" disabled="@_isSaving">
+                @(_isSaving ? "Kaydediliyor..." : "Müşteri Kaydet")
+            </button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private readonly CreateCustomerRequest _form = new();
+    private string? _error;
+    private bool _isSaving;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        if (!await AuthService.IsAuthenticatedAsync())
+            NavigationManager.NavigateTo("/login");
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _isSaving = true;
+            _error = null;
+
+            if (string.IsNullOrWhiteSpace(_form.FullName))
+            {
+                _error = "Ad Soyad zorunludur.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Phone))
+            {
+                _error = "Telefon numarası zorunludur.";
+                return;
+            }
+
+            var id = await CustomersService.CreateAsync(_form);
+            NavigationManager.NavigateTo($"/customers/{id}");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

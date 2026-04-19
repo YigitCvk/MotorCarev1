@@ -8,11 +8,22 @@ using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
 using MotorCare.Infrastructure.Persistence.Entities;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace MotorCare.Infrastructure.Persistence;
 
 public class ApplicationDbContext : DbContext
 {
+    private static readonly ValueConverter<DateTimeOffset, DateTimeOffset> UtcDateTimeOffsetConverter =
+        new(
+            value => value.ToUniversalTime(),
+            value => value);
+
+    private static readonly ValueConverter<DateTimeOffset?, DateTimeOffset?> NullableUtcDateTimeOffsetConverter =
+        new(
+            value => value.HasValue ? value.Value.ToUniversalTime() : value,
+            value => value);
+
     private readonly ITenantProvider? _tenantProvider;
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantProvider? tenantProvider = null)
@@ -38,6 +49,7 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+        ApplyUtcDateTimeOffsetConverters(modelBuilder);
         
         // Apply Global Query Filters for Tenancy automatically for all ITenantEntity implementing types
         modelBuilder.Entity<Customer>().HasQueryFilter(c => c.TenantId == CurrentTenantId);
@@ -114,6 +126,21 @@ public class ApplicationDbContext : DbContext
                             $"does not match the current context TenantId '{tenantId}'.");
                     }
                     break;
+            }
+        }
+    }
+
+    private static void ApplyUtcDateTimeOffsetConverters(ModelBuilder modelBuilder)
+    {
+        foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(entityType => entityType.GetProperties()))
+        {
+            if (property.ClrType == typeof(DateTimeOffset))
+            {
+                property.SetValueConverter(UtcDateTimeOffsetConverter);
+            }
+            else if (property.ClrType == typeof(DateTimeOffset?))
+            {
+                property.SetValueConverter(NullableUtcDateTimeOffsetConverter);
             }
         }
     }

@@ -31,6 +31,8 @@ builder.Services.AddScoped<TokenStorageService>();
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ServiceOrdersService>();
+builder.Services.AddScoped<CustomersService>();
+builder.Services.AddScoped<VehiclesService>();
 
 var app = builder.Build();
 

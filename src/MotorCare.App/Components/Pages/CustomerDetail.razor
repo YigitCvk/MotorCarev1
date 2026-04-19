@@ -1,0 +1,198 @@
+@page "/customers/{Id:guid}"
+@inject AuthService AuthService
+@inject CustomersService CustomersService
+@inject ServiceOrdersService ServiceOrdersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Müşteri Detayı</PageTitle>
+
+<div class="page-shell">
+    @if (!_isLoading && _customer is null)
+    {
+        <div class="alert alert-danger">Müşteri bulunamadı.</div>
+    }
+    else
+    {
+        <section class="hero-panel compact">
+            <div>
+                <div class="eyebrow">Müşteri Profili</div>
+                <h1 class="page-title">@(_customer?.FullName ?? "Yükleniyor...")</h1>
+                @if (_customer is not null)
+                {
+                    <p class="page-description">
+                        @_customer.Phone
+                        @if (!string.IsNullOrWhiteSpace(_customer.Email))
+                        {
+                            <span> · @_customer.Email</span>
+                        }
+                    </p>
+                }
+            </div>
+            <div class="quick-actions">
+                <a class="btn btn-outline-secondary" href="/customers">Geri</a>
+                <a class="btn btn-secondary" href="@($"/vehicles/create?customerId={Id}")">Araç Ekle</a>
+                <a class="btn btn-primary" href="/service-orders/create">Yeni Servis Kaydı</a>
+            </div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="alert alert-danger">@_error</div>
+        }
+
+        @if (_customer is not null)
+        {
+            <div class="content-grid">
+                <section class="surface-card">
+                    <div class="section-title">Müşteri Bilgileri</div>
+                    <table class="table table-borderless table-sm mb-0 mt-2">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted fw-normal" style="width:120px">Ad Soyad</th>
+                                <td class="fw-semibold">@_customer.FullName</td>
+                            </tr>
+                            @if (!string.IsNullOrWhiteSpace(_customer.Phone))
+                            {
+                                <tr>
+                                    <th class="text-muted fw-normal">Telefon</th>
+                                    <td>@_customer.Phone</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_customer.Email))
+                            {
+                                <tr>
+                                    <th class="text-muted fw-normal">E-posta</th>
+                                    <td>@_customer.Email</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_customer.Whatsapp))
+                            {
+                                <tr>
+                                    <th class="text-muted fw-normal">WhatsApp</th>
+                                    <td>@_customer.Whatsapp</td>
+                                </tr>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_customer.Notes))
+                            {
+                                <tr>
+                                    <th class="text-muted fw-normal">Not</th>
+                                    <td>@_customer.Notes</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="surface-card">
+                    <div class="section-header">
+                        <div class="section-title">Servis Geçmişi</div>
+                    </div>
+                    @if (_ordersLoading)
+                    {
+                        <div class="text-muted small mt-2">Yükleniyor...</div>
+                    }
+                    else if (_orders.Count == 0)
+                    {
+                        <div class="text-muted small mt-2">Bu müşteriye ait servis kaydı bulunmuyor.</div>
+                    }
+                    else
+                    {
+                        <div class="selection-list mt-2">
+                            @foreach (var o in _orders)
+                            {
+                                <button type="button" class="selection-item" @onclick="@(() => OpenOrder(o.Id))">
+                                    <strong>@o.OrderNo</strong>
+                                    <span>
+                                        <span class="@GetStatusBadgeClass(o.Status) me-1">@GetStatusLabel(o.Status)</span>
+                                        @o.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")
+                                        · @o.GrandTotal.ToString("N2") ₺
+                                    </span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private CustomerLookupResponse? _customer;
+    private readonly List<ServiceOrderListItem> _orders = [];
+    private bool _isLoading = true;
+    private bool _ordersLoading = true;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadCustomerAsync();
+        await LoadOrdersAsync();
+    }
+
+    private async Task LoadCustomerAsync()
+    {
+        try
+        {
+            _customer = await CustomersService.GetByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadOrdersAsync()
+    {
+        try
+        {
+            var result = await ServiceOrdersService.GetServiceOrdersAsync(null, null, null, null, Id);
+            if (result is not null) _orders.AddRange(result);
+        }
+        catch { }
+        finally
+        {
+            _ordersLoading = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenOrder(Guid id) => NavigationManager.NavigateTo($"/service-orders/{id}");
+
+    private static string GetStatusBadgeClass(string status) => status switch
+    {
+        "Open"            => "status-badge badge-open",
+        "InProgress"      => "status-badge badge-progress",
+        "WaitingForParts" => "status-badge badge-waiting",
+        "Completed"       => "status-badge badge-completed",
+        "Delivered"       => "status-badge badge-delivered",
+        "Cancelled"       => "status-badge badge-cancelled",
+        _                 => "status-badge"
+    };
+
+    private static string GetStatusLabel(string status) => status switch
+    {
+        "Open"            => "Açık",
+        "InProgress"      => "İşlemde",
+        "WaitingForParts" => "Parça Bekliyor",
+        "Completed"       => "Tamamlandı",
+        "Delivered"       => "Teslim Edildi",
+        "Cancelled"       => "İptal",
+        _                 => status
+    };
+}

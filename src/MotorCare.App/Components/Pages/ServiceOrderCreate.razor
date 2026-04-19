@@ -3,15 +3,15 @@
 @inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Yeni Servis Kaydi</PageTitle>
+<PageTitle>Yeni Servis Kaydı</PageTitle>
 
 <div class="page-shell">
     <section class="hero-panel compact">
         <div>
-            <div class="eyebrow">Hizli kabul</div>
-            <h1 class="page-title">Yeni Servis Kaydi</h1>
+            <div class="eyebrow">Hızlı kabul</div>
+            <h1 class="page-title">Yeni Servis Kaydı</h1>
             <p class="page-description">
-                Musteri ve araci sec, sikayeti kaydet, servisi hizla ac.
+                Müşteri ve aracı seç, şikayeti kaydet, servisi hızla aç.
             </p>
         </div>
     </section>
@@ -30,58 +30,27 @@
         <section class="surface-card">
             <div class="section-header">
                 <div>
-                    <div class="section-title">1. Musteri Secimi</div>
-                    <div class="section-subtitle">Mevcut kayitlar arasinda arama yapin</div>
+                    <div class="section-title">1. Müşteri Seçimi</div>
+                    <div class="section-subtitle">Mevcut kayıtlar arasında arama yapın</div>
                 </div>
+                <a class="btn btn-sm btn-outline-secondary" href="/customers/create">+ Yeni Müşteri</a>
             </div>
-
-            <div class="input-group mb-3">
-                <InputText class="form-control" @bind-Value="_customerSearch" placeholder="Musteri ara" />
-                <button type="button" class="btn btn-outline-secondary" @onclick="SearchCustomersAsync">Ara</button>
-            </div>
-
-            <div class="selection-list">
-                @if (_customerResults.Count == 0)
-                {
-                    <div class="text-muted small">Arama sonucu burada listelenecek.</div>
-                }
-                else
-                {
-                    @foreach (var customer in _customerResults)
-                    {
-                        <button type="button" class="selection-item @(customer.Id == _selectedCustomer?.Id ? "selected" : string.Empty)" @onclick="() => SelectCustomer(customer)">
-                            <strong>@customer.FullName</strong>
-                            <span>@customer.Phone</span>
-                        </button>
-                    }
-                }
+            <div class="mt-3">
+                <CustomerQuickSearch @bind-Value="_selectedCustomer" />
             </div>
         </section>
 
         <section class="surface-card">
             <div class="section-header">
                 <div>
-                    <div class="section-title">2. Arac Secimi</div>
-                    <div class="section-subtitle">Plakaya gore arac kaydini getir</div>
+                    <div class="section-title">2. Araç Seçimi</div>
+                    <div class="section-subtitle">Plakaya göre araç kaydını getirin</div>
                 </div>
+                <a class="btn btn-sm btn-outline-secondary" href="/vehicles/create">+ Yeni Araç</a>
             </div>
-
-            <div class="input-group mb-3">
-                <InputText class="form-control" @bind-Value="_vehiclePlate" placeholder="34ABC123" />
-                <button type="button" class="btn btn-outline-secondary" @onclick="LookupVehicleAsync">Bul</button>
+            <div class="mt-3">
+                <VehiclePlateLookup @bind-Value="_selectedVehicle" />
             </div>
-
-            @if (_selectedVehicle is not null)
-            {
-                <div class="selection-item selected static">
-                    <strong>@_selectedVehicle.PlateOriginal</strong>
-                    <span>@_selectedVehicle.Brand @_selectedVehicle.Model (@_selectedVehicle.Year)</span>
-                </div>
-            }
-            else
-            {
-                <div class="text-muted small">Arac secilmedi.</div>
-            }
         </section>
     </div>
 
@@ -89,22 +58,22 @@
         <div class="section-header">
             <div>
                 <div class="section-title">3. Servis Bilgileri</div>
-                <div class="section-subtitle">Kabul asamasinda gereken temel alanlar</div>
+                <div class="section-subtitle">Kabul aşamasında gereken temel alanlar</div>
             </div>
         </div>
 
         <div class="form-grid">
             <div>
-                <label class="form-label">Arac KM</label>
+                <label class="form-label">Araç KM</label>
                 <InputNumber class="form-control" @bind-Value="_vehicleKm" />
             </div>
             <div>
                 <label class="form-label">Tahmini Teslim</label>
                 <InputDate class="form-control" @bind-Value="_estimatedDeliveryDate" />
-                <div class="form-text">Backend kontratina eklenecek alan. Su an sadece UI seviyesinde tutuluyor.</div>
+                <div class="form-text">Backend kontratına eklenecek alan.</div>
             </div>
             <div class="full-span">
-                <label class="form-label">Sikayet / Aciklama</label>
+                <label class="form-label">Şikayet / Açıklama</label>
                 <InputTextArea class="form-control" @bind-Value="_complaint" />
             </div>
         </div>
@@ -118,9 +87,6 @@
 </div>
 
 @code {
-    private readonly List<CustomerLookupResponse> _customerResults = [];
-    private string? _customerSearch;
-    private string? _vehiclePlate;
     private string? _complaint;
     private int _vehicleKm;
     private DateTime? _estimatedDeliveryDate = DateTime.Today.AddDays(1);
@@ -132,63 +98,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
             NavigationManager.NavigateTo("/login");
         }
-    }
-
-    private async Task SearchCustomersAsync()
-    {
-        try
-        {
-            _error = null;
-            _customerResults.Clear();
-            var result = await ServiceOrdersService.SearchCustomersAsync(_customerSearch);
-            if (result is not null)
-            {
-                _customerResults.AddRange(result);
-            }
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-    }
-
-    private async Task LookupVehicleAsync()
-    {
-        try
-        {
-            _error = null;
-            _selectedVehicle = null;
-
-            if (string.IsNullOrWhiteSpace(_vehiclePlate))
-            {
-                _error = "Plaka girin.";
-                return;
-            }
-
-            _selectedVehicle = await ServiceOrdersService.GetVehicleByPlateAsync(_vehiclePlate);
-            if (_selectedVehicle is null)
-            {
-                _error = "Arac bulunamadi.";
-            }
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-    }
-
-    private void SelectCustomer(CustomerLookupResponse customer)
-    {
-        _selectedCustomer = customer;
     }
 
     private async Task CreateServiceOrderAsync()
@@ -201,19 +116,19 @@
 
             if (_selectedCustomer is null)
             {
-                _error = "Bir musteri secin.";
+                _error = "Bir müşteri seçin.";
                 return;
             }
 
             if (_selectedVehicle is null)
             {
-                _error = "Bir arac secin.";
+                _error = "Bir araç seçin.";
                 return;
             }
 
             if (_vehicleKm <= 0)
             {
-                _error = "Gecerli bir arac KM bilgisi girin.";
+                _error = "Geçerli bir araç KM bilgisi girin.";
                 return;
             }
 
@@ -225,7 +140,7 @@
                 Complaint = _complaint
             });
 
-            _successMessage = $"Servis kaydi olusturuldu: {id}";
+            _successMessage = $"Servis kaydı oluşturuldu: {id}";
             NavigationManager.NavigateTo($"/service-orders/{id}");
         }
         catch (Exception ex)

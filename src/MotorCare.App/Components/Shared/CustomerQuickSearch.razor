@@ -1,0 +1,106 @@
+@inject CustomersService CustomersService
+
+<div class="customer-quick-search">
+    @if (_selected is not null)
+    {
+        <div class="selection-item selected">
+            <div>
+                <strong>@_selected.FullName</strong>
+                @if (!string.IsNullOrWhiteSpace(_selected.Phone))
+                {
+                    <span class="ms-2 text-muted small">@_selected.Phone</span>
+                }
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearSelectionAsync">Değiştir</button>
+        </div>
+    }
+    else
+    {
+        <div class="input-group mb-2">
+            <InputText class="form-control"
+                       @bind-Value="_searchText"
+                       placeholder="Müşteri adı veya telefon ile ara"
+                       @onkeyup="OnKeyUpAsync" />
+            <button type="button" class="btn btn-outline-secondary" @onclick="SearchAsync" disabled="@_isSearching">
+                @(_isSearching ? "..." : "Ara")
+            </button>
+        </div>
+
+        <div class="selection-list">
+            @if (_hasSearched && _results.Count == 0)
+            {
+                <div class="text-muted small py-2">
+                    Sonuç bulunamadı. <a href="/customers/create">Yeni müşteri ekle →</a>
+                </div>
+            }
+            else
+            {
+                @foreach (var c in _results)
+                {
+                    <button type="button" class="selection-item" @onclick="() => SelectAsync(c)">
+                        <strong>@c.FullName</strong>
+                        <span>@c.Phone</span>
+                    </button>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public CustomerLookupResponse? Value { get; set; }
+    [Parameter] public EventCallback<CustomerLookupResponse?> ValueChanged { get; set; }
+
+    private string? _searchText;
+    private readonly List<CustomerLookupResponse> _results = [];
+    private CustomerLookupResponse? _selected;
+    private bool _isSearching;
+    private bool _hasSearched;
+
+    protected override void OnParametersSet()
+    {
+        _selected = Value;
+    }
+
+    private async Task OnKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText)) return;
+        try
+        {
+            _isSearching = true;
+            _hasSearched = false;
+            _results.Clear();
+            var result = await CustomersService.SearchCustomersAsync(_searchText);
+            if (result is not null) _results.AddRange(result);
+            _hasSearched = true;
+        }
+        catch
+        {
+            _hasSearched = true;
+        }
+        finally
+        {
+            _isSearching = false;
+        }
+    }
+
+    private async Task SelectAsync(CustomerLookupResponse customer)
+    {
+        _selected = customer;
+        _results.Clear();
+        _searchText = null;
+        _hasSearched = false;
+        await ValueChanged.InvokeAsync(_selected);
+    }
+
+    private async Task ClearSelectionAsync()
+    {
+        _selected = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+}

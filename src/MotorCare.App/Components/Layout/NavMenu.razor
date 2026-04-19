@@ -6,7 +6,7 @@
     <div class="brand-mark">MC</div>
     <div>
         <div class="brand-title">MotorCare</div>
-        <div class="brand-subtitle">Modern servis yonetimi</div>
+        <div class="brand-subtitle">Modern servis yönetimi</div>
     </div>
 </div>
 
@@ -14,24 +14,60 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="menu-stack">
-        <NavLink class="menu-link" href="/dashboard">Dashboard</NavLink>
-        <NavLink class="menu-link" href="/service-orders">Servis Islemleri</NavLink>
-        <NavLink class="menu-link" href="/customers">Musteriler</NavLink>
-        <NavLink class="menu-link" href="/vehicles">Araclar</NavLink>
-        <NavLink class="menu-link" href="/collections">Tahsilatlar</NavLink>
-        <NavLink class="menu-link" href="/reports">Raporlar</NavLink>
-        <NavLink class="menu-link" href="/settings">Ayarlar</NavLink>
+        <NavLink class="menu-link" href="/dashboard" Match="NavLinkMatch.All">
+            <span class="nav-icon">◉</span>
+            Dashboard
+        </NavLink>
+
+        <NavLink class="menu-link" href="/service-orders">
+            <span class="nav-icon">⚙</span>
+            Servis İşlemleri
+        </NavLink>
+
+        <NavLink class="menu-link" href="/customers">
+            <span class="nav-icon">◎</span>
+            Müşteriler
+        </NavLink>
+
+        <NavLink class="menu-link" href="/vehicles">
+            <span class="nav-icon">◈</span>
+            Araçlar
+        </NavLink>
+
+        <NavLink class="menu-link" href="/collections">
+            <span class="nav-icon">◇</span>
+            Tahsilatlar
+        </NavLink>
+
+        <NavLink class="menu-link" href="/reports">
+            <span class="nav-icon">▤</span>
+            Raporlar
+        </NavLink>
+
+        <NavLink class="menu-link" href="/settings">
+            <span class="nav-icon">≡</span>
+            Ayarlar
+        </NavLink>
 
         <div class="menu-divider"></div>
 
         @if (_isAuthenticated)
         {
-            <button type="button" class="logout-button" @onclick="LogoutAsync">Logout</button>
+            <button type="button" class="logout-button" @onclick="LogoutAsync">
+                <span class="nav-icon">→</span>
+                Çıkış Yap
+            </button>
         }
         else
         {
-            <NavLink class="menu-link subtle-link" href="/login">Login</NavLink>
-            <NavLink class="menu-link subtle-link" href="/register">Register</NavLink>
+            <NavLink class="menu-link subtle-link" href="/login">
+                <span class="nav-icon">→</span>
+                Giriş Yap
+            </NavLink>
+            <NavLink class="menu-link subtle-link" href="/register">
+                <span class="nav-icon">+</span>
+                Kayıt Ol
+            </NavLink>
         }
     </nav>
 </div>
@@ -41,10 +77,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
 
         AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
         _isAuthenticated = await AuthService.IsAuthenticatedAsync();

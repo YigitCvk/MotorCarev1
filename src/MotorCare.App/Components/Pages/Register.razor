@@ -2,53 +2,82 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Kayıt Ol — MotorCare</PageTitle>
 
-<h1 class="mb-4">Register Workshop</h1>
+<div class="auth-shell">
+    <div class="auth-panel auth-panel-brand">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
+            <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:linear-gradient(135deg,#4f46e5,#6366f1);display:grid;place-items:center;color:#fff;font-weight:800;font-size:0.95rem;letter-spacing:-0.02em">MC</div>
+            <div style="color:#f1f5f9;font-weight:700;font-size:1rem">MotorCare</div>
+        </div>
+        <div class="eyebrow" style="color:#a5b4fc">B2B onboarding</div>
+        <h1 class="auth-title">Servisinizi dakikalar içinde dijitale taşıyın</h1>
+        <p class="auth-copy">
+            MotorCare; servis kabul, müşteri kaydı, araç takibi ve günlük tahsilat yönetimini tek akışta birleştirir.
+            Eski masaüstü ekranlarının karmaşası yerine hızlı, mobil uyumlu bir operasyon merkezi.
+        </p>
 
-<div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-6">
-        <EditForm Model="_model" OnValidSubmit="RegisterAsync" class="card shadow-sm">
+        <div class="auth-feature-list">
+            <div class="auth-feature-item">⚙ Servis işlemleri ana ekranı</div>
+            <div class="auth-feature-item">◎ Müşteri ve araç kabul akışı</div>
+            <div class="auth-feature-item">◇ Tahsilat ve günlük özet görünümü</div>
+        </div>
+    </div>
+
+    <div class="auth-panel auth-panel-form">
+        <div class="section-header mb-2">
+            <div>
+                <div class="section-title">İlk işletme kaydını oluştur</div>
+                <div class="section-subtitle">İlk kullanıcı otomatik olarak Owner rolüyle açılır.</div>
+            </div>
+        </div>
+
+        <EditForm Model="_model" OnValidSubmit="RegisterAsync">
             <DataAnnotationsValidator />
-            <div class="card-body p-4">
-                <div class="mb-3">
+
+            <div class="form-grid auth-form-grid">
+                <div>
                     <label class="form-label">Tenant Identifier</label>
-                    <InputText class="form-control" @bind-Value="_model.TenantIdentifier" />
+                    <InputText class="form-control" @bind-Value="_model.TenantIdentifier" placeholder="asya-motor" />
+                    <div class="form-text">Küçük harf, tire ile ayrılmış (URL'de kullanılır)</div>
                     <ValidationMessage For="@(() => _model.TenantIdentifier)" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Tenant Name</label>
-                    <InputText class="form-control" @bind-Value="_model.TenantName" />
+                <div>
+                    <label class="form-label">Servis Adı</label>
+                    <InputText class="form-control" @bind-Value="_model.TenantName" placeholder="Asya Motor" />
                     <ValidationMessage For="@(() => _model.TenantName)" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Owner Full Name</label>
-                    <InputText class="form-control" @bind-Value="_model.OwnerFullName" />
+                <div class="full-span">
+                    <label class="form-label">Yetkili Ad Soyad</label>
+                    <InputText class="form-control" @bind-Value="_model.OwnerFullName" placeholder="Yiğit Çevik" />
                     <ValidationMessage For="@(() => _model.OwnerFullName)" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Owner Email</label>
-                    <InputText class="form-control" @bind-Value="_model.OwnerEmail" />
+                <div>
+                    <label class="form-label">E-posta</label>
+                    <InputText class="form-control" @bind-Value="_model.OwnerEmail" placeholder="owner@servisiniz.com" autocomplete="email" />
                     <ValidationMessage For="@(() => _model.OwnerEmail)" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Owner Password</label>
-                    <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" />
+                <div>
+                    <label class="form-label">Şifre</label>
+                    <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" placeholder="••••••••" autocomplete="new-password" />
                     <ValidationMessage For="@(() => _model.OwnerPassword)" />
                 </div>
+            </div>
 
-                @if (!string.IsNullOrWhiteSpace(_error))
-                {
-                    <div class="alert alert-danger">@_error</div>
-                }
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <div class="alert alert-danger mt-3">@_error</div>
+            }
 
-                <button type="submit" class="btn btn-primary w-100" disabled="@_isSubmitting">
-                    @(_isSubmitting ? "Registering..." : "Register")
+            <div class="auth-actions">
+                <button type="submit" class="btn btn-primary btn-lg" disabled="@_isSubmitting">
+                    @(_isSubmitting ? "Kayıt oluşturuluyor..." : "Kayıt Ol")
                 </button>
+                <a class="auth-link" href="/login">Zaten hesabın var mı? Giriş yap →</a>
             </div>
         </EditForm>
     </div>

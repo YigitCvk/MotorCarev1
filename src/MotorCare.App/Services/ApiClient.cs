@@ -32,6 +32,11 @@ public sealed class ApiClient
         return SendAsync<object>(HttpMethod.Post, uri, request, authorized, cancellationToken);
     }
 
+    public Task PutAsync<TRequest>(string uri, TRequest request, bool authorized = true, CancellationToken cancellationToken = default)
+    {
+        return SendAsync<object>(HttpMethod.Put, uri, request, authorized, cancellationToken);
+    }
+
     private async Task<TResponse?> SendAsync<TResponse>(
         HttpMethod method,
         string uri,

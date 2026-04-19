@@ -1,18 +1,30 @@
+/* ── App Shell ───────────────────────────────────────────────────── */
 .app-shell {
     min-height: 100vh;
     display: flex;
-    background:
-        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
-        linear-gradient(180deg, #f7fbfa 0%, #eef4f6 100%);
+    background: var(--mc-bg, #F5F7FB);
 }
 
+/* ── Sidebar ─────────────────────────────────────────────────────── */
 .sidebar {
-    width: 280px;
-    background: linear-gradient(180deg, #0f172a 0%, #12263f 100%);
+    width: 260px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     color: #e2e8f0;
-    border-right: 1px solid rgba(148, 163, 184, 0.14);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    scrollbar-width: none;
 }
 
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Workspace ───────────────────────────────────────────────────── */
 .workspace {
     flex: 1;
     min-width: 0;
@@ -20,6 +32,7 @@
     flex-direction: column;
 }
 
+/* ── Topbar ──────────────────────────────────────────────────────── */
 .app-topbar {
     position: sticky;
     top: 0;
@@ -28,113 +41,154 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-    background: rgba(247, 251, 250, 0.88);
-    backdrop-filter: blur(14px);
+    padding: 0.875rem 1.5rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    background: rgba(245, 247, 251, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    min-height: 60px;
 }
 
-.eyebrow {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #0f766e;
-    font-weight: 700;
-}
-
-.topbar-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.topbar-meta {
+.topbar-brand {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
+.topbar-logo {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: -0.02em;
+}
+
+.topbar-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--mc-text, #0f172a);
+    letter-spacing: -0.01em;
+}
+
+.topbar-subtitle {
+    font-size: 0.72rem;
+    color: var(--mc-text-muted, #64748b);
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ── Tenant Chip ─────────────────────────────────────────────────── */
 .tenant-chip {
-    min-width: 220px;
-    padding: 0.75rem 0.9rem;
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    padding: 0.5rem 0.875rem;
+    border-radius: 12px;
+    background: var(--mc-surface, #fff);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .tenant-chip-label {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
+    letter-spacing: 0.06em;
+    color: var(--mc-text-muted, #64748b);
+    font-weight: 600;
 }
 
 .tenant-chip-value {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--mc-text, #0f172a);
+    white-space: nowrap;
 }
 
 .tenant-chip-muted .tenant-chip-value {
-    color: #475569;
+    color: var(--mc-text-muted, #64748b);
 }
 
+.topbar-logout {
+    font-size: 0.82rem;
+    padding: 0.4rem 0.875rem;
+}
+
+/* ── Workspace Main ──────────────────────────────────────────────── */
 .workspace-main {
+    flex: 1;
     padding: 1.5rem;
-    padding-bottom: 5rem;
+    padding-bottom: 4rem;
+    max-width: 1400px;
+    width: 100%;
+    align-self: flex-start;
 }
 
+/* ── Mobile Bottom Nav ───────────────────────────────────────────── */
 .mobile-bottom-nav {
     display: none;
 }
 
+/* ── Blazor Error UI ─────────────────────────────────────────────── */
 #blazor-error-ui {
-    background: lightyellow;
+    background: #fff8e1;
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
     display: none;
     left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    padding: 0.75rem 1.5rem;
     position: fixed;
     width: 100%;
     z-index: 1000;
+    font-size: 0.9rem;
+    border-top: 2px solid #fbbf24;
 }
 
 #blazor-error-ui .dismiss {
     cursor: pointer;
     position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
+    right: 1rem;
+    top: 0.7rem;
+    font-size: 1.1rem;
+    color: #92400e;
 }
 
+/* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .app-shell {
         display: block;
     }
 
     .sidebar {
+        position: static;
         width: 100%;
+        height: auto;
         border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
 
     .app-topbar {
-        padding: 1rem;
+        padding: 0.75rem 1rem;
     }
 
     .tenant-chip {
-        min-width: auto;
+        display: none;
     }
 }
 
 @media (max-width: 640px) {
-    .topbar-meta {
-        display: none;
-    }
-
     .workspace-main {
         padding: 1rem;
-        padding-bottom: 6rem;
+        padding-bottom: 5.5rem;
+    }
+
+    .topbar-subtitle {
+        display: none;
     }
 
     .mobile-bottom-nav {
@@ -145,19 +199,35 @@
         z-index: 30;
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 0.25rem;
-        padding: 0.7rem;
-        background: rgba(15, 23, 42, 0.96);
-        border-top: 1px solid rgba(148, 163, 184, 0.12);
+        padding: 0.5rem 0.25rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+        background: rgba(10, 16, 30, 0.97);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
     }
 
     .mobile-bottom-nav a {
         text-decoration: none;
         text-align: center;
-        color: #e2e8f0;
-        font-size: 0.78rem;
-        padding: 0.7rem 0.3rem;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.04);
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.5rem 0.2rem;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+        transition: color 0.12s;
+    }
+
+    .mobile-bottom-nav a:hover,
+    .mobile-bottom-nav a.active {
+        color: #a5b4fc;
+    }
+
+    .mobile-bottom-nav .nav-icon {
+        font-size: 1.2rem;
+        line-height: 1;
     }
 }
