@@ -8,19 +8,28 @@
 @if (_isLoading)
 {
     <div class="page-shell">
-        <div class="surface-card state-loading">Dashboard yükleniyor...</div>
+        <section class="loading-state">
+            <strong>Dashboard yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(_error))
 {
     <div class="page-shell">
-        <div class="alert alert-danger">@_error</div>
+        <section class="error-state">
+            <strong>Dashboard alınamadı</strong>
+            <p>@_error</p>
+        </section>
     </div>
 }
 else if (_user is null)
 {
     <div class="page-shell">
-        <div class="alert alert-warning">Devam etmek için giriş yapın.</div>
+        <section class="empty-state">
+            <strong>Oturum bulunamadı</strong>
+            <p>Devam etmek için tekrar giriş yapın.</p>
+        </section>
     </div>
 }
 else
@@ -29,16 +38,16 @@ else
         <section class="hero-panel">
             <div>
                 <div class="eyebrow">Günlük operasyon</div>
-                <h1 class="page-title">Günaydın, @_user.FullName 👋</h1>
+                <h1 class="page-title">Günaydın, @_user.FullName</h1>
                 <p class="page-description">
                     <strong>@_user.TenantIdentifier</strong> — bugünkü yoğunluğu, tahsilatları ve açık işleri anlık takip edin.
                 </p>
             </div>
 
-            <div class="quick-actions">
-                <a class="btn btn-primary" href="/service-orders/create">+ Yeni Servis</a>
-                <a class="btn btn-outline-secondary" href="/customers/create">Müşteri Ekle</a>
-                <a class="btn btn-outline-secondary" href="/vehicles/create">Araç Ekle</a>
+            <div class="quick-actions action-bar">
+                <a class="app-btn-primary" href="/service-orders/create">+ Yeni Servis</a>
+                <a class="app-btn-secondary" href="/customers/create">Müşteri Ekle</a>
+                <a class="app-btn-secondary" href="/vehicles/create">Araç Ekle</a>
             </div>
         </section>
 
@@ -95,7 +104,7 @@ else
                         <div class="section-title">Son Servis Kayıtları</div>
                         <div class="section-subtitle">Servis operasyonlarının son akışı</div>
                     </div>
-                    <a class="btn btn-sm btn-outline-secondary" href="/service-orders">Tümünü Gör</a>
+                    <a class="app-btn-secondary" href="/service-orders">Tümünü Gör</a>
                 </div>
 
                 <div class="summary-list">
@@ -154,7 +163,10 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -193,23 +205,23 @@ else
 
     private static string GetStatusBadgeClass(string status) => status switch
     {
-        "Open"            => "status-badge badge-open",
-        "InProgress"      => "status-badge badge-progress",
+        "Open" => "status-badge badge-open",
+        "InProgress" => "status-badge badge-progress",
         "WaitingForParts" => "status-badge badge-waiting",
-        "Completed"       => "status-badge badge-completed",
-        "Delivered"       => "status-badge badge-delivered",
-        "Cancelled"       => "status-badge badge-cancelled",
-        _                 => "status-badge"
+        "Completed" => "status-badge badge-completed",
+        "Delivered" => "status-badge badge-delivered",
+        "Cancelled" => "status-badge badge-cancelled",
+        _ => "status-badge"
     };
 
     private static string GetStatusLabel(string status) => status switch
     {
-        "Open"            => "Açık",
-        "InProgress"      => "İşlemde",
+        "Open" => "Açık",
+        "InProgress" => "İşlemde",
         "WaitingForParts" => "Parça Bekliyor",
-        "Completed"       => "Tamamlandı",
-        "Delivered"       => "Teslim Edildi",
-        "Cancelled"       => "İptal",
-        _                 => status
+        "Completed" => "Tamamlandı",
+        "Delivered" => "Teslim Edildi",
+        "Cancelled" => "İptal",
+        _ => status
     };
 }

@@ -15,12 +15,12 @@
             </p>
         </div>
 
-        <div class="quick-actions">
-            <a class="btn btn-primary" href="/service-orders/create">Yeni Servis Kaydi</a>
+        <div class="quick-actions action-bar">
+            <a class="app-btn-primary" href="/service-orders/create">Yeni Servis Kaydi</a>
         </div>
     </section>
 
-    <section class="surface-card">
+    <section class="filter-card">
         <div class="filter-grid">
             <div>
                 <label class="form-label">Arama</label>
@@ -47,10 +47,10 @@
                 <InputDate class="form-control" @bind-Value="_openedTo" />
             </div>
             <div class="filter-actions">
-                <button type="button" class="btn btn-dark" @onclick="LoadOrdersAsync" disabled="@_isLoading">
+                <button type="button" class="app-btn-primary" @onclick="LoadOrdersAsync" disabled="@_isLoading">
                     @(_isLoading ? "Yukleniyor..." : "Filtrele")
                 </button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">
+                <button type="button" class="app-btn-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">
                     Temizle
                 </button>
             </div>
@@ -67,8 +67,8 @@
         <div class="alert alert-danger mt-3">@_error</div>
     }
 
-    <section class="surface-card mt-3 d-none d-lg-block">
-        <div class="table-responsive">
+    <section class="surface-card mt-3 desktop-only">
+        <div class="responsive-table">
             <table class="table modern-table align-middle mb-0">
                 <thead>
                     <tr>
@@ -108,7 +108,7 @@
         </div>
     </section>
 
-    <section class="card-list d-lg-none">
+    <section class="card-list mobile-only">
         @if (_orders.Count == 0)
         {
             <div class="surface-card text-muted">Kayit bulunamadi.</div>

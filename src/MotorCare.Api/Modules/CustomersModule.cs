@@ -5,6 +5,8 @@ using MotorCare.Application.Customers.Commands.CreateCustomer;
 using MotorCare.Application.Customers.Commands.UpdateCustomer;
 using MotorCare.Application.Customers.Queries.GetCustomerById;
 using MotorCare.Application.Customers.Queries.SearchCustomers;
+using MotorCare.Application.Vehicles;
+using MotorCare.Application.Vehicles.Queries.GetVehiclesByCustomerId;
 
 namespace MotorCare.Api.Modules;
 
@@ -69,6 +71,17 @@ public sealed class CustomersModule : ICarterModule
         .WithName("SearchCustomers")
         .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<IReadOnlyList<CustomerDto>>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/{customerId:guid}/vehicles", async (Guid customerId, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetVehiclesByCustomerIdQuery(customerId), ct);
+            return Results.Ok(result);
+        })
+        .WithName("GetCustomerVehicles")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces<IReadOnlyList<VehicleDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
     }

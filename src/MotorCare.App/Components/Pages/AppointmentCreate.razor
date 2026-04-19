@@ -1,0 +1,633 @@
+@page "/appointments/create"
+@rendermode InteractiveServer
+@using System.Net
+@using MotorCare.App.Models.Customers
+@using MotorCare.App.Models.Vehicles
+@inject AppointmentsService AppointmentsService
+@inject CustomersService CustomersService
+@inject VehiclesService VehiclesService
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Yeni Randevu</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Yeni Randevu</h1>
+            <p class="page-description">Servis kabul öncesi müşteri, araç ve randevu bilgisini hızlıca tamamlayın.</p>
+        </div>
+        <a href="/appointments" class="app-btn-secondary">Listeye Dön</a>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Randevu oluşturulamadı</strong>
+            <p>@_error</p>
+            @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
+            {
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+            }
+        </section>
+    }
+
+    <section class="app-card">
+        <div class="content-grid">
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">1. Müşteri Seçimi</div>
+                        <div class="section-subtitle">Müşteriyi seçin veya manuel bilgi girin.</div>
+                    </div>
+                    <a href="/customers/create" class="app-btn-secondary">+ Yeni Müşteri</a>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <label class="form-label">Ad veya telefon ile ara</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <InputText class="form-control" @bind-Value="_customerSearchText" @bind:event="oninput" placeholder="Ahmet Yılmaz / 05xx..." />
+                            <button type="button" class="app-btn-secondary" @onclick="SearchCustomersAsync" disabled="@_customerSearchLoading">
+                                @(_customerSearchLoading ? "Aranıyor..." : "Ara")
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_customerSearchMessage))
+                    {
+                        <p class="small text-muted m-0">@_customerSearchMessage</p>
+                    }
+
+                    @if (_customerResults.Count > 0)
+                    {
+                        <div class="mobile-card-list">
+                            @foreach (var customer in _customerResults)
+                            {
+                                <button type="button" class="selection-item" @onclick="() => SelectCustomerAsync(customer)">
+                                    <div>
+                                        <strong>@customer.FullName</strong>
+                                        <div class="small text-muted">@customer.Phone</div>
+                                    </div>
+                                    <span class="type-badge">Seç</span>
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @if (_selectedCustomer is not null)
+                    {
+                        <div class="selection-item selected">
+                            <div>
+                                <strong>@_selectedCustomer.FullName</strong>
+                                <div class="small text-muted">@_selectedCustomer.Phone</div>
+                            </div>
+                            <button type="button" class="app-btn-secondary" @onclick="ClearCustomerSelectionAsync">Temizle</button>
+                        </div>
+                    }
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Müşteri Adı *</label>
+                            <InputText class="form-control" @bind-Value="_form.CustomerName" placeholder="Ahmet Yılmaz" />
+                        </div>
+                        <div>
+                            <label class="form-label">Telefon *</label>
+                            <InputText class="form-control" @bind-Value="_form.Phone" placeholder="05xx xxx xx xx" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">2. Müşteriye Kayıtlı Araçlar</div>
+                        <div class="section-subtitle">Seçili müşterinin araçlarını seçin.</div>
+                    </div>
+                    @if (_selectedCustomer is not null)
+                    {
+                        <a href="@($"/vehicles/create?customerId={_selectedCustomer.Id}")" class="app-btn-secondary">+ Bu Müşteriye Araç Ekle</a>
+                    }
+                </div>
+
+                @if (_selectedCustomer is null)
+                {
+                    <section class="empty-state">
+                        <strong>Önce müşteri seçin</strong>
+                        <p>Seçili müşteriye bağlı araçlar burada listelenecek.</p>
+                    </section>
+                }
+                else if (_customerVehiclesLoading)
+                {
+                    <section class="loading-state">
+                        <strong>Araçlar yükleniyor</strong>
+                        <p>Müşteri araçları getiriliyor.</p>
+                    </section>
+                }
+                else if (!string.IsNullOrWhiteSpace(_customerVehiclesMessage))
+                {
+                    <p class="small text-muted m-0">@_customerVehiclesMessage</p>
+                }
+
+                @if (_customerVehicles.Count > 0)
+                {
+                    <div class="mobile-card-list mt-3">
+                        @foreach (var vehicle in _customerVehicles)
+                        {
+                            <button type="button" class="selection-item @(vehicle.Id == _selectedVehicle?.Id ? "selected" : string.Empty)" @onclick="() => SelectVehicle(vehicle)">
+                                <div>
+                                    <strong>@vehicle.PlateOriginal</strong>
+                                    <div class="small text-muted">@vehicle.Brand @vehicle.Model (@vehicle.Year)</div>
+                                </div>
+                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Seçili" : "Seç")</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="content-grid mt-4">
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">3. Plaka ile Araç Bul / Yeni Araç Ekle</div>
+                        <div class="section-subtitle">Plaka ile araç bulun veya seçili müşteriye hızlıca yeni araç ekleyin.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <label class="form-label">Plaka ile ara</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <InputText class="form-control" @bind-Value="_vehicleLookupPlate" placeholder="34 ABC 123" />
+                            <button type="button" class="app-btn-secondary" @onclick="LookupVehicleAsync" disabled="@_vehicleLookupLoading">
+                                @(_vehicleLookupLoading ? "Aranıyor..." : "Bul")
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_vehicleLookupMessage))
+                    {
+                        <p class="small text-muted m-0">@_vehicleLookupMessage</p>
+                    }
+
+                    @if (_selectedVehicle is not null)
+                    {
+                        <div class="selection-item selected">
+                            <div>
+                                <strong>@_selectedVehicle.PlateOriginal</strong>
+                                <div class="small text-muted">@_selectedVehicle.Brand @_selectedVehicle.Model (@_selectedVehicle.Year)</div>
+                            </div>
+                            <button type="button" class="app-btn-secondary" @onclick="ClearVehicleSelection">Temizle</button>
+                        </div>
+                    }
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Plaka</label>
+                            <InputText class="form-control" @bind-Value="_form.Plate" placeholder="34 ABC 123" />
+                        </div>
+                        <div>
+                            <label class="form-label">Marka</label>
+                            <InputText class="form-control" @bind-Value="_newVehicle.Brand" placeholder="Yamaha" />
+                        </div>
+                        <div>
+                            <label class="form-label">Model</label>
+                            <InputText class="form-control" @bind-Value="_newVehicle.Model" placeholder="NMAX" />
+                        </div>
+                        <div>
+                            <label class="form-label">Yıl</label>
+                            <InputNumber class="form-control" @bind-Value="_newVehicle.Year" />
+                        </div>
+                    </div>
+
+                    <div class="action-bar justify-content-end">
+                        <button type="button" class="app-btn-secondary" @onclick="CreateVehicleForSelectedCustomerAsync" disabled="@(_vehicleCreateLoading || _selectedCustomer is null)">
+                            @(_vehicleCreateLoading ? "Kaydediliyor..." : "Seçili Müşteriye Araç Olarak Ekle")
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">4. Randevu Bilgisi</div>
+                        <div class="section-subtitle">Tür, saat aralığı ve notları tamamlayın.</div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">Randevu Türü *</label>
+                        <InputSelect class="form-select" @bind-Value="_form.Type">
+                            @foreach (var type in Enum.GetValues<AppointmentType>())
+                            {
+                                <option value="@type">@GetTypeText(type)</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div>
+                        <label class="form-label">Başlangıç Tarihi *</label>
+                        <InputDate class="form-control" @bind-Value="_startDate" />
+                    </div>
+                    <div>
+                        <label class="form-label">Başlangıç Saati *</label>
+                        <InputText class="form-control" @bind-Value="_startTime" type="time" />
+                    </div>
+                    <div>
+                        <label class="form-label">Bitiş Tarihi *</label>
+                        <InputDate class="form-control" @bind-Value="_endDate" />
+                    </div>
+                    <div>
+                        <label class="form-label">Bitiş Saati *</label>
+                        <InputText class="form-control" @bind-Value="_endTime" type="time" />
+                    </div>
+                    <div class="full-span">
+                        <label class="form-label">Şikayet</label>
+                        <InputTextArea class="form-control" @bind-Value="_form.Complaint" rows="3" />
+                    </div>
+                    <div class="full-span">
+                        <label class="form-label">Not</label>
+                        <InputTextArea class="form-control" @bind-Value="_form.Note" rows="3" />
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="action-bar sticky-mobile-action justify-content-end mt-4">
+            <button type="button" class="app-btn-primary" @onclick="SaveAsync" disabled="@_isSaving">
+                @(_isSaving ? "Kaydediliyor..." : "Randevu Oluştur")
+            </button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private readonly CreateAppointmentRequest _form = new();
+    private readonly CreateVehicleRequest _newVehicle = new() { Year = DateTime.Today.Year };
+    private readonly List<CustomerLookupResponse> _customerResults = [];
+    private readonly List<VehicleLookupResponse> _customerVehicles = [];
+    private CustomerLookupResponse? _selectedCustomer;
+    private VehicleLookupResponse? _selectedVehicle;
+    private string? _customerSearchText;
+    private string? _customerSearchMessage;
+    private string? _vehicleLookupPlate;
+    private string? _vehicleLookupMessage;
+    private DateTime _startDate = DateTime.Today;
+    private DateTime _endDate = DateTime.Today;
+    private string _startTime = "10:30";
+    private string _endTime = "11:30";
+    private bool _isSaving;
+    private bool _customerSearchLoading;
+    private bool _vehicleLookupLoading;
+    private bool _vehicleCreateLoading;
+    private bool _customerVehiclesLoading;
+    private string? _error;
+    private string? _errorEndpoint;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task SearchCustomersAsync()
+    {
+        try
+        {
+            _customerSearchLoading = true;
+            _customerSearchMessage = null;
+            _customerResults.Clear();
+
+            if (string.IsNullOrWhiteSpace(_customerSearchText))
+            {
+                _customerSearchMessage = "Arama yapmak için müşteri adı veya telefon girin.";
+                return;
+            }
+
+            var result = await CustomersService.SearchCustomersAsync(_customerSearchText);
+            if (result is not null)
+            {
+                _customerResults.AddRange(result);
+            }
+
+            if (_customerResults.Count == 0)
+            {
+                _customerSearchMessage = "Eşleşen müşteri bulunamadı. Bilgileri manuel girebilirsiniz.";
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _customerSearchMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _customerSearchMessage = ex.Message;
+        }
+        finally
+        {
+            _customerSearchLoading = false;
+        }
+    }
+
+    private async Task SelectCustomerAsync(CustomerLookupResponse customer)
+    {
+        var previousCustomerId = _selectedCustomer?.Id;
+        _selectedCustomer = customer;
+        _form.CustomerId = customer.Id;
+        _form.CustomerName = customer.FullName;
+        _form.Phone = customer.Phone ?? _form.Phone;
+        _customerSearchText = customer.FullName;
+        _customerResults.Clear();
+        _customerSearchMessage = "Müşteri bilgileri forma aktarıldı.";
+
+        if (_selectedVehicle?.CustomerId.HasValue == true && _selectedVehicle.CustomerId != customer.Id && previousCustomerId != customer.Id)
+        {
+            ClearVehicleSelection();
+            _vehicleLookupMessage = "Seçili araç farklı bir müşteriye bağlı olduğu için temizlendi.";
+        }
+
+        await LoadCustomerVehiclesAsync(customer.Id);
+    }
+
+    private async Task ClearCustomerSelectionAsync()
+    {
+        _selectedCustomer = null;
+        _form.CustomerId = null;
+        _customerSearchText = null;
+        _customerResults.Clear();
+        _customerSearchMessage = "Müşteri seçimi temizlendi. Bilgileri manuel girebilirsiniz.";
+        _customerVehicles.Clear();
+        _customerVehiclesMessage = null;
+        ClearVehicleSelection();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string? _customerVehiclesMessage;
+
+    private async Task LoadCustomerVehiclesAsync(Guid customerId)
+    {
+        try
+        {
+            _customerVehiclesLoading = true;
+            _customerVehiclesMessage = null;
+            _customerVehicles.Clear();
+
+            var vehicles = await VehiclesService.GetByCustomerIdAsync(customerId);
+            if (vehicles is not null)
+            {
+                _customerVehicles.AddRange(vehicles);
+            }
+
+            _customerVehiclesMessage = _customerVehicles.Count == 0
+                ? "Bu müşteriye bağlı araç bulunamadı. Aşağıdan plaka ile arayabilir veya yeni araç ekleyebilirsiniz."
+                : null;
+        }
+        catch (ApiException ex)
+        {
+            _customerVehiclesMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _customerVehiclesMessage = ex.Message;
+        }
+        finally
+        {
+            _customerVehiclesLoading = false;
+        }
+    }
+
+    private void SelectVehicle(VehicleLookupResponse vehicle)
+    {
+        _selectedVehicle = vehicle;
+        _form.VehicleId = vehicle.Id;
+        _form.Plate = vehicle.PlateOriginal;
+        _vehicleLookupPlate = vehicle.PlateOriginal;
+        _newVehicle.Brand = vehicle.Brand;
+        _newVehicle.Model = vehicle.Model;
+        _newVehicle.Year = vehicle.Year;
+        _vehicleLookupMessage = "Araç seçildi.";
+    }
+
+    private async Task LookupVehicleAsync()
+    {
+        try
+        {
+            _vehicleLookupLoading = true;
+            _vehicleLookupMessage = null;
+
+            var lookupValue = string.IsNullOrWhiteSpace(_vehicleLookupPlate) ? _form.Plate : _vehicleLookupPlate;
+            if (string.IsNullOrWhiteSpace(lookupValue))
+            {
+                _vehicleLookupMessage = "Araç aramak için plaka girin.";
+                return;
+            }
+
+            var result = await VehiclesService.GetByPlateAsync(lookupValue);
+            _form.Plate = lookupValue;
+
+            if (result is null)
+            {
+                _selectedVehicle = null;
+                _form.VehicleId = null;
+                _vehicleLookupMessage = _selectedCustomer is null
+                    ? "Bu plakaya ait araç bulunamadı. Dilerseniz plakayı manuel bırakıp randevu oluşturabilirsiniz."
+                    : "Bu plakayla araç bulunamadı. Seçili müşteriye araç olarak ekleyebilirsiniz.";
+                return;
+            }
+
+            if (_selectedCustomer is not null && result.CustomerId.HasValue && result.CustomerId != _selectedCustomer.Id)
+            {
+                _vehicleLookupMessage = "Bulunan araç farklı bir müşteriye bağlı. Müşteri bilgisi araç kaydına göre güncellendi.";
+            }
+
+            if (result.CustomerId.HasValue)
+            {
+                var customer = await CustomersService.GetByIdAsync(result.CustomerId.Value);
+                if (customer is not null)
+                {
+                    _selectedCustomer = customer;
+                    _form.CustomerId = customer.Id;
+                    _form.CustomerName = customer.FullName;
+                    _form.Phone = customer.Phone ?? _form.Phone;
+                    _customerSearchText = customer.FullName;
+                    await LoadCustomerVehiclesAsync(customer.Id);
+                }
+            }
+
+            SelectVehicle(result);
+            _vehicleLookupMessage ??= "Araç bilgisi forma aktarıldı.";
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _vehicleLookupMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _vehicleLookupMessage = ex.Message;
+        }
+        finally
+        {
+            _vehicleLookupLoading = false;
+        }
+    }
+
+    private async Task CreateVehicleForSelectedCustomerAsync()
+    {
+        try
+        {
+            _vehicleCreateLoading = true;
+            _vehicleLookupMessage = null;
+
+            if (_selectedCustomer is null)
+            {
+                _vehicleLookupMessage = "Önce bir müşteri seçin.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Plate))
+            {
+                _vehicleLookupMessage = "Araç eklemek için plaka girin.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_newVehicle.Brand) || string.IsNullOrWhiteSpace(_newVehicle.Model))
+            {
+                _vehicleLookupMessage = "Yeni araç eklemek için marka ve model girin.";
+                return;
+            }
+
+            _newVehicle.Plate = _form.Plate;
+            _newVehicle.CurrentCustomerId = _selectedCustomer.Id;
+
+            await VehiclesService.CreateAsync(_newVehicle);
+            var vehicle = await VehiclesService.GetByPlateAsync(_newVehicle.Plate);
+            if (vehicle is not null)
+            {
+                await LoadCustomerVehiclesAsync(_selectedCustomer.Id);
+                SelectVehicle(vehicle);
+                _vehicleLookupMessage = "Araç seçili müşteriye eklendi ve seçildi.";
+            }
+        }
+        catch (ApiException ex)
+        {
+            _vehicleLookupMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _vehicleLookupMessage = ex.Message;
+        }
+        finally
+        {
+            _vehicleCreateLoading = false;
+        }
+    }
+
+    private void ClearVehicleSelection()
+    {
+        _selectedVehicle = null;
+        _form.VehicleId = null;
+        _vehicleLookupPlate = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _isSaving = true;
+            _error = null;
+            _errorEndpoint = null;
+
+            if (string.IsNullOrWhiteSpace(_form.CustomerName))
+            {
+                _error = "Müşteri adı zorunludur.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Phone))
+            {
+                _error = "Telefon bilgisi zorunludur.";
+                return;
+            }
+
+            _form.CustomerId = _selectedCustomer?.Id;
+            _form.VehicleId = _selectedVehicle?.Id;
+
+            if (_selectedCustomer is not null)
+            {
+                _form.CustomerName = _selectedCustomer.FullName;
+                _form.Phone = _selectedCustomer.Phone ?? _form.Phone;
+            }
+
+            if (_selectedVehicle is not null)
+            {
+                _form.Plate = _selectedVehicle.PlateOriginal;
+            }
+
+            _form.StartAt = BuildLocalDateTimeOffset(_startDate, _startTime);
+            _form.EndAt = BuildLocalDateTimeOffset(_endDate, _endTime);
+
+            if (_form.EndAt <= _form.StartAt)
+            {
+                _error = "Bitiş zamanı başlangıçtan sonra olmalıdır.";
+                return;
+            }
+
+            var result = await AppointmentsService.CreateAsync(_form);
+            NavigationManager.NavigateTo(result is not null ? $"/appointments/{result.Id}" : "/appointments");
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private static DateTimeOffset BuildLocalDateTimeOffset(DateTime date, string time)
+    {
+        var parsedTime = TimeOnly.TryParse(time, out var value) ? value : new TimeOnly(10, 30);
+        var local = new DateTime(date.Year, date.Month, date.Day, parsedTime.Hour, parsedTime.Minute, 0, DateTimeKind.Local);
+        return new DateTimeOffset(local);
+    }
+
+    private static string GetTypeText(AppointmentType type) => type switch
+    {
+        AppointmentType.Maintenance => "Bakım",
+        AppointmentType.Repair => "Onarım",
+        AppointmentType.Cleaning => "Temizlik",
+        AppointmentType.Washing => "Yıkama",
+        AppointmentType.Inspection => "Kontrol",
+        AppointmentType.TireChange => "Lastik Değişimi",
+        _ => "Diğer"
+    };
+}

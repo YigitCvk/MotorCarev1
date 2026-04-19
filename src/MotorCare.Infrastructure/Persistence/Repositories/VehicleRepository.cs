@@ -28,6 +28,16 @@ public class VehicleRepository : IVehicleRepository
             .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.Plate.NormalizedValue == normalizedPlate, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Vehicle>> GetByCustomerIdAsync(string tenantId, Guid customerId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Vehicles
+            .Where(v => v.TenantId == tenantId && v.CurrentCustomerId == customerId)
+            .OrderBy(v => v.Brand)
+            .ThenBy(v => v.Model)
+            .ThenBy(v => v.Plate.NormalizedValue)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Vehicle vehicle, CancellationToken cancellationToken = default)
     {
         await _context.Vehicles.AddAsync(vehicle, cancellationToken);

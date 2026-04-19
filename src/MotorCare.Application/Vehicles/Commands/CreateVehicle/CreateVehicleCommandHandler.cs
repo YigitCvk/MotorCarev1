@@ -1,25 +1,29 @@
-using MotorCare.Application.Common.Exceptions;
-using MotorCare.Application.Common.Interfaces;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MotorCare.Domain.Vehicles;
+using MotorCare.Application.Common.Exceptions;
+using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.ValueObjects;
+using MotorCare.Domain.Vehicles;
 
 namespace MotorCare.Application.Vehicles.Commands.CreateVehicle;
 
 public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand, Guid>
 {
     private readonly IVehicleRepository _repository;
+    private readonly ICustomerRepository _customerRepository;
     private readonly ITenantProvider _tenantProvider;
     private readonly ILogger<CreateVehicleCommandHandler> _logger;
 
     public CreateVehicleCommandHandler(
-        IVehicleRepository repository, 
+        IVehicleRepository repository,
+        ICustomerRepository customerRepository,
         ITenantProvider tenantProvider,
         ILogger<CreateVehicleCommandHandler> logger)
     {
         _repository = repository;
+        _customerRepository = customerRepository;
         _tenantProvider = tenantProvider;
         _logger = logger;
     }
@@ -45,16 +49,29 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
         vehicle.SetChassisAndColor(request.ChassisNumber, request.Color);
 
         if (request.CurrentKm.HasValue)
+        {
             vehicle.UpdateMileage(request.CurrentKm.Value);
+        }
 
         if (request.CurrentCustomerId.HasValue)
+        {
+            var customer = await _customerRepository.GetByIdAsync(request.CurrentCustomerId.Value, tenantId, cancellationToken);
+            if (customer is null)
+            {
+                throw new AppValidationException(
+                [
+                    new ValidationFailure(nameof(request.CurrentCustomerId), "Seçilen müşteri bu işletme altında bulunamadı.")
+                ]);
+            }
+
             vehicle.AssignCustomer(request.CurrentCustomerId.Value);
+        }
 
         await _repository.AddAsync(vehicle, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
-        
+
         _logger.LogInformation("Successfully registered vehicle {VehicleId} with plate {NormalizedPlate} in tenant {TenantId}.", vehicle.Id, vehicle.Plate.NormalizedValue, tenantId);
-        
+
         return vehicle.Id;
     }
 }

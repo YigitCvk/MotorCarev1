@@ -1,0 +1,302 @@
+@page "/appointments/{Id:guid}"
+@rendermode InteractiveServer
+@using System.Net
+@inject AppointmentsService AppointmentsService
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Randevu Detayı</PageTitle>
+
+<div class="page-shell">
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Randevu yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Randevu detayı alınamadı</strong>
+            <p>@_error</p>
+            @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
+            {
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+            }
+        </section>
+    }
+    else if (_appointment is null)
+    {
+        <section class="empty-state">
+            <strong>Randevu bulunamadı</strong>
+            <p>Listeye dönüp tekrar deneyin.</p>
+        </section>
+    }
+    else
+    {
+        <section class="page-header">
+            <div>
+                <h1 class="page-title">@_appointment.CustomerName</h1>
+                <p class="page-description">
+                    <span class="status-badge @GetStatusClass(_appointment.Status)">@GetStatusText(_appointment.Status)</span>
+                    <span class="ms-2 type-badge">@GetTypeText(_appointment.Type)</span>
+                </p>
+            </div>
+            <div class="action-bar">
+                <a href="/appointments" class="app-btn-secondary">Listeye Dön</a>
+                @if (_appointment.ServiceOrderId.HasValue)
+                {
+                    <a href="@($"/service-orders/{_appointment.ServiceOrderId}")" class="app-btn-primary">İş Emrini Aç</a>
+                }
+            </div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <section class="empty-state">
+                <strong>İşlem başarılı</strong>
+                <p>@_successMessage</p>
+            </section>
+        }
+
+        <div class="content-grid">
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Randevu Özeti</div>
+                        <div class="section-subtitle">Müşteri, araç ve planlama bilgileri</div>
+                    </div>
+                </div>
+
+                <dl class="detail-list">
+                    <dt>Müşteri</dt>
+                    <dd>@_appointment.CustomerName</dd>
+                    <dt>Telefon</dt>
+                    <dd>@_appointment.Phone</dd>
+                    <dt>Plaka</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(_appointment.Plate) ? "-" : _appointment.Plate)</dd>
+                    <dt>Başlangıç</dt>
+                    <dd>@_appointment.StartAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+                    <dt>Bitiş</dt>
+                    <dd>@_appointment.EndAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+                    <dt>Şikayet</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(_appointment.Complaint) ? "-" : _appointment.Complaint)</dd>
+                    <dt>Not</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(_appointment.Note) ? "-" : _appointment.Note)</dd>
+                </dl>
+            </section>
+
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Aksiyonlar</div>
+                        <div class="section-subtitle">Durum güncelle veya iş emrine dönüştür</div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <label class="form-label">Yeni durum</label>
+                        <div class="action-bar">
+                            <InputSelect class="form-select" @bind-Value="_statusRequest.Status">
+                                @foreach (var status in Enum.GetValues<AppointmentStatus>())
+                                {
+                                    <option value="@status">@GetStatusText(status)</option>
+                                }
+                            </InputSelect>
+                            <button type="button" class="app-btn-secondary" @onclick="UpdateStatusAsync" disabled="@_working">Durumu Güncelle</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label">Araç KM</label>
+                        <InputNumber class="form-control" @bind-Value="_vehicleKm" />
+                    </div>
+
+                    <button type="button" class="app-btn-primary" @onclick="ConvertAsync" disabled="@_working || _appointment.ServiceOrderId.HasValue">
+                        İş Emrine Dönüştür
+                    </button>
+                </div>
+            </section>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AppointmentDto? _appointment;
+    private bool _loading = true;
+    private bool _working;
+    private string? _error;
+    private string? _errorEndpoint;
+    private string? _successMessage;
+    private readonly UpdateAppointmentStatusRequest _statusRequest = new();
+    private int _vehicleKm;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+            _errorEndpoint = null;
+            _successMessage = null;
+            _appointment = await AppointmentsService.GetByIdAsync(Id);
+            if (_appointment is not null)
+            {
+                _statusRequest.Status = _appointment.Status;
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task UpdateStatusAsync()
+    {
+        await ExecuteAsync(async () =>
+        {
+            await AppointmentsService.UpdateStatusAsync(Id, _statusRequest.Status);
+            _successMessage = "Randevu durumu güncellendi.";
+        });
+    }
+
+    private async Task ConvertAsync()
+    {
+        try
+        {
+            _working = true;
+            _error = null;
+            _errorEndpoint = null;
+            _successMessage = null;
+
+            var result = await AppointmentsService.ConvertToServiceOrderAsync(Id, _vehicleKm);
+            if (result is not null && result.ServiceOrderId != Guid.Empty)
+            {
+                NavigationManager.NavigateTo($"/service-orders/{result.ServiceOrderId}");
+                return;
+            }
+
+            _successMessage = "Randevu iş emrine dönüştürüldü.";
+            NavigationManager.NavigateTo("/service-orders");
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _working = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ExecuteAsync(Func<Task> action)
+    {
+        try
+        {
+            _working = true;
+            _error = null;
+            _errorEndpoint = null;
+            _successMessage = null;
+            await action();
+            await LoadAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _working = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string GetTypeText(AppointmentType type) => type switch
+    {
+        AppointmentType.Maintenance => "Bakım",
+        AppointmentType.Repair => "Onarım",
+        AppointmentType.Cleaning => "Temizlik",
+        AppointmentType.Washing => "Yıkama",
+        AppointmentType.Inspection => "Kontrol",
+        AppointmentType.TireChange => "Lastik Değişimi",
+        _ => "Diğer"
+    };
+
+    private static string GetStatusText(AppointmentStatus status) => status switch
+    {
+        AppointmentStatus.Scheduled => "Planlandı",
+        AppointmentStatus.Confirmed => "Onaylandı",
+        AppointmentStatus.CheckedIn => "Servise Geldi",
+        AppointmentStatus.ConvertedToOrder => "İş Emrine Dönüştü",
+        AppointmentStatus.Cancelled => "İptal",
+        AppointmentStatus.NoShow => "Gelmedi",
+        AppointmentStatus.Completed => "Tamamlandı",
+        _ => status.ToString()
+    };
+
+    private static string GetStatusClass(AppointmentStatus status) => status switch
+    {
+        AppointmentStatus.Scheduled => "appt-scheduled",
+        AppointmentStatus.Confirmed => "appt-confirmed",
+        AppointmentStatus.CheckedIn => "appt-checkedin",
+        AppointmentStatus.ConvertedToOrder => "appt-converted",
+        AppointmentStatus.Cancelled => "appt-cancelled",
+        AppointmentStatus.NoShow => "appt-noshow",
+        AppointmentStatus.Completed => "appt-completed",
+        _ => string.Empty
+    };
+}

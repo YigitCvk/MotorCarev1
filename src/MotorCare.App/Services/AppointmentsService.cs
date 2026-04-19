@@ -32,8 +32,8 @@ public sealed class AppointmentsService(ApiClient apiClient)
     public Task<AppointmentDto?> CreateAsync(CreateAppointmentRequest request, CancellationToken ct = default)
         => apiClient.PostAsync<CreateAppointmentRequest, AppointmentDto>("/api/appointments", request, authorized: true, ct);
 
-    public Task UpdateAsync(Guid id, UpdateAppointmentRequest request, CancellationToken ct = default)
-        => apiClient.PutAsync($"/api/appointments/{id}", request, authorized: true, ct);
+    public Task<AppointmentDto?> UpdateAsync(Guid id, UpdateAppointmentRequest request, CancellationToken ct = default)
+        => apiClient.PutAsync<UpdateAppointmentRequest, AppointmentDto>($"/api/appointments/{id}", request, authorized: true, ct);
 
     public Task UpdateStatusAsync(Guid id, AppointmentStatus status, CancellationToken ct = default)
         => apiClient.PutAsync($"/api/appointments/{id}/status", new UpdateAppointmentStatusRequest { Status = status }, authorized: true, ct);

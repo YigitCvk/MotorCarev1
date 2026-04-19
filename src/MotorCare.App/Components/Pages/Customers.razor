@@ -12,22 +12,22 @@
             <h1 class="page-title">Müşteriler</h1>
             <p class="page-description">Müşterileri arayın, profillerini görüntüleyin veya yeni müşteri ekleyin.</p>
         </div>
-        <div class="quick-actions">
-            <a class="btn btn-primary" href="/customers/create">+ Yeni Müşteri</a>
+        <div class="quick-actions action-bar">
+            <a class="app-btn-primary" href="/customers/create">+ Yeni Müşteri</a>
         </div>
     </section>
 
-    <section class="surface-card">
+    <section class="filter-card">
         <div class="filter-grid">
             <div>
                 <label class="form-label">Arama</label>
                 <InputText class="form-control" @bind-Value="_searchText" placeholder="Ad, telefon veya e-posta ile ara" @onkeyup="OnSearchKeyUpAsync" />
             </div>
             <div class="filter-actions">
-                <button type="button" class="btn btn-dark" @onclick="SearchAsync" disabled="@_isLoading">
+                <button type="button" class="app-btn-primary" @onclick="SearchAsync" disabled="@_isLoading">
                     @(_isLoading ? "Aranıyor..." : "Ara")
                 </button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">
+                <button type="button" class="app-btn-secondary" @onclick="ResetAsync" disabled="@_isLoading">
                     Temizle
                 </button>
             </div>
@@ -36,16 +36,22 @@
 
     @if (_isLoading)
     {
-        <div class="surface-card mt-3 text-muted">Müşteriler yükleniyor...</div>
+        <section class="loading-state">
+            <strong>Müşteriler yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
     }
 
     @if (!string.IsNullOrWhiteSpace(_error))
     {
-        <div class="alert alert-danger mt-3">@_error</div>
+        <section class="error-state">
+            <strong>Müşteriler alınamadı</strong>
+            <p>@_error</p>
+        </section>
     }
 
-    <section class="surface-card mt-3 d-none d-lg-block">
-        <div class="table-responsive">
+    <section class="surface-card mt-3 desktop-only">
+        <div class="responsive-table">
             <table class="table modern-table align-middle mb-0">
                 <thead>
                     <tr>
@@ -65,14 +71,14 @@
                     }
                     else
                     {
-                        @foreach (var c in _customers)
+                        @foreach (var customer in _customers)
                         {
-                            <tr class="clickable-row" @onclick="() => OpenDetail(c.Id)">
-                                <td class="fw-semibold">@c.FullName</td>
-                                <td>@(c.Phone ?? "-")</td>
-                                <td>@(c.Email ?? "-")</td>
-                                <td>@(c.Whatsapp ?? "-")</td>
-                                <td class="text-truncate" style="max-width:180px">@(string.IsNullOrWhiteSpace(c.Notes) ? "-" : c.Notes)</td>
+                            <tr class="clickable-row" @onclick="() => OpenDetail(customer.Id)">
+                                <td class="fw-semibold">@customer.FullName</td>
+                                <td>@(customer.Phone ?? "-")</td>
+                                <td>@(customer.Email ?? "-")</td>
+                                <td>@(customer.Whatsapp ?? "-")</td>
+                                <td class="text-truncate" style="max-width:180px">@(string.IsNullOrWhiteSpace(customer.Notes) ? "-" : customer.Notes)</td>
                             </tr>
                         }
                     }
@@ -81,24 +87,32 @@
         </div>
     </section>
 
-    <section class="card-list d-lg-none">
+    <section class="card-list mobile-only">
         @if (_customers.Count == 0 && !_isLoading)
         {
-            <div class="surface-card text-muted">Kayıt bulunamadı.</div>
+            <section class="empty-state">
+                <strong>Kayıt bulunamadı</strong>
+                <p>Filtreleri temizleyin veya yeni müşteri ekleyin.</p>
+            </section>
         }
-        @foreach (var c in _customers)
+
+        @foreach (var customer in _customers)
         {
-            <div class="surface-card clickable-card" @onclick="() => OpenDetail(c.Id)">
-                <div class="fw-semibold">@c.FullName</div>
-                @if (!string.IsNullOrWhiteSpace(c.Phone))
+            <article class="app-card clickable-card" @onclick="() => OpenDetail(customer.Id)">
+                <div class="fw-semibold">@customer.FullName</div>
+                @if (!string.IsNullOrWhiteSpace(customer.Phone))
                 {
-                    <div class="text-muted small">@c.Phone</div>
+                    <div class="text-muted small">@customer.Phone</div>
                 }
-                @if (!string.IsNullOrWhiteSpace(c.Email))
+                @if (!string.IsNullOrWhiteSpace(customer.Email))
                 {
-                    <div class="text-muted small">@c.Email</div>
+                    <div class="text-muted small">@customer.Email</div>
                 }
-            </div>
+                @if (!string.IsNullOrWhiteSpace(customer.Notes))
+                {
+                    <div class="text-muted small mt-2">@customer.Notes</div>
+                }
+            </article>
         }
     </section>
 </div>
@@ -111,7 +125,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -124,7 +141,10 @@
 
     private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter") await SearchAsync();
+        if (e.Key == "Enter")
+        {
+            await SearchAsync();
+        }
     }
 
     private async Task SearchAsync()
@@ -134,8 +154,12 @@
             _isLoading = true;
             _error = null;
             _customers.Clear();
+
             var result = await CustomersService.SearchCustomersAsync(_searchText);
-            if (result is not null) _customers.AddRange(result);
+            if (result is not null)
+            {
+                _customers.AddRange(result);
+            }
         }
         catch (Exception ex)
         {

@@ -4,9 +4,7 @@
 @inject NavigationManager NavigationManager
 
 <div class="app-shell">
-    <aside class="app-sidebar">
-        <NavMenu />
-    </aside>
+    <AppSidebar />
 
     <div class="app-main">
         <header class="app-topbar">
@@ -24,9 +22,7 @@
                         <div class="app-user-chip-value">@_currentUser.FullName · @_currentUser.Role</div>
                     </div>
 
-                    <button type="button" class="app-btn-secondary" @onclick="LogoutAsync">
-                        Çıkış Yap
-                    </button>
+                    <button type="button" class="app-btn-secondary" @onclick="LogoutAsync">Çıkış Yap</button>
                 }
                 else
                 {
@@ -45,26 +41,26 @@
 </div>
 
 <nav class="mobile-bottom-nav">
-    <a href="/dashboard">
+    <NavLink href="/dashboard" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">DB</span>
         <span>Dashboard</span>
-    </a>
-    <a href="/appointments">
+    </NavLink>
+    <NavLink href="/appointments" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">RD</span>
         <span>Randevu</span>
-    </a>
-    <a href="/service-orders">
+    </NavLink>
+    <NavLink href="/service-orders" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">IS</span>
         <span>İşler</span>
-    </a>
-    <a href="/vehicles">
+    </NavLink>
+    <NavLink href="/vehicles" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">AR</span>
         <span>Araçlar</span>
-    </a>
-    <a href="/settings">
+    </NavLink>
+    <NavLink href="/settings" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">MN</span>
         <span>Menü</span>
-    </a>
+    </NavLink>
 </nav>
 
 <div id="blazor-error-ui">

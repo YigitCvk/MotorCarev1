@@ -3,6 +3,7 @@ using MediatR;
 using MotorCare.Api.Authorization;
 using MotorCare.Application.Vehicles.Commands.CreateVehicle;
 using MotorCare.Application.Vehicles.Queries.GetVehicleByPlate;
+using MotorCare.Application.Vehicles;
 
 namespace MotorCare.Api.Modules;
 
