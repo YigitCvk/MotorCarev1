@@ -2,6 +2,7 @@ using MotorCare.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Domain.Common;
 using MotorCare.Domain.Customers;
+using MotorCare.Domain.Appointments;
 using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.ServiceOrders;
 using MotorCare.Domain.Tenants;
@@ -37,6 +38,7 @@ public class ApplicationDbContext : DbContext
     private string CurrentTenantId => _tenantProvider?.GetTenantId() ?? string.Empty;
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
@@ -53,6 +55,7 @@ public class ApplicationDbContext : DbContext
         
         // Apply Global Query Filters for Tenancy automatically for all ITenantEntity implementing types
         modelBuilder.Entity<Customer>().HasQueryFilter(c => c.TenantId == CurrentTenantId);
+        modelBuilder.Entity<Appointment>().HasQueryFilter(a => a.TenantId == CurrentTenantId);
         modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == CurrentTenantId);
         modelBuilder.Entity<User>().HasQueryFilter(u => u.TenantId == CurrentTenantId);

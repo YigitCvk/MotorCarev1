@@ -559,6 +559,29 @@ h1:focus { outline: none; }
 .badge-delivered  { background: #ccfbf1; color: #0f766e; }
 .badge-cancelled  { background: #fee2e2; color: #b91c1c; }
 
+/* Appointment status badges */
+.appt-scheduled   { background: #dbeafe; color: #1d4ed8; }
+.appt-confirmed   { background: #e0e7ff; color: #4338ca; }
+.appt-checkedin   { background: #ffedd5; color: #c2410c; }
+.appt-converted   { background: #ccfbf1; color: #0f766e; }
+.appt-cancelled   { background: #fee2e2; color: #b91c1c; }
+.appt-noshow      { background: #fef3c7; color: #92400e; }
+.appt-completed   { background: #dcfce7; color: #15803d; }
+
+/* Appointment type badges */
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--mc-primary-bg);
+    color: var(--mc-primary);
+    white-space: nowrap;
+}
+
 /* ── Selection List ─────────────────────────────────────────────── */
 .selection-list {
     display: flex;
