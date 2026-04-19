@@ -23,4 +23,7 @@ public sealed class CustomersService(ApiClient apiClient)
 
     public Task UpdateAsync(Guid id, UpdateCustomerRequest request, CancellationToken ct = default)
         => apiClient.PutAsync($"/api/customers/{id}", request, authorized: true, ct);
+
+    public Task<CustomerSummary?> GetCustomerSummaryAsync(Guid id, CancellationToken ct = default)
+        => apiClient.GetAsync<CustomerSummary>($"/api/customers/{id}/summary", authorized: true, ct);
 }

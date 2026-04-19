@@ -1960,3 +1960,95 @@ h1:focus { outline: none; }
         border-radius: 1rem;
     }
 }
+
+/* ── Tab Bar ────────────────────────────────────────────────────── */
+.tab-bar {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--mc-border);
+    padding-bottom: 0;
+}
+
+.tab-item {
+    padding: 0.55rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--mc-text-muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    border-radius: var(--mc-r-sm) var(--mc-r-sm) 0 0;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.tab-item:hover {
+    color: var(--mc-text);
+    background: rgba(0,0,0,0.03);
+}
+
+.tab-item.active {
+    color: var(--mc-primary);
+    border-bottom-color: var(--mc-primary);
+}
+
+/* ── List Item Row ──────────────────────────────────────────────── */
+.list-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--mc-border);
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.list-item-row:last-child {
+    border-bottom: none;
+}
+
+.list-item-row:hover {
+    background: rgba(0,0,0,0.02);
+    margin: 0 -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* ── Vehicle Cards Grid ─────────────────────────────────────────── */
+.vehicle-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.vehicle-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.vehicle-card-plate {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: var(--mc-primary);
+    margin-bottom: 0.25rem;
+}
+
+.vehicle-card-model {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.vehicle-card-km {
+    margin-bottom: 0.25rem;
+}
+
+.vehicle-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}

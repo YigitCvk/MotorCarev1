@@ -14,6 +14,7 @@ public interface IAppointmentRepository
         AppointmentType? type,
         string? searchText,
         CancellationToken cancellationToken = default);
+    Task<List<Appointment>> GetByCustomerIdAsync(string tenantId, Guid customerId, CancellationToken cancellationToken = default);
     Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default);
     void Update(Appointment appointment);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

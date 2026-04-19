@@ -1,130 +1,563 @@
 @page "/customers/{Id:guid}"
 @inject AuthService AuthService
 @inject CustomersService CustomersService
-@inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Müşteri Detayı</PageTitle>
+<PageTitle>@(_summary?.FullName ?? "Müşteri Detayı") — MotorCare</PageTitle>
 
-<div class="page-shell">
-    @if (!_isLoading && _customer is null)
-    {
-        <div class="alert alert-danger">Müşteri bulunamadı.</div>
-    }
-    else
-    {
-        <section class="hero-panel compact">
-            <div>
-                <div class="eyebrow">Müşteri Profili</div>
-                <h1 class="page-title">@(_customer?.FullName ?? "Yükleniyor...")</h1>
-                @if (_customer is not null)
-                {
-                    <p class="page-description">
-                        @_customer.Phone
-                        @if (!string.IsNullOrWhiteSpace(_customer.Email))
-                        {
-                            <span> · @_customer.Email</span>
-                        }
-                    </p>
-                }
-            </div>
-            <div class="quick-actions">
-                <a class="btn btn-outline-secondary" href="/customers">Geri</a>
-                <a class="btn btn-secondary" href="@($"/vehicles/create?customerId={Id}")">Araç Ekle</a>
-                <a class="btn btn-primary" href="/service-orders/create">Yeni Servis Kaydı</a>
-            </div>
-        </section>
-
-        @if (!string.IsNullOrWhiteSpace(_error))
+@* Persistent error banner — visible regardless of summary state *@
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="alert alert-danger mb-3">
+        <strong>Hata:</strong> @_error
+        @if (!string.IsNullOrWhiteSpace(_errorDetail))
         {
-            <div class="alert alert-danger">@_error</div>
+            <div class="small mt-1 text-muted">@_errorDetail</div>
         }
+    </div>
+}
 
-        @if (_customer is not null)
+@if (_loading)
+{
+    <div class="loading-state">Müşteri bilgileri yükleniyor...</div>
+}
+else if (_notFound)
+{
+    <div class="empty-state">
+        <div class="empty-icon">◎</div>
+        <div class="empty-title">Müşteri bulunamadı.</div>
+        <a href="/customers" class="btn btn-outline mt-3">← Müşteri Listesi</a>
+    </div>
+}
+else if (_summary is not null)
+{
+    <!-- Page header -->
+    <div class="page-header mb-4">
+        <div>
+            <div class="eyebrow">Müşteri 360°</div>
+            <h1 class="page-title">@_summary.FullName</h1>
+            <p class="page-description">
+                @_summary.Phone
+                @if (!string.IsNullOrWhiteSpace(_summary.Email))
+                {
+                    <span> · @_summary.Email</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(_summary.Whatsapp))
+                {
+                    <span> · WhatsApp: @_summary.Whatsapp</span>
+                }
+            </p>
+        </div>
+        <div class="quick-actions">
+            <a href="/customers" class="btn btn-outline">← Geri</a>
+            <a href="@($"/appointments/create?customerName={Uri.EscapeDataString(_summary.FullName)}&phone={Uri.EscapeDataString(_summary.Phone ?? "")}")" class="btn btn-outline">Yeni Randevu</a>
+            <a href="/service-orders/create" class="btn btn-outline">Yeni Servis Kaydı</a>
+            <a href="@($"/vehicles/create?customerId={Id}")" class="btn btn-outline">Araç Ekle</a>
+        </div>
+    </div>
+
+    <!-- Summary metric cards -->
+    <div class="metric-grid mb-4">
+        <div class="metric-card mc-primary">
+            <div class="metric-label">Araç Sayısı</div>
+            <div class="metric-value">@_summary.Vehicles.Count</div>
+        </div>
+        <div class="metric-card mc-warning">
+            <div class="metric-label">Açık Servis</div>
+            <div class="metric-value">@_summary.ServiceOrders.Count(o => o.Status is "Open" or "InProgress" or "WaitingForParts")</div>
+        </div>
+        <div class="metric-card mc-teal">
+            <div class="metric-label">Toplam İşlem</div>
+            <div class="metric-value">@_summary.ServiceOrders.Count</div>
+        </div>
+        <div class="metric-card mc-success">
+            <div class="metric-label">Toplam Harcama</div>
+            <div class="metric-value">@_summary.ServiceOrders.Sum(o => o.GrandTotal).ToString("N0") ₺</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar mb-3">
+        @foreach (var tab in _tabs)
         {
-            <div class="content-grid">
-                <section class="surface-card">
-                    <div class="section-title">Müşteri Bilgileri</div>
-                    <table class="table table-borderless table-sm mb-0 mt-2">
-                        <tbody>
-                            <tr>
-                                <th class="text-muted fw-normal" style="width:120px">Ad Soyad</th>
-                                <td class="fw-semibold">@_customer.FullName</td>
-                            </tr>
-                            @if (!string.IsNullOrWhiteSpace(_customer.Phone))
-                            {
-                                <tr>
-                                    <th class="text-muted fw-normal">Telefon</th>
-                                    <td>@_customer.Phone</td>
-                                </tr>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(_customer.Email))
-                            {
-                                <tr>
-                                    <th class="text-muted fw-normal">E-posta</th>
-                                    <td>@_customer.Email</td>
-                                </tr>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(_customer.Whatsapp))
-                            {
-                                <tr>
-                                    <th class="text-muted fw-normal">WhatsApp</th>
-                                    <td>@_customer.Whatsapp</td>
-                                </tr>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(_customer.Notes))
-                            {
-                                <tr>
-                                    <th class="text-muted fw-normal">Not</th>
-                                    <td>@_customer.Notes</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </section>
+            <button type="button"
+                    class="tab-item @(_activeTab == tab ? "active" : "")"
+                    @onclick="@(() => _activeTab = tab)">
+                @tab
+            </button>
+        }
+    </div>
 
-                <section class="surface-card">
-                    <div class="section-header">
-                        <div class="section-title">Servis Geçmişi</div>
-                    </div>
-                    @if (_ordersLoading)
+    <!-- Tab: Genel Bakış -->
+    @if (_activeTab == "Genel Bakış")
+    {
+        <div class="content-grid">
+            <div class="surface-card">
+                <div class="section-title mb-3">Müşteri Bilgileri</div>
+                <table class="table table-borderless table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <th class="text-muted fw-normal" style="width:120px">Ad Soyad</th>
+                            <td class="fw-semibold">@_summary.FullName</td>
+                        </tr>
+                        @if (!string.IsNullOrWhiteSpace(_summary.Phone))
+                        {
+                            <tr><th class="text-muted fw-normal">Telefon</th><td>@_summary.Phone</td></tr>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_summary.Email))
+                        {
+                            <tr><th class="text-muted fw-normal">E-posta</th><td>@_summary.Email</td></tr>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_summary.Whatsapp))
+                        {
+                            <tr><th class="text-muted fw-normal">WhatsApp</th><td>@_summary.Whatsapp</td></tr>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_summary.Notes))
+                        {
+                            <tr><th class="text-muted fw-normal">Notlar</th><td>@_summary.Notes</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="surface-card">
+                <div class="section-title mb-3">Son Randevular</div>
+                @if (_summary.Appointments.Count == 0)
+                {
+                    <p class="text-muted small">Randevu geçmişi bulunamadı.</p>
+                }
+                else
+                {
+                    @foreach (var a in _summary.Appointments.Take(5))
                     {
-                        <div class="text-muted small mt-2">Yükleniyor...</div>
-                    }
-                    else if (_orders.Count == 0)
-                    {
-                        <div class="text-muted small mt-2">Bu müşteriye ait servis kaydı bulunmuyor.</div>
-                    }
-                    else
-                    {
-                        <div class="selection-list mt-2">
-                            @foreach (var o in _orders)
-                            {
-                                <button type="button" class="selection-item" @onclick="@(() => OpenOrder(o.Id))">
-                                    <strong>@o.OrderNo</strong>
-                                    <span>
-                                        <span class="@GetStatusBadgeClass(o.Status) me-1">@GetStatusLabel(o.Status)</span>
-                                        @o.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")
-                                        · @o.GrandTotal.ToString("N2") ₺
-                                    </span>
-                                </button>
-                            }
+                        <div class="list-item-row" @onclick="@(() => NavigationManager.NavigateTo($"/appointments/{a.Id}"))">
+                            <div>
+                                <span class="type-badge me-1">@a.TypeText</span>
+                                <span class="small text-muted">@a.StartAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</span>
+                            </div>
+                            <span class="status-badge @GetApptStatusClass(a.Status)">@a.StatusText</span>
                         </div>
                     }
-                </section>
+                }
+            </div>
+
+            <div class="surface-card">
+                <div class="section-title mb-3">Son Servisler</div>
+                @if (_summary.ServiceOrders.Count == 0)
+                {
+                    <p class="text-muted small">Servis geçmişi bulunamadı.</p>
+                }
+                else
+                {
+                    @foreach (var o in _summary.ServiceOrders.Take(5))
+                    {
+                        <div class="list-item-row" @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{o.Id}"))">
+                            <div>
+                                <span class="fw-semibold">@o.OrderNo</span>
+                                @if (!string.IsNullOrWhiteSpace(o.VehiclePlate))
+                                {
+                                    <span class="text-muted small ms-1">· @o.VehiclePlate</span>
+                                }
+                                <div class="text-muted small">@o.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="status-badge @GetOrderStatusClass(o.Status) d-block mb-1">@o.StatusText</span>
+                                <span class="small fw-semibold">@o.GrandTotal.ToString("N0") ₺</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Tab: Araçlar -->
+    @if (_activeTab == "Araçlar")
+    {
+        @if (_summary.Vehicles.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">◈</div>
+                <div class="empty-title">Bu müşteriye ait araç bulunamadı.</div>
+                <a href="@($"/vehicles/create?customerId={Id}")" class="btn btn-primary mt-3">Araç Ekle</a>
+            </div>
+        }
+        else
+        {
+            <div class="vehicle-cards-grid">
+                @foreach (var v in _summary.Vehicles)
+                {
+                    <div class="surface-card vehicle-card">
+                        <div class="vehicle-card-plate">@v.Plate</div>
+                        <div class="vehicle-card-model">@v.Brand @v.Model <span class="text-muted">(@v.Year)</span></div>
+                        @if (v.CurrentKm.HasValue)
+                        {
+                            <div class="vehicle-card-km text-muted small">@v.CurrentKm.Value.ToString("N0") km</div>
+                        }
+                        @if (v.LastServiceDate.HasValue)
+                        {
+                            <div class="text-muted small">Son servis: @v.LastServiceDate.Value.LocalDateTime.ToString("dd.MM.yyyy")</div>
+                        }
+                        <div class="vehicle-card-actions mt-3">
+                            <a href="@($"/appointments/create?customerName={Uri.EscapeDataString(_summary.FullName)}&plate={Uri.EscapeDataString(v.Plate)}")" class="btn btn-sm btn-outline">Randevu</a>
+                            <a href="/service-orders/create" class="btn btn-sm btn-primary">Servis Kaydı</a>
+                        </div>
+                    </div>
+                }
             </div>
         }
     }
-</div>
+
+    <!-- Tab: Randevular -->
+    @if (_activeTab == "Randevular")
+    {
+        @if (_summary.Appointments.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">◷</div>
+                <div class="empty-title">Randevu geçmişi bulunamadı.</div>
+            </div>
+        }
+        else
+        {
+            <div class="surface-card">
+                <table class="data-table d-none d-lg-table">
+                    <thead>
+                        <tr>
+                            <th>Tür</th>
+                            <th>Başlangıç</th>
+                            <th>Bitiş</th>
+                            <th>Plaka</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in _summary.Appointments)
+                        {
+                            <tr class="clickable-row" @onclick="@(() => NavigationManager.NavigateTo($"/appointments/{a.Id}"))">
+                                <td><span class="type-badge">@a.TypeText</span></td>
+                                <td>@a.StartAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@a.EndAt.LocalDateTime.ToString("HH:mm")</td>
+                                <td>@(a.Plate ?? "—")</td>
+                                <td><span class="status-badge @GetApptStatusClass(a.Status)">@a.StatusText</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="d-lg-none">
+                    @foreach (var a in _summary.Appointments)
+                    {
+                        <div class="list-item-row" @onclick="@(() => NavigationManager.NavigateTo($"/appointments/{a.Id}"))">
+                            <div>
+                                <div><span class="type-badge">@a.TypeText</span></div>
+                                <div class="text-muted small">@a.StartAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
+                                @if (!string.IsNullOrWhiteSpace(a.Plate))
+                                {
+                                    <div class="text-muted small">@a.Plate</div>
+                                }
+                            </div>
+                            <span class="status-badge @GetApptStatusClass(a.Status)">@a.StatusText</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Tab: Servis Geçmişi -->
+    @if (_activeTab == "Servis Geçmişi")
+    {
+        @if (_summary.ServiceOrders.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">⚙</div>
+                <div class="empty-title">Servis geçmişi bulunamadı.</div>
+            </div>
+        }
+        else
+        {
+            @foreach (var o in _summary.ServiceOrders)
+            {
+                <div class="surface-card mb-3">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                        <div>
+                            <span class="fw-semibold me-2">@o.OrderNo</span>
+                            @if (!string.IsNullOrWhiteSpace(o.VehiclePlate))
+                            {
+                                <span class="type-badge me-2">@o.VehiclePlate</span>
+                            }
+                            <span class="status-badge @GetOrderStatusClass(o.Status)">@o.StatusText</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline" @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{o.Id}"))">
+                            Detay →
+                        </button>
+                    </div>
+                    <div class="text-muted small mb-2">
+                        Açılış: @o.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")
+                        @if (o.ClosedAt.HasValue)
+                        {
+                            <span> · Kapanış: @o.ClosedAt.Value.LocalDateTime.ToString("dd.MM.yyyy")</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(o.Complaint))
+                    {
+                        <div class="text-muted small mb-2">@o.Complaint</div>
+                    }
+                    <div class="d-flex gap-4 small">
+                        <span>Toplam: <strong>@o.GrandTotal.ToString("N0") ₺</strong></span>
+                        <span>Ödenen: <strong>@o.PaidTotal.ToString("N0") ₺</strong></span>
+                        @if (o.GrandTotal - o.PaidTotal > 0)
+                        {
+                            <span class="text-warning">Kalan: <strong>@((o.GrandTotal - o.PaidTotal).ToString("N0")) ₺</strong></span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    }
+
+    <!-- Tab: Değişen Parçalar -->
+    @if (_activeTab == "Değişen Parçalar")
+    {
+        @if (!AllParts.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">⚙</div>
+                <div class="empty-title">Değişen parça geçmişi bulunamadı.</div>
+            </div>
+        }
+        else
+        {
+            <div class="surface-card">
+                <table class="data-table d-none d-lg-table">
+                    <thead>
+                        <tr>
+                            <th>Parça Adı</th>
+                            <th>Parça No</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam</th>
+                            <th>Tarih</th>
+                            <th>Servis No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var x in AllParts)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@x.Part.PartName</td>
+                                <td class="text-muted small">@(x.Part.PartNumber ?? "—")</td>
+                                <td>@x.Part.Quantity</td>
+                                <td>@x.Part.UnitPrice.ToString("N2") ₺</td>
+                                <td class="fw-semibold">@x.Part.TotalPrice.ToString("N2") ₺</td>
+                                <td class="text-muted small">@x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-link p-0"
+                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                        @x.Order.OrderNo
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="d-lg-none">
+                    @foreach (var x in AllParts)
+                    {
+                        <div class="list-item-row">
+                            <div>
+                                <div class="fw-semibold">@x.Part.PartName</div>
+                                @if (!string.IsNullOrWhiteSpace(x.Part.PartNumber))
+                                {
+                                    <div class="text-muted small">@x.Part.PartNumber</div>
+                                }
+                                <div class="text-muted small">@x.Order.OrderNo · @x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</div>
+                            </div>
+                            <div class="text-end">
+                                <div>@x.Part.Quantity × @x.Part.UnitPrice.ToString("N0") ₺</div>
+                                <div class="fw-semibold">@x.Part.TotalPrice.ToString("N0") ₺</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Tab: İşçilik -->
+    @if (_activeTab == "İşçilik")
+    {
+        @if (!AllOps.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">⚙</div>
+                <div class="empty-title">İşçilik geçmişi bulunamadı.</div>
+            </div>
+        }
+        else
+        {
+            <div class="surface-card">
+                <table class="data-table d-none d-lg-table">
+                    <thead>
+                        <tr>
+                            <th>Açıklama</th>
+                            <th>Fiyat</th>
+                            <th>Tarih</th>
+                            <th>Servis No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var x in AllOps)
+                        {
+                            <tr>
+                                <td>@x.Op.Description</td>
+                                <td class="fw-semibold">@x.Op.Price.ToString("N2") ₺</td>
+                                <td class="text-muted small">@x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-link p-0"
+                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                        @x.Order.OrderNo
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="d-lg-none">
+                    @foreach (var x in AllOps)
+                    {
+                        <div class="list-item-row">
+                            <div>
+                                <div>@x.Op.Description</div>
+                                <div class="text-muted small">@x.Order.OrderNo · @x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</div>
+                            </div>
+                            <div class="fw-semibold">@x.Op.Price.ToString("N0") ₺</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Tab: Ödemeler -->
+    @if (_activeTab == "Ödemeler")
+    {
+        @if (!AllPayments.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">◇</div>
+                <div class="empty-title">Ödeme geçmişi bulunamadı.</div>
+            </div>
+        }
+        else
+        {
+            <div class="surface-card">
+                <table class="data-table d-none d-lg-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Yöntem</th>
+                            <th>Tutar</th>
+                            <th>Servis No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var x in AllPayments)
+                        {
+                            <tr>
+                                <td>@x.Payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy")</td>
+                                <td>@x.Payment.MethodText</td>
+                                <td class="fw-semibold">@x.Payment.Amount.ToString("N2") ₺</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-link p-0"
+                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                        @x.Order.OrderNo
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="d-lg-none">
+                    @foreach (var x in AllPayments)
+                    {
+                        <div class="list-item-row">
+                            <div>
+                                <div>@x.Payment.MethodText</div>
+                                <div class="text-muted small">@x.Order.OrderNo · @x.Payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy")</div>
+                            </div>
+                            <div class="fw-semibold">@x.Payment.Amount.ToString("N0") ₺</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Tab: Notlar -->
+    @if (_activeTab == "Notlar")
+    {
+        <div class="surface-card">
+            <div class="section-title mb-3">Müşteri Notları</div>
+            @if (string.IsNullOrWhiteSpace(_summary.Notes))
+            {
+                <p class="text-muted">Bu müşteri için not bulunmuyor.</p>
+            }
+            else
+            {
+                <p>@_summary.Notes</p>
+            }
+        </div>
+    }
+}
+else if (!_loading && string.IsNullOrWhiteSpace(_error))
+{
+    @* Fallback: loaded, no error, no summary — should not normally happen *@
+    <div class="empty-state">
+        <div class="empty-icon">◎</div>
+        <div class="empty-title">Müşteri bilgisi alınamadı.</div>
+        <a href="/customers" class="btn btn-outline mt-3">← Müşteri Listesi</a>
+    </div>
+}
 
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private CustomerLookupResponse? _customer;
-    private readonly List<ServiceOrderListItem> _orders = [];
-    private bool _isLoading = true;
-    private bool _ordersLoading = true;
+    private CustomerSummary? _summary;
+    private bool _loading = true;
+    private bool _notFound;
     private string? _error;
+    private string? _errorDetail;
+
+    private readonly string[] _tabs =
+    [
+        "Genel Bakış", "Araçlar", "Randevular",
+        "Servis Geçmişi", "Değişen Parçalar", "İşçilik",
+        "Ödemeler", "Notlar"
+    ];
+    private string _activeTab = "Genel Bakış";
+
+    private IEnumerable<(CustomerServiceOrderHistoryItem Order, CustomerPartHistoryItem Part)> AllParts =>
+        _summary is null
+            ? []
+            : _summary.ServiceOrders
+                .SelectMany(o => o.Parts.Select(p => (Order: o, Part: p)))
+                .OrderByDescending(x => x.Order.OpenedAt);
+
+    private IEnumerable<(CustomerServiceOrderHistoryItem Order, CustomerOperationHistoryItem Op)> AllOps =>
+        _summary is null
+            ? []
+            : _summary.ServiceOrders
+                .SelectMany(o => o.Operations.Select(op => (Order: o, Op: op)))
+                .OrderByDescending(x => x.Order.OpenedAt);
+
+    private IEnumerable<(CustomerServiceOrderHistoryItem Order, CustomerPaymentHistoryItem Payment)> AllPayments =>
+        _summary is null
+            ? []
+            : _summary.ServiceOrders
+                .SelectMany(o => o.Payments.Select(p => (Order: o, Payment: p)))
+                .OrderByDescending(x => x.Payment.PaymentDate);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -136,45 +569,47 @@
             return;
         }
 
-        await LoadCustomerAsync();
-        await LoadOrdersAsync();
+        await LoadAsync();
     }
 
-    private async Task LoadCustomerAsync()
+    private async Task LoadAsync()
     {
+        _loading = true;
+        _error = null;
+        _errorDetail = null;
+        StateHasChanged();
+
         try
         {
-            _customer = await CustomersService.GetByIdAsync(Id);
+            _summary = await CustomersService.GetCustomerSummaryAsync(Id);
+            _notFound = _summary is null;
         }
         catch (Exception ex)
         {
             _error = ex.Message;
+            _errorDetail = $"Endpoint: GET /api/customers/{Id}/summary";
         }
         finally
         {
-            _isLoading = false;
+            _loading = false;
         }
+
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task LoadOrdersAsync()
+    private static string GetApptStatusClass(int status) => status switch
     {
-        try
-        {
-            var result = await ServiceOrdersService.GetServiceOrdersAsync(null, null, null, null, Id);
-            if (result is not null) _orders.AddRange(result);
-        }
-        catch { }
-        finally
-        {
-            _ordersLoading = false;
-        }
-        await InvokeAsync(StateHasChanged);
-    }
+        1 => "appt-scheduled",
+        2 => "appt-confirmed",
+        3 => "appt-checkedin",
+        4 => "appt-converted",
+        5 => "appt-cancelled",
+        6 => "appt-noshow",
+        7 => "appt-completed",
+        _ => ""
+    };
 
-    private void OpenOrder(Guid id) => NavigationManager.NavigateTo($"/service-orders/{id}");
-
-    private static string GetStatusBadgeClass(string status) => status switch
+    private static string GetOrderStatusClass(string status) => status switch
     {
         "Open"            => "status-badge badge-open",
         "InProgress"      => "status-badge badge-progress",
@@ -183,16 +618,5 @@
         "Delivered"       => "status-badge badge-delivered",
         "Cancelled"       => "status-badge badge-cancelled",
         _                 => "status-badge"
-    };
-
-    private static string GetStatusLabel(string status) => status switch
-    {
-        "Open"            => "Açık",
-        "InProgress"      => "İşlemde",
-        "WaitingForParts" => "Parça Bekliyor",
-        "Completed"       => "Tamamlandı",
-        "Delivered"       => "Teslim Edildi",
-        "Cancelled"       => "İptal",
-        _                 => status
     };
 }

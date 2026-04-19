@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/yigit/Desktop/MotorCare/**)",
-      "Bash(dotnet build *)"
+      "Bash(dotnet build *)",
+      "Bash(xargs ls *)"
     ]
   }
 }

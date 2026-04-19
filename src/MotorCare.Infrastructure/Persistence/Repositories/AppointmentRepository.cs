@@ -66,6 +66,14 @@ public sealed class AppointmentRepository : IAppointmentRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Appointment>> GetByCustomerIdAsync(string tenantId, Guid customerId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Appointments
+            .Where(x => x.TenantId == tenantId && x.CustomerId == customerId)
+            .OrderByDescending(x => x.StartAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Appointment appointment, CancellationToken cancellationToken = default)
     {
         await _context.Appointments.AddAsync(appointment, cancellationToken);
