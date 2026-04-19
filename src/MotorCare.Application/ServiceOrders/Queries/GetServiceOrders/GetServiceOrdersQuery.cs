@@ -1,4 +1,5 @@
 using MediatR;
+using MotorCare.Application.Common.Models;
 using MotorCare.Domain.Enums;
 using MotorCare.Application.ServiceOrders.Queries.GetServiceOrderById;
 
@@ -9,4 +10,6 @@ public sealed record GetServiceOrdersQuery(
     ServiceOrderStatus? Status,
     string? SearchText,
     DateTimeOffset? OpenedFrom,
-    DateTimeOffset? OpenedTo) : IRequest<IReadOnlyList<ServiceOrderDto>>;
+    DateTimeOffset? OpenedTo,
+    int PageNumber = 1,
+    int PageSize = 20) : IRequest<PagedResult<ServiceOrderDto>>;

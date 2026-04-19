@@ -139,6 +139,52 @@ public class ServiceOrderRepository : IServiceOrderRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(List<ServiceOrder> Items, int TotalCount)> GetFilteredPagedAsync(
+        string tenantId,
+        Guid? customerId,
+        ServiceOrderStatus? status,
+        string? searchText,
+        DateTimeOffset? openedFrom,
+        DateTimeOffset? openedTo,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.ServiceOrders
+            .AsNoTracking()
+            .Where(o => o.TenantId == tenantId);
+
+        if (customerId.HasValue)
+            query = query.Where(o => o.CustomerId == customerId.Value);
+
+        if (status.HasValue)
+            query = query.Where(o => o.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var term = searchText.ToLower();
+            query = query.Where(o =>
+                o.OrderNo.ToLower().Contains(term) ||
+                (o.Complaint != null && o.Complaint.ToLower().Contains(term)));
+        }
+
+        if (openedFrom.HasValue)
+            query = query.Where(o => o.OpenedAt >= openedFrom.Value);
+
+        if (openedTo.HasValue)
+            query = query.Where(o => o.OpenedAt <= openedTo.Value);
+
+        query = query.OrderByDescending(o => o.OpenedAt);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task<(List<ServiceOrder> Items, int TotalCount)> GetByVehicleIdAsync(
         Guid vehicleId, string tenantId, int page, int pageSize, CancellationToken cancellationToken = default)
     {

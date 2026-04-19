@@ -54,6 +54,46 @@ public class CustomerRepository : ICustomerRepository
         return await query.OrderBy(c => c.FullName).ToListAsync(cancellationToken);
     }
 
+    public async Task<(List<Customer> Items, int TotalCount)> SearchPagedAsync(
+        string tenantId,
+        string? searchTerm,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Customers
+            .AsNoTracking()
+            .Where(c => c.TenantId == tenantId);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            var termPattern = $"%{term}%";
+            var normalizedPhoneTerm = new string(term.Where(char.IsDigit).ToArray());
+            PhoneNumber? phoneTerm = null;
+
+            if (normalizedPhoneTerm.Length >= 10)
+            {
+                phoneTerm = PhoneNumber.Create(normalizedPhoneTerm);
+            }
+
+            query = query.Where(c =>
+                EF.Functions.ILike(c.FullName, termPattern) ||
+                (c.Email != null && EF.Functions.ILike(c.Email, termPattern)) ||
+                (phoneTerm != null && c.Phone == phoneTerm));
+        }
+
+        query = query.OrderBy(c => c.FullName);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         await _context.Customers.AddAsync(customer, cancellationToken);

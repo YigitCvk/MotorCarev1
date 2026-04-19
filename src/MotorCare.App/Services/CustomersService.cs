@@ -1,18 +1,24 @@
+using MotorCare.App.Models.Common;
 using MotorCare.App.Models.Customers;
 
 namespace MotorCare.App.Services;
 
 public sealed class CustomersService(ApiClient apiClient)
 {
-    public Task<IReadOnlyList<CustomerLookupResponse>?> SearchCustomersAsync(
+    public Task<PagedResult<CustomerLookupResponse>?> SearchCustomersAsync(
         string? searchText,
+        int pageNumber = 1,
+        int pageSize = 20,
         CancellationToken ct = default)
     {
-        var uri = string.IsNullOrWhiteSpace(searchText)
-            ? "/api/customers"
-            : $"/api/customers?q={Uri.EscapeDataString(searchText)}";
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(searchText))
+            parts.Add($"q={Uri.EscapeDataString(searchText)}");
+        parts.Add($"pageNumber={pageNumber}");
+        parts.Add($"pageSize={pageSize}");
 
-        return apiClient.GetAsync<IReadOnlyList<CustomerLookupResponse>>(uri, authorized: true, ct);
+        var uri = $"/api/customers?{string.Join("&", parts)}";
+        return apiClient.GetAsync<PagedResult<CustomerLookupResponse>>(uri, authorized: true, ct);
     }
 
     public Task<CustomerLookupResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)

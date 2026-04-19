@@ -1,6 +1,7 @@
 using Carter;
 using MediatR;
 using MotorCare.Api.Authorization;
+using MotorCare.Application.Common.Models;
 using MotorCare.Application.Customers.Commands.CreateCustomer;
 using MotorCare.Application.Customers.Commands.UpdateCustomer;
 using MotorCare.Application.Customers.Queries.GetCustomerById;
@@ -64,14 +65,14 @@ public sealed class CustomersModule : ICarterModule
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
-        group.MapGet("/", async (string? q, IMediator mediator, CancellationToken ct) =>
+        group.MapGet("/", async (string? q, int? pageNumber, int? pageSize, IMediator mediator, CancellationToken ct) =>
         {
-            var result = await mediator.Send(new SearchCustomersQuery(q), ct);
+            var result = await mediator.Send(new SearchCustomersQuery(q, pageNumber ?? 1, pageSize ?? 20), ct);
             return Results.Ok(result);
         })
         .WithName("SearchCustomers")
         .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
-        .Produces<IReadOnlyList<CustomerDto>>()
+        .Produces<PagedResult<CustomerDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 

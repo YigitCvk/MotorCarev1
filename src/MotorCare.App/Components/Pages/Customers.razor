@@ -30,6 +30,11 @@
                 <button type="button" class="app-btn-secondary" @onclick="ResetAsync" disabled="@_isLoading">
                     Temizle
                 </button>
+                <select class="form-select" style="width:auto" @bind="_pageSize" @bind:after="SearchAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
             </div>
         </div>
     </section>
@@ -115,6 +120,19 @@
             </article>
         }
     </section>
+
+    @if (_totalPages > 1 || _totalCount > 0)
+    {
+        <div class="pagination-bar">
+            <div class="pagination-info">
+                Toplam kayıt: <strong>@_totalCount</strong> &nbsp;·&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+            </div>
+            <div class="pagination-actions">
+                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _isLoading)">Önceki</button>
+                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _isLoading)">Sonraki</button>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -123,12 +141,16 @@
     private bool _isLoading;
     private string? _error;
 
+    private int _pageNumber = 1;
+    private int _pageSize = 20;
+    private int _totalCount;
+    private int _totalPages;
+    private bool _hasPreviousPage;
+    private bool _hasNextPage;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -141,24 +163,42 @@
 
     private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
-        {
-            await SearchAsync();
-        }
+        if (e.Key == "Enter") await SearchAsync();
     }
 
     private async Task SearchAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_pageNumber > 1) { _pageNumber--; await LoadAsync(); }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_hasNextPage) { _pageNumber++; await LoadAsync(); }
+    }
+
+    private async Task LoadAsync()
     {
         try
         {
             _isLoading = true;
             _error = null;
             _customers.Clear();
+            await InvokeAsync(StateHasChanged);
 
-            var result = await CustomersService.SearchCustomersAsync(_searchText);
+            var result = await CustomersService.SearchCustomersAsync(_searchText, _pageNumber, _pageSize);
             if (result is not null)
             {
-                _customers.AddRange(result);
+                _customers.AddRange(result.Items);
+                _totalCount = result.TotalCount;
+                _totalPages = result.TotalPages;
+                _hasPreviousPage = result.HasPreviousPage;
+                _hasNextPage = result.HasNextPage;
             }
         }
         catch (Exception ex)

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using MotorCare.App.Models.Common;
 using MotorCare.App.Models.Customers;
 using MotorCare.App.Models.ServiceOrders;
 using MotorCare.App.Models.Vehicles;
@@ -15,25 +16,23 @@ public sealed class ServiceOrdersService
         _apiClient = apiClient;
     }
 
-    public Task<IReadOnlyList<ServiceOrderListItem>?> GetServiceOrdersAsync(
+    public Task<PagedResult<ServiceOrderListItem>?> GetServiceOrdersAsync(
         string? searchText,
         string? status,
         DateTime? openedFrom,
         DateTime? openedTo,
         Guid? customerId = null,
+        int pageNumber = 1,
+        int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(searchText))
-        {
             query.Add($"q={Uri.EscapeDataString(searchText)}");
-        }
 
         if (!string.IsNullOrWhiteSpace(status))
-        {
             query.Add($"status={Uri.EscapeDataString(status)}");
-        }
 
         if (openedFrom.HasValue)
         {
@@ -48,26 +47,24 @@ public sealed class ServiceOrdersService
         }
 
         if (customerId.HasValue)
-        {
             query.Add($"customerId={customerId.Value}");
-        }
 
-        var uriBuilder = new StringBuilder("/api/service-orders");
-        if (query.Count > 0)
-        {
-            uriBuilder.Append('?').Append(string.Join('&', query));
-        }
+        query.Add($"pageNumber={pageNumber}");
+        query.Add($"pageSize={pageSize}");
 
-        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderListItem>>(uriBuilder.ToString(), authorized: true, cancellationToken);
+        var uri = "/api/service-orders?" + string.Join('&', query);
+        return _apiClient.GetAsync<PagedResult<ServiceOrderListItem>>(uri, authorized: true, cancellationToken);
     }
 
-    public Task<IReadOnlyList<CustomerLookupResponse>?> SearchCustomersAsync(string? searchText, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CustomerLookupResponse>?> SearchCustomersAsync(string? searchText, CancellationToken cancellationToken = default)
     {
-        var uri = string.IsNullOrWhiteSpace(searchText)
-            ? "/api/customers"
-            : $"/api/customers?q={Uri.EscapeDataString(searchText)}";
+        var parts = new List<string> { "pageNumber=1", "pageSize=100" };
+        if (!string.IsNullOrWhiteSpace(searchText))
+            parts.Insert(0, $"q={Uri.EscapeDataString(searchText)}");
 
-        return _apiClient.GetAsync<IReadOnlyList<CustomerLookupResponse>>(uri, authorized: true, cancellationToken);
+        var uri = "/api/customers?" + string.Join("&", parts);
+        var paged = await _apiClient.GetAsync<PagedResult<CustomerLookupResponse>>(uri, authorized: true, cancellationToken);
+        return paged?.Items;
     }
 
     public Task<VehicleLookupResponse?> GetVehicleByPlateAsync(string plate, CancellationToken cancellationToken = default)

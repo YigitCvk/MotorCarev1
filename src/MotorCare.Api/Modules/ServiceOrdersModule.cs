@@ -1,6 +1,7 @@
 using Carter;
 using MediatR;
 using MotorCare.Api.Authorization;
+using MotorCare.Application.Common.Models;
 using MotorCare.Application.ServiceOrders.Commands.AddOperationToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddPartToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddPaymentToOrder;
@@ -54,15 +55,17 @@ public sealed class ServiceOrdersModule : ICarterModule
             string? q,
             DateTimeOffset? openedFrom,
             DateTimeOffset? openedTo,
+            int? pageNumber,
+            int? pageSize,
             IMediator mediator,
             CancellationToken ct) =>
         {
-            var result = await mediator.Send(new GetServiceOrdersQuery(customerId, status, q, openedFrom, openedTo), ct);
+            var result = await mediator.Send(new GetServiceOrdersQuery(customerId, status, q, openedFrom, openedTo, pageNumber ?? 1, pageSize ?? 20), ct);
             return Results.Ok(result);
         })
         .WithName("GetServiceOrders")
         .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
-        .Produces<IReadOnlyList<ServiceOrderDto>>()
+        .Produces<PagedResult<ServiceOrderDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 

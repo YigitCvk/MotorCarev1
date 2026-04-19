@@ -47,12 +47,17 @@
                 <InputDate class="form-control" @bind-Value="_openedTo" />
             </div>
             <div class="filter-actions">
-                <button type="button" class="app-btn-primary" @onclick="LoadOrdersAsync" disabled="@_isLoading">
+                <button type="button" class="app-btn-primary" @onclick="FilterAsync" disabled="@_isLoading">
                     @(_isLoading ? "Yukleniyor..." : "Filtrele")
                 </button>
                 <button type="button" class="app-btn-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">
                     Temizle
                 </button>
+                <select class="form-select" style="width:auto" @bind="_pageSize" @bind:after="FilterAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
             </div>
         </div>
     </section>
@@ -137,6 +142,19 @@
             }
         }
     </section>
+
+    @if (_totalPages > 1 || _totalCount > 0)
+    {
+        <div class="pagination-bar">
+            <div class="pagination-info">
+                Toplam kayıt: <strong>@_totalCount</strong> &nbsp;·&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+            </div>
+            <div class="pagination-actions">
+                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _isLoading)">Önceki</button>
+                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _isLoading)">Sonraki</button>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -147,6 +165,13 @@
     private DateTime? _openedFrom;
     private DateTime? _openedTo;
     private string? _error;
+
+    private int _pageNumber = 1;
+    private int _pageSize = 20;
+    private int _totalCount;
+    private int _totalPages;
+    private bool _hasPreviousPage;
+    private bool _hasNextPage;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -171,11 +196,16 @@
             _isLoading = true;
             _error = null;
             _orders.Clear();
+            await InvokeAsync(StateHasChanged);
 
-            var response = await ServiceOrdersService.GetServiceOrdersAsync(_searchText, _status, _openedFrom, _openedTo);
+            var response = await ServiceOrdersService.GetServiceOrdersAsync(_searchText, _status, _openedFrom, _openedTo, pageNumber: _pageNumber, pageSize: _pageSize);
             if (response is not null)
             {
-                _orders.AddRange(response);
+                _orders.AddRange(response.Items);
+                _totalCount = response.TotalCount;
+                _totalPages = response.TotalPages;
+                _hasPreviousPage = response.HasPreviousPage;
+                _hasNextPage = response.HasNextPage;
             }
         }
         catch (Exception ex)
@@ -190,13 +220,30 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task FilterAsync()
+    {
+        _pageNumber = 1;
+        await LoadOrdersAsync();
+    }
+
     private async Task ResetFiltersAsync()
     {
         _searchText = null;
         _status = null;
         _openedFrom = null;
         _openedTo = null;
+        _pageNumber = 1;
         await LoadOrdersAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_pageNumber > 1) { _pageNumber--; await LoadOrdersAsync(); }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_hasNextPage) { _pageNumber++; await LoadOrdersAsync(); }
     }
 
     private void OpenDetail(Guid id)

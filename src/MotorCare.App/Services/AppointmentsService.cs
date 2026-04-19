@@ -1,15 +1,18 @@
 using MotorCare.App.Models.Appointments;
+using MotorCare.App.Models.Common;
 
 namespace MotorCare.App.Services;
 
 public sealed class AppointmentsService(ApiClient apiClient)
 {
-    public Task<IReadOnlyList<AppointmentDto>?> GetAppointmentsAsync(
+    public Task<PagedResult<AppointmentDto>?> GetAppointmentsAsync(
         DateTimeOffset? startFrom = null,
         DateTimeOffset? endTo = null,
         AppointmentStatus? status = null,
         AppointmentType? type = null,
         string? q = null,
+        int pageNumber = 1,
+        int pageSize = 20,
         CancellationToken ct = default)
     {
         var parts = new List<string>();
@@ -18,12 +21,11 @@ public sealed class AppointmentsService(ApiClient apiClient)
         if (status.HasValue) parts.Add($"status={(int)status.Value}");
         if (type.HasValue) parts.Add($"type={(int)type.Value}");
         if (!string.IsNullOrWhiteSpace(q)) parts.Add($"q={Uri.EscapeDataString(q)}");
+        parts.Add($"pageNumber={pageNumber}");
+        parts.Add($"pageSize={pageSize}");
 
-        var uri = parts.Count > 0
-            ? $"/api/appointments?{string.Join("&", parts)}"
-            : "/api/appointments";
-
-        return apiClient.GetAsync<IReadOnlyList<AppointmentDto>>(uri, authorized: true, ct);
+        var uri = $"/api/appointments?{string.Join("&", parts)}";
+        return apiClient.GetAsync<PagedResult<AppointmentDto>>(uri, authorized: true, ct);
     }
 
     public Task<AppointmentDto?> GetByIdAsync(Guid id, CancellationToken ct = default)

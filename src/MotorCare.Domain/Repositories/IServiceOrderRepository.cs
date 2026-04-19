@@ -17,6 +17,16 @@ public interface IServiceOrderRepository
         DateTimeOffset? openedFrom,
         DateTimeOffset? openedTo,
         CancellationToken cancellationToken = default);
+    Task<(List<ServiceOrder> Items, int TotalCount)> GetFilteredPagedAsync(
+        string tenantId,
+        Guid? customerId,
+        ServiceOrderStatus? status,
+        string? searchText,
+        DateTimeOffset? openedFrom,
+        DateTimeOffset? openedTo,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
     Task<(List<ServiceOrder> Items, int TotalCount)> GetByVehicleIdAsync(Guid vehicleId, string tenantId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<int> GetTodayOrderCountAsync(string tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(ServiceOrder order, CancellationToken cancellationToken = default);

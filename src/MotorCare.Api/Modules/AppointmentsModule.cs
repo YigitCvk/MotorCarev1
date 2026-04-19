@@ -8,6 +8,7 @@ using MotorCare.Application.Appointments.Commands.UpdateAppointment;
 using MotorCare.Application.Appointments.Commands.UpdateAppointmentStatus;
 using MotorCare.Application.Appointments.Queries.GetAppointmentById;
 using MotorCare.Application.Appointments.Queries.GetAppointments;
+using MotorCare.Application.Common.Models;
 using MotorCare.Domain.Enums;
 
 namespace MotorCare.Api.Modules;
@@ -50,13 +51,15 @@ public sealed class AppointmentsModule : ICarterModule
             AppointmentStatus? status,
             AppointmentType? type,
             string? q,
+            int? pageNumber,
+            int? pageSize,
             IMediator mediator,
             CancellationToken ct) =>
         {
-            var result = await mediator.Send(new GetAppointmentsQuery(startFrom, endTo, status, type, q), ct);
+            var result = await mediator.Send(new GetAppointmentsQuery(startFrom, endTo, status, type, q, pageNumber ?? 1, pageSize ?? 20), ct);
             return Results.Ok(result);
         })
-        .Produces<IReadOnlyList<AppointmentDto>>()
+        .Produces<PagedResult<AppointmentDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
