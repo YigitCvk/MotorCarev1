@@ -1,0 +1,187 @@
+@page "/services/{Id:guid}/edit"
+@using MotorCare.App.Models.Services
+@inject AuthService AuthService
+@inject ServicesService ServicesService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Hizmet Düzenle</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Hizmet Düzenle</h1>
+            <p class="page-description">Hizmet tanımını, süresini ve fiyatını güncelleyin.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/services">Listeye dön</a>
+        </div>
+    </section>
+
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Hizmet yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Hizmet yüklenemedi</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else
+    {
+        <section class="app-card">
+            <div class="form-grid">
+                <div>
+                    <label class="form-label">Hizmet adı *</label>
+                    <InputText class="form-control" @bind-Value="_form.Name" />
+                </div>
+                <div>
+                    <label class="form-label">Kategori *</label>
+                    <InputSelect class="form-select" @bind-Value="_form.Category">
+                        @foreach (var category in Enum.GetValues<ServiceCategory>())
+                        {
+                            <option value="@category">@GetCategoryText(category)</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="form-label">Varsayılan süre (dk) *</label>
+                    <InputNumber class="form-control" @bind-Value="_form.DefaultDurationMinutes" />
+                </div>
+                <div>
+                    <label class="form-label">Varsayılan fiyat *</label>
+                    <InputNumber class="form-control" @bind-Value="_form.DefaultPrice" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Açıklama</label>
+                    <InputTextArea class="form-control" @bind-Value="_form.Description" rows="4" />
+                </div>
+                <div>
+                    <label class="form-label d-block">Durum</label>
+                    <div class="form-check mt-2">
+                        <InputCheckbox class="form-check-input" @bind-Value="_form.IsActive" />
+                        <label class="form-check-label ms-2">Hizmet aktif</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sticky-mobile-action mt-4">
+                <button type="button" class="app-btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                    @(_saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet")
+                </button>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private readonly UpdateServiceCatalogItemRequest _form = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var item = await ServicesService.GetByIdAsync(Id);
+            if (item is null)
+            {
+                _error = "Hizmet bulunamadı.";
+                return;
+            }
+
+            _form.Name = item.Name;
+            _form.Category = item.Category;
+            _form.Description = item.Description;
+            _form.DefaultDurationMinutes = item.DefaultDurationMinutes;
+            _form.DefaultPrice = item.DefaultPrice;
+            _form.IsActive = item.IsActive;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _saving = true;
+            _error = null;
+
+            if (string.IsNullOrWhiteSpace(_form.Name))
+            {
+                _error = "Hizmet adı zorunludur.";
+                return;
+            }
+
+            if (_form.DefaultDurationMinutes <= 0)
+            {
+                _error = "Varsayılan süre sıfırdan büyük olmalıdır.";
+                return;
+            }
+
+            if (_form.DefaultPrice < 0)
+            {
+                _error = "Varsayılan fiyat negatif olamaz.";
+                return;
+            }
+
+            await ServicesService.UpdateAsync(Id, _form);
+            NavigationManager.NavigateTo("/services");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static string GetCategoryText(ServiceCategory category) => category switch
+    {
+        ServiceCategory.PeriodicMaintenance => "Periyodik Bakım",
+        ServiceCategory.FaultDiagnosis => "Arıza Tespit",
+        ServiceCategory.CarWash => "Oto Yıkama",
+        ServiceCategory.Detailing => "Detailing",
+        ServiceCategory.TireService => "Lastik",
+        ServiceCategory.MotorcycleMaintenance => "Motosiklet Bakım",
+        ServiceCategory.BodyPaint => "Kaporta / Boya",
+        _ => "Diğer"
+    };
+}

@@ -1,64 +1,301 @@
 @page "/services"
+@using MotorCare.App.Models.Services
+@inject AuthService AuthService
+@inject ServicesService ServicesService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Hizmetler</PageTitle>
 
 <div class="page-shell">
     <section class="page-header">
         <div>
-            <div class="eyebrow">Operasyon tanimlari</div>
             <h1 class="page-title">Hizmetler</h1>
-            <p class="page-description">
-                BakimSuite icinde kullanilan hizmet kartlari, kategori mantigi ve fiyat setleri icin tenant bazli yonetim alani.
-            </p>
+            <p class="page-description">İşletmenizin sunduğu bakım, yıkama, detailing ve servis hizmetlerini yönetin.</p>
         </div>
         <div class="page-header-actions">
-            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
-            <button type="button" class="app-btn-primary">Yeni Hizmet</button>
+            <a class="app-btn-primary" href="/services/create">+ Yeni Hizmet</a>
         </div>
     </section>
 
-    <section class="admin-grid">
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Periyodik Bakim Paketleri</div>
-                    <div class="section-subtitle">Hazir kontrol listeleri ve standart ucretler</div>
-                </div>
-                <span class="status-badge badge-open">Aktif</span>
+    <section class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label class="form-label">Ara</label>
+                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Hizmet adı veya açıklama ara" />
             </div>
-            <p class="admin-card-copy">Yag, filtre, kontrol ve rutin servis kalemleri icin sabit hizmet kartlari tanimlayin.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yonet</button>
-                <button type="button" class="app-btn-secondary">Duzenle</button>
+            <div>
+                <label class="form-label">Kategori</label>
+                <InputSelect class="form-select" @bind-Value="_categoryFilter" @bind:after="ResetAndLoadAsync">
+                    <option value="">Tümü</option>
+                    @foreach (var category in Enum.GetValues<ServiceCategory>())
+                    {
+                        <option value="@((int)category)">@GetCategoryText(category)</option>
+                    }
+                </InputSelect>
             </div>
-        </article>
-
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Onarim Iscilikleri</div>
-                    <div class="section-subtitle">Tekil operasyon ve saatlik iscilik tanimlari</div>
-                </div>
-                <span class="status-badge badge-open">Aktif</span>
+            <div>
+                <label class="form-label">Durum</label>
+                <InputSelect class="form-select" @bind-Value="_activeFilter" @bind:after="ResetAndLoadAsync">
+                    <option value="">Tümü</option>
+                    <option value="true">Aktif</option>
+                    <option value="false">Pasif</option>
+                </InputSelect>
             </div>
-            <p class="admin-card-copy">Sik kullanilan iscilikleri, tahmini sure ve ucret mantigi ile siralayin.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yonet</button>
+            <div>
+                <label class="form-label">Sayfa boyutu</label>
+                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
             </div>
-        </article>
-
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Paket ve Kampanyalar</div>
-                    <div class="section-subtitle">Tematik hizmet paketleri ve promosyonlar</div>
-                </div>
-                <span class="status-badge badge-progress">Planlandi</span>
-            </div>
-            <p class="admin-card-copy">Yikama + bakim veya sezonluk hizmet kampanyalari icin hazir alan.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
-            </div>
-        </article>
+        </div>
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <section class="loading-state">
+            <strong>@_message</strong>
+        </section>
+    }
+
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Hizmetler yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Hizmetler alınamadı</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else if (_items.Count == 0)
+    {
+        <section class="empty-state">
+            <strong>Hizmet bulunamadı</strong>
+            <p>Yeni bir hizmet ekleyin veya filtreleri değiştirin.</p>
+        </section>
+    }
+    else
+    {
+        <section class="surface-card desktop-only">
+            <div class="responsive-table">
+                <table class="table modern-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Hizmet</th>
+                            <th>Kategori</th>
+                            <th>Süre</th>
+                            <th>Varsayılan Fiyat</th>
+                            <th>Durum</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@item.Name</div>
+                                    <div class="text-muted small">@(string.IsNullOrWhiteSpace(item.Description) ? "-" : item.Description)</div>
+                                </td>
+                                <td>@item.CategoryText</td>
+                                <td>@item.DefaultDurationMinutes dk</td>
+                                <td>@item.DefaultPrice.ToString("N2") ₺</td>
+                                <td><span class="status-badge @(item.IsActive ? "badge-open" : "badge-muted")">@(item.IsActive ? "Aktif" : "Pasif")</span></td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                        <a class="app-btn-secondary" href="@($"/services/{item.Id}/edit")">Düzenle</a>
+                                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleActiveAsync(item)" disabled="_loadingActionId == item.Id">
+                                            @(item.IsActive ? "Pasife Al" : "Aktifleştir")
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mobile-card-list mobile-only">
+            @foreach (var item in _items)
+            {
+                <article class="app-card">
+                    <div class="d-flex justify-content-between gap-3 align-items-start">
+                        <div>
+                            <div class="fw-semibold">@item.Name</div>
+                            <div class="text-muted small">@item.CategoryText · @item.DefaultDurationMinutes dk</div>
+                        </div>
+                        <span class="status-badge @(item.IsActive ? "badge-open" : "badge-muted")">@(item.IsActive ? "Aktif" : "Pasif")</span>
+                    </div>
+                    <p class="text-muted small mt-3 mb-3">@(string.IsNullOrWhiteSpace(item.Description) ? "Açıklama girilmedi." : item.Description)</p>
+                    <div class="d-flex justify-content-between align-items-center small mb-3">
+                        <span>Varsayılan fiyat</span>
+                        <strong>@item.DefaultPrice.ToString("N2") ₺</strong>
+                    </div>
+                    <div class="action-bar">
+                        <a class="app-btn-secondary" href="@($"/services/{item.Id}/edit")">Düzenle</a>
+                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleActiveAsync(item)" disabled="_loadingActionId == item.Id">
+                            @(item.IsActive ? "Pasife Al" : "Aktifleştir")
+                        </button>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    @if (_totalPages > 1 || _totalCount > 0)
+    {
+        <div class="pagination-bar">
+            <div class="pagination-info">
+                Toplam kayıt: <strong>@_totalCount</strong> · Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+            </div>
+            <div class="pagination-actions">
+                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Önceki</button>
+                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
+            </div>
+        </div>
+    }
 </div>
+
+@code {
+    private readonly List<ServiceCatalogItem> _items = [];
+    private bool _loading;
+    private Guid? _loadingActionId;
+    private string? _error;
+    private string? _message;
+    private string? _searchText;
+    private int? _categoryFilter;
+    private bool? _activeFilter;
+    private int _pageNumber = 1;
+    private int _pageSize = 20;
+    private int _totalCount;
+    private int _totalPages;
+    private bool _hasPreviousPage;
+    private bool _hasNextPage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var category = _categoryFilter.HasValue ? (ServiceCategory?)_categoryFilter.Value : null;
+            var result = await ServicesService.GetServicesAsync(_searchText, category, _activeFilter, _pageNumber, _pageSize);
+
+            _items.Clear();
+            if (result is not null)
+            {
+                _items.AddRange(result.Items);
+                _totalCount = result.TotalCount;
+                _totalPages = result.TotalPages;
+                _hasPreviousPage = result.HasPreviousPage;
+                _hasNextPage = result.HasNextPage;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResetAndLoadAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_pageNumber <= 1)
+        {
+            return;
+        }
+
+        _pageNumber--;
+        await LoadAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!_hasNextPage)
+        {
+            return;
+        }
+
+        _pageNumber++;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(ServiceCatalogItem item)
+    {
+        try
+        {
+            _loadingActionId = item.Id;
+            _error = null;
+            _message = null;
+
+            if (item.IsActive)
+            {
+                await ServicesService.DeactivateAsync(item.Id);
+                _message = "Hizmet pasife alındı.";
+            }
+            else
+            {
+                await ServicesService.ActivateAsync(item.Id);
+                _message = "Hizmet aktifleştirildi.";
+            }
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loadingActionId = null;
+        }
+    }
+
+    private static string GetCategoryText(ServiceCategory category) => category switch
+    {
+        ServiceCategory.PeriodicMaintenance => "Periyodik Bakım",
+        ServiceCategory.FaultDiagnosis => "Arıza Tespit",
+        ServiceCategory.CarWash => "Oto Yıkama",
+        ServiceCategory.Detailing => "Detailing",
+        ServiceCategory.TireService => "Lastik",
+        ServiceCategory.MotorcycleMaintenance => "Motosiklet Bakım",
+        ServiceCategory.BodyPaint => "Kaporta / Boya",
+        _ => "Diğer"
+    };
+}

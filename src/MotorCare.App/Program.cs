@@ -34,6 +34,7 @@ builder.Services.AddScoped<ServiceOrdersService>();
 builder.Services.AddScoped<CustomersService>();
 builder.Services.AddScoped<VehiclesService>();
 builder.Services.AddScoped<AppointmentsService>();
+builder.Services.AddScoped<ServicesService>();
 
 var app = builder.Build();
 

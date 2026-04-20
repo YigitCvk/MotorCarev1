@@ -2,10 +2,12 @@
 @using System.Net
 @using MotorCare.App.Models.Appointments
 @using MotorCare.App.Models.Customers
+@using MotorCare.App.Models.Services
 @using MotorCare.App.Models.Vehicles
 @inject AppointmentsService AppointmentsService
 @inject CustomersService CustomersService
 @inject VehiclesService VehiclesService
+@inject ServicesService ServicesService
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -140,7 +142,7 @@
                                     <strong>@vehicle.PlateOriginal</strong>
                                     <div class="small text-muted">@vehicle.Brand @vehicle.Model (@vehicle.Year)</div>
                                 </div>
-                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Seçili" : "Seç")</span>
+                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Seçildi" : "Seç")</span>
                             </button>
                         }
                     </div>
@@ -214,7 +216,49 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">4. Randevu Bilgisi</div>
+                        <div class="section-title">4. Hizmet Seçimi</div>
+                        <div class="section-subtitle">Tanımlı hizmetlerden birini seçerek süre ve türü hızlı doldurun.</div>
+                    </div>
+                </div>
+
+                @if (_servicesLoading)
+                {
+                    <section class="loading-state">
+                        <strong>Hizmetler yükleniyor</strong>
+                        <p>Tanımlı hizmetler getiriliyor.</p>
+                    </section>
+                }
+                else if (_activeServices.Count == 0)
+                {
+                    <section class="empty-state">
+                        <strong>Henüz hizmet tanımlanmamış</strong>
+                        <p>Hizmetler ekranından ekleyebilirsiniz.</p>
+                    </section>
+                }
+                else
+                {
+                    <div class="mobile-card-list">
+                        @foreach (var service in _activeServices)
+                        {
+                            <button type="button" class="selection-item @(service.Id == _selectedService?.Id ? "selected" : string.Empty)" @onclick="() => SelectService(service)">
+                                <div>
+                                    <strong>@service.Name</strong>
+                                    <div class="small text-muted">@service.CategoryText</div>
+                                    <div class="small text-muted">Tahmini Süre: @service.DefaultDurationMinutes dk · Varsayılan Fiyat: @service.DefaultPrice.ToString("N2") ₺</div>
+                                </div>
+                                <span class="type-badge">@(service.Id == _selectedService?.Id ? "Seçildi" : "Seç")</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="content-grid mt-4">
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">5. Randevu Bilgisi</div>
                         <div class="section-subtitle">Tür, saat aralığı ve notları tamamlayın.</div>
                     </div>
                 </div>
@@ -231,11 +275,11 @@
                     </div>
                     <div>
                         <label class="form-label">Başlangıç Tarihi *</label>
-                        <InputDate class="form-control" @bind-Value="_startDate" />
+                        <InputDate class="form-control" @bind-Value="_startDate" @bind:after="RecalculateEndTimeFromServiceAsync" />
                     </div>
                     <div>
                         <label class="form-label">Başlangıç Saati *</label>
-                        <InputText class="form-control" @bind-Value="_startTime" type="time" />
+                        <InputText class="form-control" @bind-Value="_startTime" @bind:after="RecalculateEndTimeFromServiceAsync" type="time" />
                     </div>
                     <div>
                         <label class="form-label">Bitiş Tarihi *</label>
@@ -270,12 +314,15 @@
     private readonly CreateVehicleRequest _newVehicle = new() { Year = DateTime.Today.Year };
     private readonly List<CustomerLookupResponse> _customerResults = [];
     private readonly List<VehicleLookupResponse> _customerVehicles = [];
+    private readonly List<ServiceCatalogItem> _activeServices = [];
     private CustomerLookupResponse? _selectedCustomer;
     private VehicleLookupResponse? _selectedVehicle;
+    private ServiceCatalogItem? _selectedService;
     private string? _customerSearchText;
     private string? _customerSearchMessage;
     private string? _vehicleLookupPlate;
     private string? _vehicleLookupMessage;
+    private string? _customerVehiclesMessage;
     private DateTime _startDate = DateTime.Today;
     private DateTime _endDate = DateTime.Today;
     private string _startTime = "10:30";
@@ -285,6 +332,7 @@
     private bool _vehicleLookupLoading;
     private bool _vehicleCreateLoading;
     private bool _customerVehiclesLoading;
+    private bool _servicesLoading;
     private string? _error;
     private string? _errorEndpoint;
 
@@ -298,6 +346,28 @@
         if (!await AuthService.IsAuthenticatedAsync())
         {
             NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadActiveServicesAsync();
+    }
+
+    private async Task LoadActiveServicesAsync()
+    {
+        try
+        {
+            _servicesLoading = true;
+            _activeServices.Clear();
+            var services = await ServicesService.GetActiveServicesAsync();
+            _activeServices.AddRange(services);
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _servicesLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -377,8 +447,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private string? _customerVehiclesMessage;
-
     private async Task LoadCustomerVehiclesAsync(Guid customerId)
     {
         try
@@ -417,9 +485,6 @@
         _form.VehicleId = vehicle.Id;
         _form.Plate = vehicle.PlateOriginal;
         _vehicleLookupPlate = vehicle.PlateOriginal;
-        _newVehicle.Brand = vehicle.Brand;
-        _newVehicle.Model = vehicle.Model;
-        _newVehicle.Year = vehicle.Year;
         _vehicleLookupMessage = "Araç seçildi.";
     }
 
@@ -430,51 +495,42 @@
             _vehicleLookupLoading = true;
             _vehicleLookupMessage = null;
 
-            var lookupValue = string.IsNullOrWhiteSpace(_vehicleLookupPlate) ? _form.Plate : _vehicleLookupPlate;
-            if (string.IsNullOrWhiteSpace(lookupValue))
+            if (string.IsNullOrWhiteSpace(_vehicleLookupPlate))
             {
-                _vehicleLookupMessage = "Araç aramak için plaka girin.";
+                _vehicleLookupMessage = "Plaka girin.";
                 return;
             }
 
-            var result = await VehiclesService.GetByPlateAsync(lookupValue);
-            _form.Plate = lookupValue;
-
-            if (result is null)
+            var vehicle = await VehiclesService.GetByPlateAsync(_vehicleLookupPlate);
+            if (vehicle is null)
             {
                 _selectedVehicle = null;
                 _form.VehicleId = null;
-                _vehicleLookupMessage = _selectedCustomer is null
-                    ? "Bu plakaya ait araç bulunamadı. Dilerseniz plakayı manuel bırakıp randevu oluşturabilirsiniz."
-                    : "Bu plakayla araç bulunamadı. Seçili müşteriye araç olarak ekleyebilirsiniz.";
+                _form.Plate = _vehicleLookupPlate;
+                _vehicleLookupMessage = "Bu plakayla araç bulunamadı. İsterseniz seçili müşteriye yeni araç ekleyebilirsiniz.";
                 return;
             }
 
-            if (_selectedCustomer is not null && result.CustomerId.HasValue && result.CustomerId != _selectedCustomer.Id)
+            if (vehicle.CustomerId.HasValue &&
+                _selectedCustomer is not null &&
+                vehicle.CustomerId.Value != _selectedCustomer.Id)
             {
-                _vehicleLookupMessage = "Bulunan araç farklı bir müşteriye bağlı. Müşteri bilgisi araç kaydına göre güncellendi.";
+                _vehicleLookupMessage = "Bulunan araç başka bir müşteriye bağlı. Müşteri seçimi araç sahibine göre güncellendi.";
             }
 
-            if (result.CustomerId.HasValue)
+            if (vehicle.CustomerId.HasValue)
             {
-                var customer = await CustomersService.GetByIdAsync(result.CustomerId.Value);
+                var customer = await CustomersService.GetByIdAsync(vehicle.CustomerId.Value);
                 if (customer is not null)
                 {
-                    _selectedCustomer = customer;
-                    _form.CustomerId = customer.Id;
-                    _form.CustomerName = customer.FullName;
-                    _form.Phone = customer.Phone ?? _form.Phone;
-                    _customerSearchText = customer.FullName;
-                    await LoadCustomerVehiclesAsync(customer.Id);
+                    await SelectCustomerAsync(customer);
                 }
             }
 
-            SelectVehicle(result);
-            _vehicleLookupMessage ??= "Araç bilgisi forma aktarıldı.";
-        }
-        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            NavigationManager.NavigateTo("/login");
+            SelectVehicle(vehicle);
+            _newVehicle.Brand = vehicle.Brand;
+            _newVehicle.Model = vehicle.Model;
+            _newVehicle.Year = vehicle.Year;
         }
         catch (ApiException ex)
         {
@@ -499,13 +555,13 @@
 
             if (_selectedCustomer is null)
             {
-                _vehicleLookupMessage = "Önce bir müşteri seçin.";
+                _vehicleLookupMessage = "Müşteri seçmelisiniz.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_form.Plate))
             {
-                _vehicleLookupMessage = "Araç eklemek için plaka girin.";
+                _vehicleLookupMessage = "Yeni araç eklemek için plaka girin.";
                 return;
             }
 
@@ -546,6 +602,42 @@
         _selectedVehicle = null;
         _form.VehicleId = null;
         _vehicleLookupPlate = null;
+    }
+
+    private void SelectService(ServiceCatalogItem service)
+    {
+        _selectedService = service;
+        _form.Type = MapAppointmentType(service.Category);
+
+        if (string.IsNullOrWhiteSpace(_form.Complaint))
+        {
+            _form.Complaint = service.Name;
+        }
+
+        if (string.IsNullOrWhiteSpace(_form.Note))
+        {
+            _form.Note = $"Seçili hizmet: {service.Name}";
+        }
+
+        ApplyServiceDuration(service.DefaultDurationMinutes);
+    }
+
+    private Task RecalculateEndTimeFromServiceAsync()
+    {
+        if (_selectedService is not null)
+        {
+            ApplyServiceDuration(_selectedService.DefaultDurationMinutes);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ApplyServiceDuration(int minutes)
+    {
+        var start = BuildLocalDateTimeOffset(_startDate, _startTime);
+        var end = start.AddMinutes(minutes);
+        _endDate = end.LocalDateTime.Date;
+        _endTime = end.LocalDateTime.ToString("HH:mm");
     }
 
     private async Task SaveAsync()
@@ -619,6 +711,18 @@
         var local = new DateTime(date.Year, date.Month, date.Day, parsedTime.Hour, parsedTime.Minute, 0, DateTimeKind.Local);
         return new DateTimeOffset(local);
     }
+
+    private static AppointmentType MapAppointmentType(ServiceCategory category) => category switch
+    {
+        ServiceCategory.PeriodicMaintenance => AppointmentType.Maintenance,
+        ServiceCategory.FaultDiagnosis => AppointmentType.Repair,
+        ServiceCategory.CarWash => AppointmentType.Washing,
+        ServiceCategory.Detailing => AppointmentType.Cleaning,
+        ServiceCategory.TireService => AppointmentType.TireChange,
+        ServiceCategory.MotorcycleMaintenance => AppointmentType.Maintenance,
+        ServiceCategory.BodyPaint => AppointmentType.Repair,
+        _ => AppointmentType.Other
+    };
 
     private static string GetTypeText(AppointmentType type) => type switch
     {

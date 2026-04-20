@@ -43,13 +43,19 @@ public class GetServiceOrdersQueryHandler : IRequestHandler<GetServiceOrdersQuer
             pagination.SafePageSize,
             cancellationToken);
 
-        var items = new List<ServiceOrderDto>(orders.Count);
-        foreach (var order in orders)
-        {
-            var customer = await _customerRepository.GetByIdAsync(order.CustomerId, tenantId, cancellationToken);
-            var vehicle = await _vehicleRepository.GetByIdAsync(order.VehicleId, tenantId, cancellationToken);
+        // Batch-fetch customers and vehicles with two queries instead of 2×N individual lookups.
+        var customerIds = orders.Select(o => o.CustomerId).Distinct();
+        var vehicleIds = orders.Select(o => o.VehicleId).Distinct();
 
-            items.Add(new ServiceOrderDto(
+        var customers = await _customerRepository.GetByIdsAsync(customerIds, tenantId, cancellationToken);
+        var vehicles = await _vehicleRepository.GetByIdsAsync(vehicleIds, tenantId, cancellationToken);
+
+        var items = orders.Select(order =>
+        {
+            customers.TryGetValue(order.CustomerId, out var customer);
+            vehicles.TryGetValue(order.VehicleId, out var vehicle);
+
+            return new ServiceOrderDto(
                 order.Id,
                 order.OrderNo,
                 order.VehicleId,
@@ -72,8 +78,8 @@ public class GetServiceOrdersQueryHandler : IRequestHandler<GetServiceOrdersQuer
                 order.RemainingTotal,
                 [],
                 [],
-                []));
-        }
+                []);
+        }).ToList();
 
         return PagedResult<ServiceOrderDto>.Create(items, pagination.SafePageNumber, pagination.SafePageSize, totalCount);
     }

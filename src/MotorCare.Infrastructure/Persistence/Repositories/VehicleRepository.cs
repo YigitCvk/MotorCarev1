@@ -39,6 +39,15 @@ public class VehicleRepository : IVehicleRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Dictionary<Guid, Vehicle>> GetByIdsAsync(IEnumerable<Guid> ids, string tenantId, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        return await _context.Vehicles
+            .AsNoTracking()
+            .Where(v => v.TenantId == tenantId && idList.Contains(v.Id))
+            .ToDictionaryAsync(v => v.Id, cancellationToken);
+    }
+
     public async Task AddAsync(Vehicle vehicle, CancellationToken cancellationToken = default)
     {
         await _context.Vehicles.AddAsync(vehicle, cancellationToken);

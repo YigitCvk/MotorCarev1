@@ -6,6 +6,7 @@ using MotorCare.Domain.Appointments;
 using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.ServiceOrders;
 using MotorCare.Domain.ServiceOrders.Entities;
+using MotorCare.Domain.Services;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
@@ -43,6 +44,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+    public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<ServiceOrderNumberCounter> ServiceOrderNumberCounters => Set<ServiceOrderNumberCounter>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -59,6 +61,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Appointment>().HasQueryFilter(a => a.TenantId == CurrentTenantId);
         modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => s.TenantId == CurrentTenantId);
         modelBuilder.Entity<User>().HasQueryFilter(u => u.TenantId == CurrentTenantId);
     }
     

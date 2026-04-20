@@ -1,10 +1,13 @@
 @page "/service-orders/create"
 @using System.Net
 @using MotorCare.App.Models.Customers
+@using MotorCare.App.Models.ServiceOrders
+@using MotorCare.App.Models.Services
 @using MotorCare.App.Models.Vehicles
 @inject ServiceOrdersService ServiceOrdersService
 @inject CustomersService CustomersService
 @inject VehiclesService VehiclesService
+@inject ServicesService ServicesService
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -26,16 +29,22 @@
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
             }
         </section>
     }
 
     @if (!string.IsNullOrWhiteSpace(_successMessage))
     {
-        <section class="empty-state">
-                <strong>İşlem başarılı</strong>
+        <section class="loading-state">
+            <strong>İşlem başarılı</strong>
             <p>@_successMessage</p>
+            @if (_createdServiceOrderId.HasValue)
+            {
+                <p class="mt-2">
+                    <a class="app-btn-secondary" href="@($"/service-orders/{_createdServiceOrderId.Value}")">Servis emrini aç</a>
+                </p>
+            }
         </section>
     }
 
@@ -56,7 +65,7 @@
                         <div class="d-flex gap-2 flex-wrap">
                             <InputText class="form-control" @bind-Value="_customerSearchText" @bind:event="oninput" placeholder="Ahmet Yılmaz / 05xx..." />
                             <button type="button" class="app-btn-secondary" @onclick="SearchCustomersAsync" disabled="@_customerSearchLoading">
-                                @(_customerSearchLoading ? "Araniyor..." : "Ara")
+                                @(_customerSearchLoading ? "Aranıyor..." : "Ara")
                             </button>
                         </div>
                     </div>
@@ -76,7 +85,7 @@
                                         <strong>@customer.FullName</strong>
                                         <div class="small text-muted">@customer.Phone</div>
                                     </div>
-                                    <span class="type-badge">Sec</span>
+                                    <span class="type-badge">Seç</span>
                                 </button>
                             }
                         </div>
@@ -136,7 +145,7 @@
                                     <strong>@vehicle.PlateOriginal</strong>
                                     <div class="small text-muted">@vehicle.Brand @vehicle.Model (@vehicle.Year)</div>
                                 </div>
-                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Secili" : "Sec")</span>
+                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Seçildi" : "Seç")</span>
                             </button>
                         }
                     </div>
@@ -159,7 +168,7 @@
                         <div class="d-flex gap-2 flex-wrap">
                             <InputText class="form-control" @bind-Value="_vehicleLookupPlate" placeholder="34 ABC 123" />
                             <button type="button" class="app-btn-secondary" @onclick="LookupVehicleAsync" disabled="@_vehicleLookupLoading">
-                                @(_vehicleLookupLoading ? "Araniyor..." : "Bul")
+                                @(_vehicleLookupLoading ? "Aranıyor..." : "Bul")
                             </button>
                         </div>
                     </div>
@@ -194,7 +203,7 @@
                             <InputText class="form-control" @bind-Value="_newVehicle.Model" placeholder="Corolla" />
                         </div>
                         <div>
-                            <label class="form-label">Yil</label>
+                            <label class="form-label">Yıl</label>
                             <InputNumber class="form-control" @bind-Value="_newVehicle.Year" />
                         </div>
                     </div>
@@ -210,7 +219,49 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">4. Servis Bilgileri</div>
+                        <div class="section-title">4. Hizmet Seçimi</div>
+                        <div class="section-subtitle">İlk operasyonu hızlı başlatmak için bir hizmet seçin.</div>
+                    </div>
+                </div>
+
+                @if (_servicesLoading)
+                {
+                    <section class="loading-state">
+                        <strong>Hizmetler yükleniyor</strong>
+                        <p>Tanımlı hizmetler getiriliyor.</p>
+                    </section>
+                }
+                else if (_activeServices.Count == 0)
+                {
+                    <section class="empty-state">
+                        <strong>Henüz hizmet tanımlanmamış</strong>
+                        <p>Hizmetler ekranından ekleyebilirsiniz.</p>
+                    </section>
+                }
+                else
+                {
+                    <div class="mobile-card-list">
+                        @foreach (var service in _activeServices)
+                        {
+                            <button type="button" class="selection-item @(service.Id == _selectedService?.Id ? "selected" : string.Empty)" @onclick="() => SelectService(service)">
+                                <div>
+                                    <strong>@service.Name</strong>
+                                    <div class="small text-muted">@service.CategoryText</div>
+                                    <div class="small text-muted">Tahmini Süre: @service.DefaultDurationMinutes dk · Varsayılan Fiyat: @service.DefaultPrice.ToString("N2") ₺</div>
+                                </div>
+                                <span class="type-badge">@(service.Id == _selectedService?.Id ? "Seçildi" : "Seç")</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="content-grid mt-4">
+            <section class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">5. Servis Bilgileri</div>
                         <div class="section-subtitle">Kilometre ve şikayet bilgisini tamamlayın.</div>
                     </div>
                 </div>
@@ -219,6 +270,14 @@
                     <div>
                         <label class="form-label">Araç KM *</label>
                         <InputNumber class="form-control" @bind-Value="_vehicleKm" />
+                    </div>
+                    <div>
+                        <label class="form-label">Varsayılan Fiyat</label>
+                        <InputText class="form-control" Value="@GetSelectedServicePriceText()" disabled />
+                    </div>
+                    <div>
+                        <label class="form-label">Tahmini Süre</label>
+                        <InputText class="form-control" Value="@GetSelectedServiceDurationText()" disabled />
                     </div>
                     <div class="full-span">
                         <label class="form-label">Şikayet / Açıklama</label>
@@ -238,13 +297,15 @@
 
 @code {
     [SupplyParameterFromQuery] public Guid? CustomerId { get; set; }
-    [SupplyParameterFromQuery] public string? PlateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "plate")] public string? PlateQuery { get; set; }
 
     private readonly List<CustomerLookupResponse> _customerResults = [];
     private readonly List<VehicleLookupResponse> _customerVehicles = [];
+    private readonly List<ServiceCatalogItem> _activeServices = [];
     private readonly CreateVehicleRequest _newVehicle = new() { Year = DateTime.Today.Year };
     private CustomerLookupResponse? _selectedCustomer;
     private VehicleLookupResponse? _selectedVehicle;
+    private ServiceCatalogItem? _selectedService;
     private string? _customerSearchText;
     private string? _customerSearchMessage;
     private string? _customerVehiclesMessage;
@@ -255,12 +316,14 @@
     private string? _error;
     private string? _errorEndpoint;
     private string? _successMessage;
+    private Guid? _createdServiceOrderId;
     private int _vehicleKm;
     private bool _isSaving;
     private bool _customerSearchLoading;
     private bool _vehicleLookupLoading;
     private bool _vehicleCreateLoading;
     private bool _customerVehiclesLoading;
+    private bool _servicesLoading;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -274,6 +337,8 @@
             NavigationManager.NavigateTo("/login");
             return;
         }
+
+        await LoadActiveServicesAsync();
 
         if (CustomerId.HasValue)
         {
@@ -295,6 +360,25 @@
             _vehicleLookupPlate = PlateQuery;
             _plate = PlateQuery;
             await LookupVehicleAsync();
+        }
+    }
+
+    private async Task LoadActiveServicesAsync()
+    {
+        try
+        {
+            _servicesLoading = true;
+            _activeServices.Clear();
+            var services = await ServicesService.GetActiveServicesAsync();
+            _activeServices.AddRange(services);
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _servicesLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -407,9 +491,6 @@
         _selectedVehicle = vehicle;
         _plate = vehicle.PlateOriginal;
         _vehicleLookupPlate = vehicle.PlateOriginal;
-        _newVehicle.Brand = vehicle.Brand;
-        _newVehicle.Model = vehicle.Model;
-        _newVehicle.Year = vehicle.Year;
         _vehicleLookupMessage = "Araç seçildi.";
     }
 
@@ -420,47 +501,41 @@
             _vehicleLookupLoading = true;
             _vehicleLookupMessage = null;
 
-            var lookupValue = string.IsNullOrWhiteSpace(_vehicleLookupPlate) ? _plate : _vehicleLookupPlate;
-            if (string.IsNullOrWhiteSpace(lookupValue))
+            if (string.IsNullOrWhiteSpace(_vehicleLookupPlate))
             {
-                _vehicleLookupMessage = "Araç aramak için plaka girin.";
+                _vehicleLookupMessage = "Plaka girin.";
                 return;
             }
 
-            var result = await VehiclesService.GetByPlateAsync(lookupValue);
-            _plate = lookupValue;
-
-            if (result is null)
+            var vehicle = await VehiclesService.GetByPlateAsync(_vehicleLookupPlate);
+            if (vehicle is null)
             {
                 _selectedVehicle = null;
-                _vehicleLookupMessage = _selectedCustomer is null
-                    ? "Bu plakaya ait araç bulunamadı. Önce müşteri seçip yeni araç ekleyebilirsiniz."
-                    : "Bu plakaya ait araç bulunamadı. Seçili müşteriye araç olarak ekleyebilirsiniz.";
+                _plate = _vehicleLookupPlate;
+                _vehicleLookupMessage = "Bu plakayla araç bulunamadı. Seçili müşteriye araç olarak ekleyebilirsiniz.";
                 return;
             }
 
-            if (_selectedCustomer is not null && result.CustomerId.HasValue && result.CustomerId != _selectedCustomer.Id)
+            if (vehicle.CustomerId.HasValue &&
+                _selectedCustomer is not null &&
+                vehicle.CustomerId.Value != _selectedCustomer.Id)
             {
-                _vehicleLookupMessage = "Bulunan araç farklı bir müşteriye bağlı. Müşteri bilgisi araç kaydına göre güncellendi.";
+                _vehicleLookupMessage = "Bulunan araç başka bir müşteriye bağlı. Müşteri seçimi araç sahibine göre güncellendi.";
             }
 
-            if (result.CustomerId.HasValue)
+            if (vehicle.CustomerId.HasValue)
             {
-                var customer = await CustomersService.GetByIdAsync(result.CustomerId.Value);
+                var customer = await CustomersService.GetByIdAsync(vehicle.CustomerId.Value);
                 if (customer is not null)
                 {
-                    _selectedCustomer = customer;
-                    _customerSearchText = customer.FullName;
-                    await LoadCustomerVehiclesAsync(customer.Id);
+                    await SelectCustomerAsync(customer);
                 }
             }
 
-            SelectVehicle(result);
-            _vehicleLookupMessage ??= "Araç bilgisi forma aktarıldı.";
-        }
-        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            NavigationManager.NavigateTo("/login");
+            SelectVehicle(vehicle);
+            _newVehicle.Brand = vehicle.Brand;
+            _newVehicle.Model = vehicle.Model;
+            _newVehicle.Year = vehicle.Year;
         }
         catch (ApiException ex)
         {
@@ -533,6 +608,16 @@
         _vehicleLookupPlate = null;
     }
 
+    private void SelectService(ServiceCatalogItem service)
+    {
+        _selectedService = service;
+
+        if (string.IsNullOrWhiteSpace(_complaint))
+        {
+            _complaint = service.Name;
+        }
+    }
+
     private async Task CreateServiceOrderAsync()
     {
         try
@@ -541,6 +626,7 @@
             _error = null;
             _errorEndpoint = null;
             _successMessage = null;
+            _createdServiceOrderId = null;
 
             if (_selectedCustomer is null)
             {
@@ -568,6 +654,31 @@
                 Complaint = _complaint
             });
 
+            _createdServiceOrderId = id;
+
+            if (_selectedService is not null)
+            {
+                try
+                {
+                    await ServiceOrdersService.AddOperationAsync(id, new AddOperationRequest
+                    {
+                        Description = _selectedService.Name,
+                        Price = _selectedService.DefaultPrice
+                    });
+                }
+                catch (ApiException ex)
+                {
+                    _successMessage = $"Servis emri oluşturuldu ancak seçilen hizmet operasyon olarak eklenemedi: {ex.Message}";
+                    _errorEndpoint = ex.Endpoint;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _successMessage = $"Servis emri oluşturuldu ancak seçilen hizmet operasyon olarak eklenemedi: {ex.Message}";
+                    return;
+                }
+            }
+
             _successMessage = "Servis emri oluşturuldu.";
             NavigationManager.NavigateTo($"/service-orders/{id}");
         }
@@ -589,4 +700,10 @@
             _isSaving = false;
         }
     }
+
+    private string GetSelectedServicePriceText()
+        => _selectedService is null ? "-" : $"{_selectedService.DefaultPrice:N2} ₺";
+
+    private string GetSelectedServiceDurationText()
+        => _selectedService is null ? "-" : $"{_selectedService.DefaultDurationMinutes} dk";
 }

@@ -94,6 +94,15 @@ public class CustomerRepository : ICustomerRepository
         return (items, totalCount);
     }
 
+    public async Task<Dictionary<Guid, Customer>> GetByIdsAsync(IEnumerable<Guid> ids, string tenantId, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        return await _context.Customers
+            .AsNoTracking()
+            .Where(c => c.TenantId == tenantId && idList.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, cancellationToken);
+    }
+
     public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         await _context.Customers.AddAsync(customer, cancellationToken);
