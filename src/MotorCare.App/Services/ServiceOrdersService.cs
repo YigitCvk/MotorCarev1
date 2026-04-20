@@ -87,18 +87,28 @@ public sealed class ServiceOrdersService
         return _apiClient.PostAsync($"/api/service-orders/{id}/operations", request, authorized: true, cancellationToken);
     }
 
+    public Task RemoveOperationAsync(Guid id, Guid operationId, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync($"/api/service-orders/{id}/operations/{operationId}", authorized: true, cancellationToken);
+    }
+
     public Task AddPartAsync(Guid id, AddPartRequest request, CancellationToken cancellationToken = default)
     {
         return _apiClient.PostAsync($"/api/service-orders/{id}/parts", request, authorized: true, cancellationToken);
     }
 
+    public Task RemovePartAsync(Guid id, Guid partId, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync($"/api/service-orders/{id}/parts/{partId}", authorized: true, cancellationToken);
+    }
+
     public Task AddPaymentAsync(Guid id, AddPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        var payload = new AddPaymentRequest
+        var payload = new
         {
-            Amount = request.Amount,
-            Method = request.Method,
-            PaymentDate = request.PaymentDate?.ToUniversalTime()
+            amount = request.Amount,
+            method = ToPaymentMethodValue(request.Method),
+            paymentDate = request.PaymentDate?.ToUniversalTime()
         };
 
         return _apiClient.PostAsync($"/api/service-orders/{id}/payments", payload, authorized: true, cancellationToken);
@@ -106,6 +116,30 @@ public sealed class ServiceOrdersService
 
     public Task UpdateStatusAsync(Guid id, UpdateServiceOrderStatusRequest request, CancellationToken cancellationToken = default)
     {
-        return _apiClient.PutAsync($"/api/service-orders/{id}/status", request, authorized: true, cancellationToken);
+        var payload = new
+        {
+            status = ToServiceOrderStatusValue(request.Status)
+        };
+
+        return _apiClient.PutAsync($"/api/service-orders/{id}/status", payload, authorized: true, cancellationToken);
     }
+
+    private static int ToServiceOrderStatusValue(string status) => status switch
+    {
+        "Open" => 1,
+        "InProgress" => 2,
+        "WaitingForParts" => 3,
+        "Completed" => 4,
+        "Cancelled" => 5,
+        "Delivered" => 6,
+        _ => 2
+    };
+
+    private static int ToPaymentMethodValue(string method) => method switch
+    {
+        "Cash" => 1,
+        "CreditCard" => 2,
+        "BankTransfer" => 3,
+        _ => 1
+    };
 }

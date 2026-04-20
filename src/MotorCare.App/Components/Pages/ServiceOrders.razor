@@ -3,20 +3,20 @@
 @inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Servis Islemleri</PageTitle>
+<PageTitle>Servis İşlemleri</PageTitle>
 
 <div class="page-shell">
     <section class="hero-panel compact">
         <div>
             <div class="eyebrow">Ana ekran</div>
-            <h1 class="page-title">Servis Islemleri</h1>
+            <h1 class="page-title">Servis İşlemleri</h1>
             <p class="page-description">
-                Plaka, musteri veya order numarasina gore ara. Durum ve tarih filtreleri ile kayit kabul akisini hizlandir.
+                Plaka, müşteri veya order numarasına göre ara. Durum ve tarih filtreleri ile kayıt kabul akışını hızlandır.
             </p>
         </div>
 
         <div class="quick-actions action-bar">
-            <a class="app-btn-primary" href="/service-orders/create">Yeni Servis Kaydi</a>
+            <a class="app-btn-primary" href="/service-orders/create">Yeni Servis Kaydı</a>
         </div>
     </section>
 
@@ -24,31 +24,31 @@
         <div class="filter-grid">
             <div>
                 <label class="form-label">Arama</label>
-                <InputText class="form-control" @bind-Value="_searchText" placeholder="Plaka, musteri veya servis no ara" />
+                <InputText class="form-control" @bind-Value="_searchText" placeholder="Plaka, müşteri veya servis no ara" />
             </div>
             <div>
                 <label class="form-label">Durum</label>
                 <InputSelect class="form-select" @bind-Value="_status">
-                    <option value="">Tum durumlar</option>
-                    <option value="Open">Acik</option>
-                    <option value="InProgress">Islemde</option>
-                    <option value="WaitingForParts">Parca Bekliyor</option>
-                    <option value="Completed">Tamamlandi</option>
-                    <option value="Cancelled">Iptal</option>
+                    <option value="">Tüm durumlar</option>
+                    <option value="Open">Açık</option>
+                    <option value="InProgress">İşlemde</option>
+                    <option value="WaitingForParts">Parça Bekliyor</option>
+                    <option value="Completed">Tamamlandı</option>
+                    <option value="Cancelled">İptal</option>
                     <option value="Delivered">Teslim Edildi</option>
                 </InputSelect>
             </div>
             <div>
-                <label class="form-label">Baslangic</label>
+                <label class="form-label">Başlangıç</label>
                 <InputDate class="form-control" @bind-Value="_openedFrom" />
             </div>
             <div>
-                <label class="form-label">Bitis</label>
+                <label class="form-label">Bitiş</label>
                 <InputDate class="form-control" @bind-Value="_openedTo" />
             </div>
             <div class="filter-actions">
                 <button type="button" class="app-btn-primary" @onclick="FilterAsync" disabled="@_isLoading">
-                    @(_isLoading ? "Yukleniyor..." : "Filtrele")
+                    @(_isLoading ? "Yükleniyor..." : "Filtrele")
                 </button>
                 <button type="button" class="app-btn-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">
                     Temizle
@@ -64,7 +64,7 @@
 
     @if (_isLoading)
     {
-        <div class="surface-card mt-3 text-muted">Servis kayitlari yukleniyor...</div>
+        <div class="surface-card mt-3 text-muted">Servis kayıtları yükleniyor...</div>
     }
 
     @if (!string.IsNullOrWhiteSpace(_error))
@@ -78,10 +78,11 @@
                 <thead>
                     <tr>
                         <th>Order No</th>
+                        <th>Müşteri / Araç</th>
                         <th>Durum</th>
                         <th>Kabul</th>
                         <th>KM</th>
-                        <th>Sikayet</th>
+                        <th>Şikayet</th>
                         <th>Tutar</th>
                         <th>Kalan</th>
                     </tr>
@@ -90,7 +91,7 @@
                     @if (_orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="text-muted py-4">Kayit bulunamadi.</td>
+                            <td colspan="8" class="text-muted py-4">Kayıt bulunamadı.</td>
                         </tr>
                     }
                     else
@@ -99,6 +100,10 @@
                         {
                             <tr class="clickable-row" @onclick="@(() => OpenDetail(order.Id))">
                                 <td class="fw-semibold">@order.OrderNo</td>
+                                <td>
+                                    <div class="fw-semibold">@(string.IsNullOrWhiteSpace(order.CustomerName) ? "-" : order.CustomerName)</div>
+                                    <div class="text-muted small">@(string.IsNullOrWhiteSpace(order.VehiclePlate) ? order.VehicleDisplay ?? "-" : order.VehiclePlate)</div>
+                                </td>
                                 <td><span class="@GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span></td>
                                 <td>@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@order.VehicleKm</td>
@@ -116,7 +121,7 @@
     <section class="mobile-card-list mobile-only">
         @if (_orders.Count == 0)
         {
-            <div class="surface-card text-muted">Kayit bulunamadi.</div>
+            <div class="surface-card text-muted">Kayıt bulunamadı.</div>
         }
         else
         {
@@ -126,13 +131,20 @@
                     <div class="order-card-top">
                         <div>
                             <div class="order-no">@order.OrderNo</div>
+                            <div class="text-muted small">
+                                @(string.IsNullOrWhiteSpace(order.CustomerName) ? "-" : order.CustomerName)
+                                @if (!string.IsNullOrWhiteSpace(order.VehiclePlate))
+                                {
+                                    <span> · @order.VehiclePlate</span>
+                                }
+                            </div>
                             <div class="text-muted small">@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
                         </div>
                         <span class="@GetStatusBadgeClass(order.Status)">@GetStatusLabel(order.Status)</span>
                     </div>
                     <div class="order-card-body">
                         <div><strong>KM:</strong> @order.VehicleKm</div>
-                        <div><strong>Sikayet:</strong> @(string.IsNullOrWhiteSpace(order.Complaint) ? "-" : order.Complaint)</div>
+                        <div><strong>Şikayet:</strong> @(string.IsNullOrWhiteSpace(order.Complaint) ? "-" : order.Complaint)</div>
                         <div class="order-money-row">
                             <span>Tutar @order.GrandTotal.ToString("N2")</span>
                             <span>Kalan @order.RemainingTotal.ToString("N2")</span>
@@ -266,12 +278,12 @@
     private static string GetStatusLabel(string status) =>
         status switch
         {
-            "Open" => "Acik",
-            "InProgress" => "Islemde",
-            "WaitingForParts" => "Parca Bekliyor",
-            "Completed" => "Tamamlandi",
+            "Open" => "Açık",
+            "InProgress" => "İşlemde",
+            "WaitingForParts" => "Parça Bekliyor",
+            "Completed" => "Tamamlandı",
             "Delivered" => "Teslim Edildi",
-            "Cancelled" => "Iptal",
+            "Cancelled" => "İptal",
             _ => status
         };
 }

@@ -2,14 +2,14 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Dashboard - BakimSuite</PageTitle>
+<PageTitle>Dashboard - BakımSuite</PageTitle>
 
 @if (_isLoading)
 {
     <div class="page-shell">
         <section class="loading-state">
-            <strong>Dashboard yukleniyor</strong>
-            <p>Lutfen bekleyin.</p>
+            <strong>Dashboard yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
         </section>
     </div>
 }
@@ -17,7 +17,7 @@ else if (!string.IsNullOrWhiteSpace(_error))
 {
     <div class="page-shell">
         <section class="error-state">
-            <strong>Dashboard alinamadi</strong>
+            <strong>Dashboard alınamadı</strong>
             <p>@_error</p>
         </section>
     </div>
@@ -26,8 +26,8 @@ else if (_user is null)
 {
     <div class="page-shell">
         <section class="empty-state">
-            <strong>Oturum bulunamadi</strong>
-            <p>Devam etmek icin tekrar giris yapin.</p>
+            <strong>Oturum bulunamadı</strong>
+            <p>Devam etmek için tekrar giriş yapın.</p>
         </section>
     </div>
 }
@@ -36,41 +36,41 @@ else
     <div class="page-shell">
         <section class="hero-panel">
             <div>
-                <div class="eyebrow">Gunluk operasyon</div>
-                <h1 class="page-title">Gunaydin, @_user.FullName</h1>
+                <div class="eyebrow">Günlük operasyon</div>
+                <h1 class="page-title">Günaydın, @_user.FullName</h1>
                 <p class="page-description">
-                    <strong>@_user.TenantIdentifier</strong> - bugunku randevu yogunlugunu, aktif is emirlerini ve ciroyu tek ekrandan takip edin.
+                    <strong>@_user.TenantIdentifier</strong> - bugünkü randevu yoğunluğunu, aktif iş emirlerini ve ciroyu tek ekrandan takip edin.
                 </p>
             </div>
 
             <div class="quick-actions action-bar">
                 <a class="app-btn-primary" href="/appointments/create">+ Yeni Randevu</a>
                 <a class="app-btn-primary" href="/service-orders/create">+ Yeni Servis</a>
-                <a class="app-btn-secondary" href="/customers/create">Musteri Ekle</a>
-                <a class="app-btn-secondary" href="/vehicles/create">Arac Ekle</a>
+                <a class="app-btn-secondary" href="/customers/create">Müşteri Ekle</a>
+                <a class="app-btn-secondary" href="/vehicles/create">Araç Ekle</a>
             </div>
         </section>
 
         <section class="metric-grid">
             <div class="metric-card mc-primary">
-                <div class="metric-label">Bugunku Randevular</div>
+                <div class="metric-label">Bugünkü Randevular</div>
                 <div class="metric-value">@(_summary?.TodayAppointmentsCount ?? 0)</div>
-                <div class="metric-sub">Bugun baslayan planlar</div>
+                <div class="metric-sub">Bugün başlayan planlar</div>
             </div>
             <div class="metric-card mc-warning">
-                <div class="metric-label">Aktif Is Emirleri</div>
+                <div class="metric-label">Aktif İş Emirleri</div>
                 <div class="metric-value">@(_summary?.ActiveServiceOrdersCount ?? 0)</div>
-                <div class="metric-sub">Acik, islemde veya parca bekliyor</div>
+                <div class="metric-sub">Açık, işlemde veya parça bekliyor</div>
             </div>
             <div class="metric-card mc-success">
                 <div class="metric-label">Teslim Bekleyen</div>
                 <div class="metric-value">@(_summary?.DeliveryWaitingCount ?? 0)</div>
-                <div class="metric-sub">Tamamlandi ama teslim edilmedi</div>
+                <div class="metric-sub">Tamamlandı ama teslim edilmedi</div>
             </div>
             <div class="metric-card mc-teal">
-                <div class="metric-label">Gunluk Ciro</div>
+                <div class="metric-label">Günlük Ciro</div>
                 <div class="metric-value">@((_summary?.DailyRevenue ?? 0).ToString("N0")) ₺</div>
-                <div class="metric-sub">Bugun tahsil edilen tutar</div>
+                <div class="metric-sub">Bugün tahsil edilen tutar</div>
             </div>
         </section>
 
@@ -78,22 +78,22 @@ else
             <a class="quick-link-card" href="/appointments/create">
                 <span class="quick-link-icon">R</span>
                 <div class="quick-link-title">Yeni Randevu</div>
-                <div class="quick-link-copy">Bugun icin servis plani olustur</div>
+                <div class="quick-link-copy">Bugün için servis planı oluştur</div>
             </a>
             <a class="quick-link-card" href="/service-orders/create">
                 <span class="quick-link-icon">S</span>
-                <div class="quick-link-title">Yeni Servis Kaydi</div>
-                <div class="quick-link-copy">Arac kabulu ve is emri baslat</div>
+                <div class="quick-link-title">Yeni Servis Kaydı</div>
+                <div class="quick-link-copy">Araç kabulü ve iş emri başlat</div>
             </a>
             <a class="quick-link-card" href="/customers/create">
                 <span class="quick-link-icon">M</span>
-                <div class="quick-link-title">Musteri Ekle</div>
-                <div class="quick-link-copy">Yeni musteri karti olustur</div>
+                <div class="quick-link-title">Müşteri Ekle</div>
+                <div class="quick-link-copy">Yeni müşteri kartı oluştur</div>
             </a>
             <a class="quick-link-card" href="/vehicles/create">
                 <span class="quick-link-icon">A</span>
-                <div class="quick-link-title">Arac Ekle</div>
-                <div class="quick-link-copy">Yeni arac veya motosiklet kaydet</div>
+                <div class="quick-link-title">Araç Ekle</div>
+                <div class="quick-link-copy">Yeni araç veya motosiklet kaydet</div>
             </a>
         </section>
 
@@ -101,18 +101,18 @@ else
             <div class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">Bugunun Randevulari</div>
-                        <div class="section-subtitle">Bugun planlanan servis akisiniz</div>
+                        <div class="section-title">Bugünün Randevuları</div>
+                        <div class="section-subtitle">Bugün planlanan servis akışınız</div>
                     </div>
-                    <a class="app-btn-secondary" href="/appointments">Tumunu Gor</a>
+                    <a class="app-btn-secondary" href="/appointments">Tümünü Gör</a>
                 </div>
 
                 <div class="summary-list">
                     @if (_summary?.TodayAppointments.Count is not > 0)
                     {
                         <div class="summary-list-item">
-                            <strong>Bugun icin randevu yok</strong>
-                            <span class="text-muted">Yeni randevu olusturdugunuzda burada listelenecek.</span>
+                            <strong>Bugün için randevu yok</strong>
+                            <span class="text-muted">Yeni randevu oluşturduğunuzda burada listelenecek.</span>
                         </div>
                     }
                     else
@@ -141,18 +141,18 @@ else
             <div class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">Son Servis Kayitlari</div>
-                        <div class="section-subtitle">En son acilan is emirleri</div>
+                        <div class="section-title">Son Servis Kayıtları</div>
+                        <div class="section-subtitle">En son açılan iş emirleri</div>
                     </div>
-                    <a class="app-btn-secondary" href="/service-orders">Tumunu Gor</a>
+                    <a class="app-btn-secondary" href="/service-orders">Tümünü Gör</a>
                 </div>
 
                 <div class="summary-list">
                     @if (_summary?.RecentServiceOrders.Count is not > 0)
                     {
                         <div class="summary-list-item">
-                            <strong>Henuz servis kaydi yok</strong>
-                            <span class="text-muted">Ilk is emri olustugunda burada gorunecek.</span>
+                            <strong>Henüz servis kaydı yok</strong>
+                            <span class="text-muted">İlk iş emri oluştuğunda burada görünecek.</span>
                         </div>
                     }
                     else
@@ -188,12 +188,12 @@ else
                 <div class="section-header">
                     <div>
                         <div class="section-title">Aktif Oturum</div>
-                        <div class="section-subtitle">Yetkili kullanici bilgisi</div>
+                        <div class="section-subtitle">Yetkili kullanıcı bilgisi</div>
                     </div>
                 </div>
 
                 <dl class="detail-list">
-                    <dt>Kullanici</dt>
+                    <dt>Kullanıcı</dt>
                     <dd>@_user.FullName</dd>
                     <dt>E-posta</dt>
                     <dd>@_user.Email</dd>

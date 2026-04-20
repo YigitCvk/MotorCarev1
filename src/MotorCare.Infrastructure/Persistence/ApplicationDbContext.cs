@@ -5,6 +5,7 @@ using MotorCare.Domain.Customers;
 using MotorCare.Domain.Appointments;
 using MotorCare.Domain.Vehicles;
 using MotorCare.Domain.ServiceOrders;
+using MotorCare.Domain.ServiceOrders.Entities;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
@@ -91,6 +92,8 @@ public class ApplicationDbContext : DbContext
 
     private void ApplyAuditInfo()
     {
+        NormalizeNewOwnedServiceOrderEntries();
+
         foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             switch (entry.State)
@@ -101,6 +104,24 @@ public class ApplicationDbContext : DbContext
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
                     break;
+            }
+        }
+    }
+
+    private void NormalizeNewOwnedServiceOrderEntries()
+    {
+        NormalizeNewOwnedEntries<ServiceOperationItem>();
+        NormalizeNewOwnedEntries<ServicePartItem>();
+        NormalizeNewOwnedEntries<ServicePayment>();
+    }
+
+    private void NormalizeNewOwnedEntries<TEntity>() where TEntity : AuditableEntity
+    {
+        foreach (var entry in ChangeTracker.Entries<TEntity>())
+        {
+            if (entry.State == EntityState.Modified && entry.Entity.CreatedAt == default)
+            {
+                entry.State = EntityState.Added;
             }
         }
     }

@@ -44,6 +44,11 @@ public sealed class ApiClient
         return SendAsync<TResponse>(HttpMethod.Put, uri, request, authorized, cancellationToken);
     }
 
+    public Task DeleteAsync(string uri, bool authorized = true, CancellationToken cancellationToken = default)
+    {
+        return SendAsync<object>(HttpMethod.Delete, uri, null, authorized, cancellationToken);
+    }
+
     private async Task<TResponse?> SendAsync<TResponse>(
         HttpMethod method,
         string uri,

@@ -6,7 +6,6 @@
 
 <PageTitle>@(_summary?.FullName ?? "Müşteri Detayı") — MotorCare</PageTitle>
 
-@* Persistent error banner — visible regardless of summary state *@
 @if (!string.IsNullOrWhiteSpace(_error))
 {
     <div class="alert alert-danger mb-3">
@@ -25,14 +24,12 @@
 else if (_notFound)
 {
     <div class="empty-state">
-        <div class="empty-icon">◎</div>
         <div class="empty-title">Müşteri bulunamadı.</div>
-        <a href="/customers" class="btn btn-outline mt-3">← Müşteri Listesi</a>
+        <a href="/customers" class="app-btn-secondary mt-3">← Müşteri Listesi</a>
     </div>
 }
 else if (_summary is not null)
 {
-    <!-- Page header -->
     <div class="page-header mb-4">
         <div>
             <div class="eyebrow">Müşteri 360°</div>
@@ -50,14 +47,13 @@ else if (_summary is not null)
             </p>
         </div>
         <div class="quick-actions">
-            <a href="/customers" class="btn btn-outline">← Geri</a>
-            <a href="@($"/appointments/create?customerName={Uri.EscapeDataString(_summary.FullName)}&phone={Uri.EscapeDataString(_summary.Phone ?? "")}")" class="btn btn-outline">Yeni Randevu</a>
-            <a href="/service-orders/create" class="btn btn-outline">Yeni Servis Kaydı</a>
-            <a href="@($"/vehicles/create?customerId={Id}")" class="btn btn-outline">Araç Ekle</a>
+            <a href="/customers" class="app-btn-secondary">← Geri</a>
+            <a href="@($"/appointments/create?customerName={Uri.EscapeDataString(_summary.FullName)}&phone={Uri.EscapeDataString(_summary.Phone ?? "")}")" class="app-btn-secondary">Yeni Randevu</a>
+            <a href="/service-orders/create" class="app-btn-secondary">Yeni Servis Kaydı</a>
+            <a href="@($"/vehicles/create?customerId={Id}")" class="app-btn-secondary">Araç Ekle</a>
         </div>
     </div>
 
-    <!-- Summary metric cards -->
     <div class="metric-grid mb-4">
         <div class="metric-card mc-primary">
             <div class="metric-label">Araç Sayısı</div>
@@ -77,19 +73,15 @@ else if (_summary is not null)
         </div>
     </div>
 
-    <!-- Tabs -->
     <div class="tab-bar mb-3">
         @foreach (var tab in _tabs)
         {
-            <button type="button"
-                    class="tab-item @(_activeTab == tab ? "active" : "")"
-                    @onclick="@(() => _activeTab = tab)">
+            <button type="button" class="tab-item @(_activeTab == tab ? "active" : "")" @onclick="@(() => _activeTab = tab)">
                 @tab
             </button>
         }
     </div>
 
-    <!-- Tab: Genel Bakış -->
     @if (_activeTab == "Genel Bakış")
     {
         <div class="content-grid">
@@ -172,15 +164,13 @@ else if (_summary is not null)
         </div>
     }
 
-    <!-- Tab: Araçlar -->
     @if (_activeTab == "Araçlar")
     {
         @if (_summary.Vehicles.Count == 0)
         {
             <div class="empty-state">
-                <div class="empty-icon">◈</div>
                 <div class="empty-title">Bu müşteriye ait araç bulunamadı.</div>
-                <a href="@($"/vehicles/create?customerId={Id}")" class="btn btn-primary mt-3">Araç Ekle</a>
+                <a href="@($"/vehicles/create?customerId={Id}")" class="app-btn-primary mt-3">Araç Ekle</a>
             </div>
         }
         else
@@ -209,13 +199,11 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: Randevular -->
     @if (_activeTab == "Randevular")
     {
         @if (_summary.Appointments.Count == 0)
         {
             <div class="empty-state">
-                <div class="empty-icon">◷</div>
                 <div class="empty-title">Randevu geçmişi bulunamadı.</div>
             </div>
         }
@@ -266,13 +254,11 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: Servis Geçmişi -->
     @if (_activeTab == "Servis Geçmişi")
     {
         @if (_summary.ServiceOrders.Count == 0)
         {
             <div class="empty-state">
-                <div class="empty-icon">⚙</div>
                 <div class="empty-title">Servis geçmişi bulunamadı.</div>
             </div>
         }
@@ -318,13 +304,11 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: Değişen Parçalar -->
     @if (_activeTab == "Değişen Parçalar")
     {
         @if (!AllParts.Any())
         {
             <div class="empty-state">
-                <div class="empty-icon">⚙</div>
                 <div class="empty-title">Değişen parça geçmişi bulunamadı.</div>
             </div>
         }
@@ -354,8 +338,7 @@ else if (_summary is not null)
                                 <td class="fw-semibold">@x.Part.TotalPrice.ToString("N2") ₺</td>
                                 <td class="text-muted small">@x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-link p-0"
-                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                    <button type="button" class="btn btn-sm btn-link p-0" @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
                                         @x.Order.OrderNo
                                     </button>
                                 </td>
@@ -386,13 +369,11 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: İşçilik -->
     @if (_activeTab == "İşçilik")
     {
         @if (!AllOps.Any())
         {
             <div class="empty-state">
-                <div class="empty-icon">⚙</div>
                 <div class="empty-title">İşçilik geçmişi bulunamadı.</div>
             </div>
         }
@@ -416,8 +397,7 @@ else if (_summary is not null)
                                 <td class="fw-semibold">@x.Op.Price.ToString("N2") ₺</td>
                                 <td class="text-muted small">@x.Order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-link p-0"
-                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                    <button type="button" class="btn btn-sm btn-link p-0" @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
                                         @x.Order.OrderNo
                                     </button>
                                 </td>
@@ -441,13 +421,11 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: Ödemeler -->
     @if (_activeTab == "Ödemeler")
     {
         @if (!AllPayments.Any())
         {
             <div class="empty-state">
-                <div class="empty-icon">◇</div>
                 <div class="empty-title">Ödeme geçmişi bulunamadı.</div>
             </div>
         }
@@ -471,8 +449,7 @@ else if (_summary is not null)
                                 <td>@x.Payment.MethodText</td>
                                 <td class="fw-semibold">@x.Payment.Amount.ToString("N2") ₺</td>
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-link p-0"
-                                            @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
+                                    <button type="button" class="btn btn-sm btn-link p-0" @onclick="@(() => NavigationManager.NavigateTo($"/service-orders/{x.Order.Id}"))">
                                         @x.Order.OrderNo
                                     </button>
                                 </td>
@@ -496,7 +473,6 @@ else if (_summary is not null)
         }
     }
 
-    <!-- Tab: Notlar -->
     @if (_activeTab == "Notlar")
     {
         <div class="surface-card">
@@ -514,11 +490,9 @@ else if (_summary is not null)
 }
 else if (!_loading && string.IsNullOrWhiteSpace(_error))
 {
-    @* Fallback: loaded, no error, no summary — should not normally happen *@
     <div class="empty-state">
-        <div class="empty-icon">◎</div>
         <div class="empty-title">Müşteri bilgisi alınamadı.</div>
-        <a href="/customers" class="btn btn-outline mt-3">← Müşteri Listesi</a>
+        <a href="/customers" class="app-btn-secondary mt-3">← Müşteri Listesi</a>
     </div>
 }
 

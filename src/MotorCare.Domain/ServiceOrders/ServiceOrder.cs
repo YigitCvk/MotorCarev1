@@ -25,7 +25,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public decimal DiscountTotal { get; private set; }
     public decimal GrandTotal { get; private set; }
     public decimal PaidTotal { get; private set; }
-    public decimal RemainingTotal => GrandTotal - PaidTotal;
+    public decimal RemainingTotal => Math.Max(0, GrandTotal - PaidTotal);
 
     private readonly List<ServiceOperationItem> _operations = new();
     public IReadOnlyCollection<ServiceOperationItem> Operations => _operations;
@@ -73,6 +73,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         EnsureModifiable();
         var operation = _operations.FirstOrDefault(o => o.Id == operationId)
             ?? throw new DomainException($"Operation with id '{operationId}' not found in this service order.");
+
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal - operation.Price, PartsTotal, DiscountTotal));
+
         _operations.Remove(operation);
         RecalculateTotals();
     }
@@ -94,6 +97,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         EnsureModifiable();
         var part = _parts.FirstOrDefault(p => p.Id == partId)
             ?? throw new DomainException($"Part with id '{partId}' not found in this service order.");
+
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal - part.TotalPrice, DiscountTotal));
+
         _parts.Remove(part);
         RecalculateTotals();
     }
@@ -104,7 +110,10 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         EnsureModifiable();
         if (amount <= 0) throw new DomainException("Payment amount must be greater than zero.");
-        if (amount > RemainingTotal) throw new DomainException($"Payment amount ({amount}) exceeds the remaining total ({RemainingTotal}).");
+        if (PaidTotal + amount > GrandTotal)
+        {
+            throw new DomainException("Bu odeme eklenemez. Alinan odeme toplam tutari asiyor.");
+        }
 
         _payments.Add(new ServicePayment(amount, method, paymentDate));
         RecalculateTotals();
@@ -117,6 +126,8 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         EnsureModifiable();
         if (discount < 0) throw new DomainException("Discount cannot be negative.");
         if (discount > (LaborTotal + PartsTotal)) throw new DomainException("Discount cannot exceed labor and parts total.");
+
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal, discount));
         
         DiscountTotal = discount;
         RecalculateTotals();
@@ -204,11 +215,22 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         LaborTotal = _operations.Sum(o => o.Price);
         PartsTotal = _parts.Sum(p => p.TotalPrice);
-        GrandTotal = (LaborTotal + PartsTotal) - DiscountTotal;
-        
-        if (GrandTotal < 0) GrandTotal = 0;
-        
+        GrandTotal = CalculateGrandTotal(LaborTotal, PartsTotal, DiscountTotal);
         PaidTotal = _payments.Sum(p => p.Amount);
+    }
+
+    private void EnsurePaidTotalWillFit(decimal projectedGrandTotal)
+    {
+        if (PaidTotal > projectedGrandTotal)
+        {
+            throw new DomainException("Bu islem silinemez. Alinan odeme toplam tutardan fazla kaliyor. Once odemeyi duzenleyin veya iade islemi olusturun.");
+        }
+    }
+
+    private static decimal CalculateGrandTotal(decimal laborTotal, decimal partsTotal, decimal discountTotal)
+    {
+        var total = (laborTotal + partsTotal) - discountTotal;
+        return total < 0 ? 0 : total;
     }
 
     private void EnsureModifiable()

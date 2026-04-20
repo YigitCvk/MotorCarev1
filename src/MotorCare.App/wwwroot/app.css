@@ -2153,6 +2153,74 @@ h1:focus { outline: none; }
     gap: 1rem;
 }
 
+.service-order-detail-page {
+    gap: 1.25rem;
+}
+
+.service-order-detail-header {
+    align-items: flex-end;
+}
+
+.service-order-detail-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.service-order-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.service-order-summary-grid,
+.service-order-work-grid {
+    align-items: start;
+}
+
+.service-order-summary-card,
+.service-order-status-card,
+.service-order-payments-card {
+    min-height: 100%;
+}
+
+.service-order-totals-list {
+    margin-bottom: 1rem;
+}
+
+.service-order-line-item {
+    gap: 0.75rem;
+}
+
+.service-order-line-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.service-order-line-copy {
+    min-width: 0;
+    flex: 1 1 16rem;
+}
+
+.service-order-line-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+}
+
+.service-order-payments-card .summary-list-item strong,
+.service-order-line-copy strong {
+    color: var(--mc-text);
+}
+
 @media (max-width: 640px) {
     .tab-bar {
         flex-wrap: nowrap;
@@ -2178,6 +2246,25 @@ h1:focus { outline: none; }
     }
 
     .list-item-row > * {
+        width: 100%;
+    }
+
+    .service-order-detail-header {
+        align-items: stretch;
+    }
+
+    .service-order-detail-meta {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .service-order-line-row,
+    .service-order-line-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .service-order-line-actions {
         width: 100%;
     }
 }

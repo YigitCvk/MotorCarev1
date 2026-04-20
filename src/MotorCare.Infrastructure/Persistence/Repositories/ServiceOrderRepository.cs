@@ -148,10 +148,20 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
         if (!string.IsNullOrWhiteSpace(searchText))
         {
-            var term = searchText.ToLower();
+            var term = searchText.Trim().ToLower();
+            var normalizedPlate = new string(searchText.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+            var matchingCustomerIds = _context.Customers
+                .Where(c => c.TenantId == tenantId && EF.Functions.ILike(c.FullName, $"%{searchText.Trim()}%"))
+                .Select(c => c.Id);
+            var matchingVehicleIds = _context.Vehicles
+                .Where(v => v.TenantId == tenantId && v.Plate.NormalizedValue.Contains(normalizedPlate))
+                .Select(v => v.Id);
+
             query = query.Where(o =>
                 o.OrderNo.ToLower().Contains(term) ||
-                (o.Complaint != null && o.Complaint.ToLower().Contains(term)));
+                (o.Complaint != null && o.Complaint.ToLower().Contains(term)) ||
+                matchingCustomerIds.Contains(o.CustomerId) ||
+                matchingVehicleIds.Contains(o.VehicleId));
         }
 
         if (openedFrom.HasValue)
@@ -196,10 +206,20 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
         if (!string.IsNullOrWhiteSpace(searchText))
         {
-            var term = searchText.ToLower();
+            var term = searchText.Trim().ToLower();
+            var normalizedPlate = new string(searchText.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+            var matchingCustomerIds = _context.Customers
+                .Where(c => c.TenantId == tenantId && EF.Functions.ILike(c.FullName, $"%{searchText.Trim()}%"))
+                .Select(c => c.Id);
+            var matchingVehicleIds = _context.Vehicles
+                .Where(v => v.TenantId == tenantId && v.Plate.NormalizedValue.Contains(normalizedPlate))
+                .Select(v => v.Id);
+
             query = query.Where(o =>
                 o.OrderNo.ToLower().Contains(term) ||
-                (o.Complaint != null && o.Complaint.ToLower().Contains(term)));
+                (o.Complaint != null && o.Complaint.ToLower().Contains(term)) ||
+                matchingCustomerIds.Contains(o.CustomerId) ||
+                matchingVehicleIds.Contains(o.VehicleId));
         }
 
         if (openedFrom.HasValue)
@@ -253,7 +273,11 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
     public void Update(ServiceOrder order)
     {
-        _context.ServiceOrders.Update(order);
+        var entry = _context.Entry(order);
+        if (entry.State == EntityState.Detached)
+        {
+            _context.ServiceOrders.Update(order);
+        }
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

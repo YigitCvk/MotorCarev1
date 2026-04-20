@@ -1,62 +1,90 @@
 @page "/service-orders/{Id:guid}"
+@using System.Net
 @using ServiceOrderDetailModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Servis Detayı — MotorCare</PageTitle>
+<PageTitle>Servis Detayı</PageTitle>
 
-<div class="page-shell">
+<div class="page-shell service-order-detail-page">
     @if (_isLoading)
     {
-        <div class="surface-card state-loading">Servis detayı yükleniyor...</div>
+        <section class="loading-state">
+            <strong>Servis detayı yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
-        <div class="alert alert-danger">@_error</div>
+        <section class="error-state">
+            <strong>Servis detayı alınamadı</strong>
+            <p>@_error</p>
+            @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
+            {
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+            }
+        </section>
     }
     else if (_order is null)
     {
-        <div class="alert alert-warning">Servis kaydı bulunamadı.</div>
+        <section class="empty-state">
+            <strong>Servis kaydı bulunamadı</strong>
+            <p>Listeye dönüp tekrar deneyin.</p>
+        </section>
     }
     else
     {
-        <section class="hero-panel compact">
-            <div>
-                <div class="eyebrow">Servis kaydı</div>
+        <section class="page-header service-order-detail-header">
+            <div class="service-order-detail-title">
                 <h1 class="page-title">@_order.OrderNo</h1>
-                <p class="page-description">
+                <div class="page-description service-order-detail-meta">
                     <span class="@GetStatusBadgeClass(_order.Status)">@GetStatusLabel(_order.Status)</span>
-                    <span class="ms-2 text-muted" style="font-size:0.85rem">
-                        Açılış: @_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")
-                    </span>
-                </p>
+                    @if (!string.IsNullOrWhiteSpace(_order.CustomerName))
+                    {
+                        <span>@_order.CustomerName</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_order.VehiclePlate))
+                    {
+                        <span>@_order.VehiclePlate</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_order.VehicleDisplay))
+                    {
+                        <span>@_order.VehicleDisplay</span>
+                    }
+                </div>
             </div>
 
-            <div class="quick-actions action-bar">
-                <a class="btn btn-outline-secondary" href="/service-orders">← Listeye Dön</a>
-                <button type="button" class="btn btn-outline-secondary" @onclick="@(() => ScrollTo("operations-section"))">İşçilik</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="@(() => ScrollTo("parts-section"))">Parça</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="@(() => ScrollTo("payments-section"))">Tahsilat</button>
-                <button type="button" class="btn btn-primary" @onclick="@(() => ScrollTo("status-section"))">Durum Güncelle</button>
+            <div class="page-header-actions action-bar">
+                <a class="app-btn-secondary" href="/service-orders">Listeye Dön</a>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("operations-section"))">İşçilik</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("parts-section"))">Parça</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("payments-section"))">Tahsilat</button>
+                <button type="button" class="app-btn-primary" @onclick="@(() => ScrollTo("status-section"))">Durum Güncelle</button>
             </div>
         </section>
 
         @if (!string.IsNullOrWhiteSpace(_actionMessage))
         {
-            <div class="alert alert-success">@_actionMessage</div>
+            <section class="empty-state">
+                <strong>İşlem başarılı</strong>
+                <p>@_actionMessage</p>
+            </section>
         }
 
-        @if (!string.IsNullOrWhiteSpace(_error))
+        @if (_order.PaidTotal > _order.GrandTotal)
         {
-            <div class="alert alert-danger">@_error</div>
+            <section class="error-state">
+                <strong>Fazla ödeme uyarısı</strong>
+                <p>Bu kayıtta alınan ödeme toplam tutarı aşıyor. Yeni silme veya indirim işlemleri backend tarafında engellenir.</p>
+            </section>
         }
 
-        <section class="metric-grid">
+        <section class="metric-grid service-order-metrics">
             <div class="metric-card mc-primary">
                 <div class="metric-label">Toplam Tutar</div>
                 <div class="metric-value">@_order.GrandTotal.ToString("N2") ₺</div>
-                <div class="metric-sub">İşçilik + parça − indirim</div>
+                <div class="metric-sub">İşçilik + parça - indirim</div>
             </div>
             <div class="metric-card mc-success">
                 <div class="metric-label">Tahsil Edilen</div>
@@ -65,32 +93,47 @@
             </div>
             <div class="metric-card @(_order.RemainingTotal > 0 ? "mc-warning" : "mc-success")">
                 <div class="metric-label">Kalan Bakiye</div>
-                <div class="metric-value">@_order.RemainingTotal.ToString("N2") ₺</div>
-                <div class="metric-sub">@(_order.RemainingTotal <= 0 ? "Tahsilat tamamlandı" : "Ödeme bekliyor")</div>
+                <div class="metric-value">@Math.Max(0, _order.RemainingTotal).ToString("N2") ₺</div>
+                <div class="metric-sub">@(_order.RemainingTotal > 0 ? "Ödeme bekliyor" : "Tahsilat tamamlandı")</div>
             </div>
-            <div class="metric-card">
+            <div class="metric-card mc-teal">
                 <div class="metric-label">Araç KM</div>
                 <div class="metric-value">@_order.VehicleKm.ToString("N0")</div>
-                <div class="metric-sub">Kabul anındaki km</div>
+                <div class="metric-sub">Kabul sırasındaki kilometre</div>
             </div>
         </section>
 
-        <section class="content-grid">
-            <div class="surface-card">
+        <section class="content-grid service-order-summary-grid">
+            <section class="app-card service-order-summary-card">
                 <div class="section-header">
                     <div>
                         <div class="section-title">Servis Özeti</div>
-                        <div class="section-subtitle">Kabul ve operasyon bilgileri</div>
+                        <div class="section-subtitle">Müşteri, araç ve kabul bilgileri</div>
                     </div>
                 </div>
 
                 <dl class="detail-list">
+                    @if (!string.IsNullOrWhiteSpace(_order.CustomerName))
+                    {
+                        <dt>Müşteri</dt>
+                        <dd>@_order.CustomerName</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_order.VehiclePlate))
+                    {
+                        <dt>Plaka</dt>
+                        <dd>@_order.VehiclePlate</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_order.VehicleDisplay))
+                    {
+                        <dt>Araç</dt>
+                        <dd>@_order.VehicleDisplay</dd>
+                    }
                     <dt>Açılış</dt>
                     <dd>@_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
                     <dt>Kapanış</dt>
-                    <dd>@(_order.ClosedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "—")</dd>
+                    <dd>@(_order.ClosedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
                     <dt>Şikayet</dt>
-                    <dd>@(string.IsNullOrWhiteSpace(_order.Complaint) ? "—" : _order.Complaint)</dd>
+                    <dd>@(string.IsNullOrWhiteSpace(_order.Complaint) ? "-" : _order.Complaint)</dd>
                     @if (!string.IsNullOrWhiteSpace(_order.WorkDescription))
                     {
                         <dt>Yapılan İş</dt>
@@ -102,9 +145,9 @@
                         <dd>@_order.InternalNote</dd>
                     }
                 </dl>
-            </div>
+            </section>
 
-            <div class="surface-card" id="status-section">
+            <section class="app-card service-order-status-card" id="status-section">
                 <div class="section-header">
                     <div>
                         <div class="section-title">Durum ve Finansal</div>
@@ -112,7 +155,7 @@
                     </div>
                 </div>
 
-                <dl class="detail-list mb-4">
+                <dl class="detail-list service-order-totals-list">
                     <dt>İşçilik</dt>
                     <dd>@_order.LaborTotal.ToString("N2") ₺</dd>
                     <dt>Parça</dt>
@@ -121,27 +164,26 @@
                     <dd>@_order.DiscountTotal.ToString("N2") ₺</dd>
                 </dl>
 
-                <div class="inline-form">
+                <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Yeni Durum</label>
                     <div class="inline-form-row">
                         <InputSelect class="form-select" @bind-Value="_statusRequest.Status">
-                            <option value="Open">Açık</option>
                             <option value="InProgress">İşlemde</option>
                             <option value="WaitingForParts">Parça Bekliyor</option>
                             <option value="Completed">Tamamlandı</option>
                             <option value="Delivered">Teslim Edildi</option>
                             <option value="Cancelled">İptal</option>
                         </InputSelect>
-                        <button type="button" class="btn btn-dark" @onclick="UpdateStatusAsync" disabled="@_isWorking">
+                        <button type="button" class="app-btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">
                             Kaydet
                         </button>
                     </div>
                 </div>
-            </div>
+            </section>
         </section>
 
-        <section class="content-grid operations-board">
-            <div class="surface-card" id="operations-section">
+        <section class="content-grid service-order-work-grid">
+            <section class="app-card" id="operations-section">
                 <div class="section-header">
                     <div>
                         <div class="section-title">İşçilik / Operasyonlar</div>
@@ -160,17 +202,22 @@
                     {
                         @foreach (var op in _order.Operations)
                         {
-                            <div class="summary-list-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <strong>@op.Description</strong>
-                                    <span class="fw-bold">@op.Price.ToString("N2") ₺</span>
+                            <div class="summary-list-item service-order-line-item">
+                                <div class="service-order-line-row">
+                                    <div class="service-order-line-copy">
+                                        <strong>@op.Description</strong>
+                                    </div>
+                                    <div class="service-order-line-actions">
+                                        <span class="fw-bold">@op.Price.ToString("N2") ₺</span>
+                                        <button type="button" class="app-btn-secondary" @onclick="() => RemoveOperationAsync(op.Id)" disabled="@(_isWorking || !CanRemoveOperation(op))">Sil</button>
+                                    </div>
                                 </div>
                             </div>
                         }
                     }
                 </div>
 
-                <div class="inline-form">
+                <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Operasyon Ekle</label>
                     <div class="form-grid compact-grid">
                         <div class="full-span">
@@ -181,15 +228,13 @@
                             <InputNumber class="form-control" @bind-Value="_operationRequest.Price" />
                         </div>
                         <div class="filter-actions">
-                            <button type="button" class="btn btn-primary" @onclick="AddOperationAsync" disabled="@_isWorking">
-                                Ekle
-                            </button>
+                            <button type="button" class="app-btn-primary" @onclick="AddOperationAsync" disabled="@_isWorking">Ekle</button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="surface-card" id="parts-section">
+            <section class="app-card" id="parts-section">
                 <div class="section-header">
                     <div>
                         <div class="section-title">Parçalar</div>
@@ -208,26 +253,27 @@
                     {
                         @foreach (var part in _order.Parts)
                         {
-                            <div class="summary-list-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div>
+                            <div class="summary-list-item service-order-line-item">
+                                <div class="service-order-line-row">
+                                    <div class="service-order-line-copy">
                                         <strong>@part.PartName</strong>
                                         @if (!string.IsNullOrWhiteSpace(part.PartNumber))
                                         {
-                                            <span class="text-muted ms-1" style="font-size:0.8rem">@part.PartNumber</span>
+                                            <span class="text-muted ms-1 small">@part.PartNumber</span>
                                         }
+                                        <div class="text-muted small">@part.Quantity x @part.UnitPrice.ToString("N2") ₺</div>
                                     </div>
-                                    <span class="fw-bold">@part.TotalPrice.ToString("N2") ₺</span>
+                                    <div class="service-order-line-actions">
+                                        <span class="fw-bold">@part.TotalPrice.ToString("N2") ₺</span>
+                                        <button type="button" class="app-btn-secondary" @onclick="() => RemovePartAsync(part.Id)" disabled="@(_isWorking || !CanRemovePart(part))">Sil</button>
+                                    </div>
                                 </div>
-                                <span class="text-muted" style="font-size:0.8rem">
-                                    @part.Quantity × @part.UnitPrice.ToString("N2") ₺
-                                </span>
                             </div>
                         }
                     }
                 </div>
 
-                <div class="inline-form">
+                <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Parça Ekle</label>
                     <div class="form-grid compact-grid">
                         <div>
@@ -246,21 +292,19 @@
                             <label class="form-label">Adet</label>
                             <InputNumber class="form-control" @bind-Value="_partRequest.Quantity" />
                         </div>
-                        <div class="full-span d-flex justify-content-end">
-                            <button type="button" class="btn btn-primary" @onclick="AddPartAsync" disabled="@_isWorking">
-                                Parça Ekle
-                            </button>
+                        <div class="full-span filter-actions">
+                            <button type="button" class="app-btn-primary" @onclick="AddPartAsync" disabled="@_isWorking">Parça Ekle</button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </section>
 
-        <section class="surface-card" id="payments-section">
+        <section class="app-card service-order-payments-card" id="payments-section">
             <div class="section-header">
                 <div>
                     <div class="section-title">Tahsilatlar</div>
-                    <div class="section-subtitle">Günlük ödeme akışını servis bazında yönetin</div>
+                    <div class="section-subtitle">Ödeme hareketleri ve tahsilat kayıtları</div>
                 </div>
             </div>
 
@@ -275,13 +319,11 @@
                 {
                     @foreach (var payment in _order.Payments)
                     {
-                        <div class="summary-list-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
+                        <div class="summary-list-item service-order-line-item">
+                            <div class="service-order-line-row">
+                                <div class="service-order-line-copy">
                                     <strong>@GetPaymentLabel(payment.Method)</strong>
-                                    <span class="text-muted ms-2" style="font-size:0.8rem">
-                                        @payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy HH:mm")
-                                    </span>
+                                    <div class="text-muted small">@payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
                                 </div>
                                 <span class="fw-bold text-success">@payment.Amount.ToString("N2") ₺</span>
                             </div>
@@ -290,7 +332,7 @@
                 }
             </div>
 
-            <div class="form-grid compact-grid">
+            <div class="form-grid compact-grid sticky-mobile-action">
                 <div>
                     <label class="form-label">Tutar (₺)</label>
                     <InputNumber class="form-control" @bind-Value="_paymentRequest.Amount" />
@@ -308,9 +350,7 @@
                     <InputDate class="form-control" @bind-Value="_paymentDate" />
                 </div>
                 <div class="filter-actions">
-                    <button type="button" class="btn btn-primary" @onclick="AddPaymentAsync" disabled="@_isWorking">
-                        Tahsilat Ekle
-                    </button>
+                    <button type="button" class="app-btn-primary" @onclick="AddPaymentAsync" disabled="@_isWorking">Tahsilat Ekle</button>
                 </div>
             </div>
         </section>
@@ -323,17 +363,21 @@
     private bool _isLoading = true;
     private bool _isWorking;
     private string? _error;
+    private string? _errorEndpoint;
     private string? _actionMessage;
     private ServiceOrderDetailModel? _order;
     private readonly AddOperationRequest _operationRequest = new();
     private readonly AddPartRequest _partRequest = new() { Quantity = 1 };
     private readonly AddPaymentRequest _paymentRequest = new() { Method = "Cash" };
-    private readonly UpdateServiceOrderStatusRequest _statusRequest = new();
+    private readonly UpdateServiceOrderStatusRequest _statusRequest = new() { Status = "InProgress" };
     private DateTime? _paymentDate = DateTime.Today;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            return;
+        }
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -344,17 +388,33 @@
         await LoadAsync();
     }
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(bool resetMessages = true)
     {
         try
         {
+            _isLoading = true;
             _error = null;
-            _actionMessage = null;
+            _errorEndpoint = null;
+            if (resetMessages)
+            {
+                _actionMessage = null;
+            }
+
             _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
             if (_order is not null)
             {
-                _statusRequest.Status = _order.Status;
+                _statusRequest.Status = _order.Status is "Open" ? "InProgress" : _order.Status;
             }
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -363,7 +423,7 @@
         finally
         {
             _isLoading = false;
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -376,9 +436,15 @@
 
     private async Task AddOperationAsync()
     {
-        if (string.IsNullOrWhiteSpace(_operationRequest.Description) || _operationRequest.Price <= 0)
+        if (string.IsNullOrWhiteSpace(_operationRequest.Description))
         {
-            _error = "Operasyon açıklaması ve fiyat gereklidir.";
+            _error = "İşlem açıklaması zorunludur.";
+            return;
+        }
+
+        if (_operationRequest.Price < 0)
+        {
+            _error = "Tutar geçersiz.";
             return;
         }
 
@@ -390,11 +456,24 @@
         _operationRequest.Price = 0;
     }
 
+    private async Task RemoveOperationAsync(Guid operationId)
+    {
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.RemoveOperationAsync(Id, operationId),
+            "Operasyon kaldırıldı.");
+    }
+
     private async Task AddPartAsync()
     {
-        if (string.IsNullOrWhiteSpace(_partRequest.PartName) || _partRequest.UnitPrice <= 0 || _partRequest.Quantity <= 0)
+        if (string.IsNullOrWhiteSpace(_partRequest.PartName))
         {
-            _error = "Parça adı, miktar ve fiyat gereklidir.";
+            _error = "Parça adı zorunludur.";
+            return;
+        }
+
+        if (_partRequest.UnitPrice < 0 || _partRequest.Quantity <= 0)
+        {
+            _error = "Tutar geçersiz.";
             return;
         }
 
@@ -408,21 +487,28 @@
         _partRequest.Quantity = 1;
     }
 
+    private async Task RemovePartAsync(Guid partId)
+    {
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.RemovePartAsync(Id, partId),
+            "Parça kaldırıldı.");
+    }
+
     private async Task AddPaymentAsync()
     {
         if (_paymentRequest.Amount <= 0)
         {
-            _error = "Tahsilat tutarı girilmesi zorunludur.";
+            _error = "Tutar geçersiz.";
             return;
         }
 
         _paymentRequest.PaymentDate = _paymentDate.HasValue
-            ? new DateTimeOffset(DateTime.SpecifyKind(_paymentDate.Value, DateTimeKind.Utc))
+            ? new DateTimeOffset(DateTime.SpecifyKind(_paymentDate.Value, DateTimeKind.Local))
             : null;
 
         await ExecuteActionAsync(
             () => ServiceOrdersService.AddPaymentAsync(Id, _paymentRequest),
-            "Tahsilat kaydı eklendi.");
+            "Tahsilat eklendi.");
 
         _paymentRequest.Amount = 0;
         _paymentRequest.Method = "Cash";
@@ -435,10 +521,21 @@
         {
             _isWorking = true;
             _error = null;
+            _errorEndpoint = null;
             _actionMessage = null;
+
             await action();
             _actionMessage = successMessage;
-            await LoadAsync();
+            await LoadAsync(resetMessages: false);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -455,31 +552,37 @@
 
     private static string GetStatusBadgeClass(string status) => status switch
     {
-        "Open"            => "status-badge badge-open",
-        "InProgress"      => "status-badge badge-progress",
+        "Open" => "status-badge badge-open",
+        "InProgress" => "status-badge badge-progress",
         "WaitingForParts" => "status-badge badge-waiting",
-        "Completed"       => "status-badge badge-completed",
-        "Delivered"       => "status-badge badge-delivered",
-        "Cancelled"       => "status-badge badge-cancelled",
-        _                 => "status-badge"
+        "Completed" => "status-badge badge-completed",
+        "Delivered" => "status-badge badge-delivered",
+        "Cancelled" => "status-badge badge-cancelled",
+        _ => "status-badge"
     };
 
     private static string GetStatusLabel(string status) => status switch
     {
-        "Open"            => "Açık",
-        "InProgress"      => "İşlemde",
+        "Open" => "Açık",
+        "InProgress" => "İşlemde",
         "WaitingForParts" => "Parça Bekliyor",
-        "Completed"       => "Tamamlandı",
-        "Delivered"       => "Teslim Edildi",
-        "Cancelled"       => "İptal",
-        _                 => status
+        "Completed" => "Tamamlandı",
+        "Delivered" => "Teslim Edildi",
+        "Cancelled" => "İptal",
+        _ => status
     };
 
     private static string GetPaymentLabel(string method) => method switch
     {
-        "Cash"         => "Nakit",
-        "CreditCard"   => "Kredi Kartı",
+        "Cash" => "Nakit",
+        "CreditCard" => "Kredi Kartı",
         "BankTransfer" => "Havale / EFT",
-        _              => method
+        _ => method
     };
+
+    private bool CanRemoveOperation(ServiceOrderOperation operation)
+        => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - operation.Price);
+
+    private bool CanRemovePart(ServiceOrderPart part)
+        => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - part.TotalPrice);
 }

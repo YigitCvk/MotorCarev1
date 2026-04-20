@@ -6,6 +6,9 @@ public class ServiceOrderListItem
     public string OrderNo { get; set; } = string.Empty;
     public Guid VehicleId { get; set; }
     public Guid CustomerId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? VehiclePlate { get; set; }
+    public string? VehicleDisplay { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTimeOffset OpenedAt { get; set; }
     public DateTimeOffset? ClosedAt { get; set; }

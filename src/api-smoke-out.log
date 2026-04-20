@@ -1,0 +1,1030 @@
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5104
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\yigit\Desktop\MotorCare\src\MotorCare.Api
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: LuckyPennySoftware.MediatR.License[0]
+      You do not have a valid license key for the Lucky Penny software MediatR. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (35ms) [Parameters=[@__identifier_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Identifier" = @__identifier_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__tenantId_0='?', @__normalizedEmail_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."TenantId" = @__tenantId_0 AND u."Email" = @__normalizedEmail_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?', @p3='?' (DbType = Boolean), @p4='?', @p5='?' (DbType = DateTime), @p6='?' (DbType = Guid), @p7='?' (DbType = DateTime), @p8='?', @p9='?', @p10='?' (DbType = Boolean), @p11='?' (DbType = DateTime), @p12='?', @p13='?', @p14='?', @p15='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Tenants" ("Id", "CreatedAt", "Identifier", "IsActive", "Name", "UpdatedAt")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+      INSERT INTO "Users" ("Id", "CreatedAt", "Email", "FullName", "IsActive", "LastLoginAt", "PasswordHash", "Role", "TenantId", "UpdatedAt")
+      VALUES (@p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__identifier_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Identifier" = @__identifier_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__tenantId_0='?', @__normalizedEmail_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."TenantId" = @__tenantId_0 AND u."Email" = @__normalizedEmail_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (DbType = DateTime), @p3='?' (DbType = DateTime), @p4='?', @p5='?' (DbType = DateTime), @p6='?' (DbType = Guid), @p9='?' (DbType = Guid), @p7='?' (DbType = DateTime), @p8='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "UserRefreshTokens" ("Id", "CreatedAt", "ExpiresAt", "RevokedAt", "TokenHash", "UpdatedAt", "UserId")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+      UPDATE "Users" SET "LastLoginAt" = @p7, "UpdatedAt" = @p8
+      WHERE "Id" = @p9;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__phone_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."TenantId" = @__tenantId_0 AND c."Phone" = @__phone_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?', @p3='?', @p4='?', @p5='?', @p6='?', @p7='?' (DbType = DateTime), @p8='?'], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Customers" ("Id", "CreatedAt", "Email", "FullName", "Notes", "Phone", "TenantId", "UpdatedAt", "Whatsapp")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: MotorCare.Application.Vehicles.Commands.CreateVehicle.CreateVehicleCommandHandler[0]
+      Starting vehicle registration for plate 34FAU936 in tenant so-smoke-20260420195015.
+warn: Microsoft.EntityFrameworkCore.Query[20504]
+      Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__normalizedPlate_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."Brand", t."ChassisNumber", t."Color", t."CreatedAt", t."CurrentCustomerId", t."CurrentKm", t."Model", t."TenantId", t."UpdatedAt", t."Year", v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", v1."Id", v1."CreatedAt", v1."Description", v1."PhotoUrl", v1."UpdatedAt", v1."VehicleId", t."PlateNormalized", t."PlateOriginal"
+      FROM (
+          SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."TenantId" = @__tenantId_0 AND v."PlateNormalized" = @__normalizedPlate_1
+          LIMIT 1
+      ) AS t
+      LEFT JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      LEFT JOIN "VehiclePhotos" AS v1 ON t."Id" = v1."VehicleId"
+      ORDER BY t."Id", v0."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?', @p3='?', @p4='?' (DbType = DateTime), @p5='?' (DbType = Guid), @p6='?' (DbType = Int32), @p7='?', @p8='?', @p9='?' (DbType = DateTime), @p10='?' (DbType = Int32), @p11='?', @p12='?'], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Vehicles" ("Id", "Brand", "ChassisNumber", "Color", "CreatedAt", "CurrentCustomerId", "CurrentKm", "Model", "TenantId", "UpdatedAt", "Year", "PlateNormalized", "PlateOriginal")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12);
+info: MotorCare.Application.Vehicles.Commands.CreateVehicle.CreateVehicleCommandHandler[0]
+      Successfully registered vehicle 1df5a142-75b2-434b-a620-def9c6858cf2 with plate 34FAU936 in tenant so-smoke-20260420195015.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__orderNo_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."OrderNo" = @__orderNo_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?', @p3='?' (DbType = DateTime), @p4='?' (DbType = Guid), @p5='?' (DbType = Decimal), @p6='?' (DbType = Decimal), @p7='?', @p8='?' (DbType = Decimal), @p9='?' (DbType = DateTime), @p10='?', @p11='?' (DbType = Decimal), @p12='?' (DbType = Decimal), @p13='?', @p14='?', @p15='?' (DbType = DateTime), @p16='?' (DbType = Guid), @p17='?' (DbType = Int32), @p18='?'], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "ServiceOrders" ("Id", "ClosedAt", "Complaint", "CreatedAt", "CustomerId", "DiscountTotal", "GrandTotal", "InternalNote", "LaborTotal", "OpenedAt", "OrderNo", "PaidTotal", "PartsTotal", "Status", "TenantId", "UpdatedAt", "VehicleId", "VehicleKm", "WorkDescription")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?', @p3='?' (DbType = Decimal), @p4='?' (DbType = Guid), @p5='?' (DbType = DateTime), @p9='?' (DbType = Guid), @p6='?' (DbType = Decimal), @p7='?' (DbType = Decimal), @p8='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "ServiceOperationItems" ("Id", "CreatedAt", "Description", "Price", "ServiceOrderId", "UpdatedAt")
+      VALUES (@p0, @p1, @p2, @p3, @p4, @p5);
+      UPDATE "ServiceOrders" SET "GrandTotal" = @p6, "LaborTotal" = @p7, "UpdatedAt" = @p8
+      WHERE "Id" = @p9;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p3='?' (DbType = Guid), @p0='?' (DbType = Decimal), @p1='?' (DbType = Decimal), @p2='?' (DbType = DateTime), @p4='?' (DbType = Guid), @p5='?' (DbType = DateTime), @p6='?', @p7='?', @p8='?' (DbType = Int32), @p9='?' (DbType = Guid), @p10='?' (DbType = Decimal), @p11='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      UPDATE "ServiceOrders" SET "GrandTotal" = @p0, "PartsTotal" = @p1, "UpdatedAt" = @p2
+      WHERE "Id" = @p3;
+      INSERT INTO "ServicePartItems" ("Id", "CreatedAt", "PartName", "PartNumber", "Quantity", "ServiceOrderId", "UnitPrice", "UpdatedAt")
+      VALUES (@p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?' (DbType = Decimal), @p1='?' (DbType = DateTime), @p3='?' (DbType = Guid), @p4='?' (DbType = Decimal), @p5='?' (DbType = DateTime), @p6='?', @p7='?' (DbType = DateTime), @p8='?' (DbType = Guid), @p9='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      UPDATE "ServiceOrders" SET "PaidTotal" = @p0, "UpdatedAt" = @p1
+      WHERE "Id" = @p2;
+      INSERT INTO "ServicePayments" ("Id", "Amount", "CreatedAt", "Method", "PaymentDate", "ServiceOrderId", "UpdatedAt")
+      VALUES (@p3, @p4, @p5, @p6, @p7, @p8, @p9);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p2='?' (DbType = Guid), @p0='?', @p1='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      UPDATE "ServiceOrders" SET "Status" = @p0, "UpdatedAt" = @p1
+      WHERE "Id" = @p2;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p4='?' (DbType = Guid), @p1='?' (DbType = Decimal), @p2='?' (DbType = Decimal), @p3='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "ServiceOperationItems"
+      WHERE "Id" = @p0;
+      UPDATE "ServiceOrders" SET "GrandTotal" = @p1, "LaborTotal" = @p2, "UpdatedAt" = @p3
+      WHERE "Id" = @p4;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@p3='?' (DbType = Guid), @p0='?' (DbType = Decimal), @p1='?' (DbType = Decimal), @p2='?' (DbType = DateTime), @p4='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      UPDATE "ServiceOrders" SET "GrandTotal" = @p0, "PartsTotal" = @p1, "UpdatedAt" = @p2
+      WHERE "Id" = @p3;
+      DELETE FROM "ServicePartItems"
+      WHERE "Id" = @p4;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+      ORDER BY s."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePartItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", t."Id"
+      FROM (
+          SELECT s."Id"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."Id" = @__id_0 AND s."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "ServicePayments" AS s0 ON t."Id" = s0."ServiceOrderId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (27ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__term_1_contains='?', @__term_1_contains_1='?', @__8__locals1_tenantId_2='?', @__Format_4='?', @__normalizedPlate_5_contains='?'], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND (lower(s."OrderNo") LIKE @__term_1_contains OR (s."Complaint" IS NOT NULL AND lower(s."Complaint") LIKE @__term_1_contains_1) OR s."CustomerId" IN (
+          SELECT c."Id"
+          FROM "Customers" AS c
+          WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."TenantId" = @__8__locals1_tenantId_2 AND c."FullName" ILIKE @__Format_4 ESCAPE ''
+      ) OR s."VehicleId" IN (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."TenantId" = @__8__locals1_tenantId_2 AND v."PlateNormalized" LIKE @__normalizedPlate_5_contains
+      ))
+warn: Microsoft.EntityFrameworkCore.Query[20504]
+      Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__term_1_contains='?', @__term_1_contains_1='?', @__8__locals1_tenantId_2='?', @__Format_4='?', @__normalizedPlate_5_contains='?', @__p_7='?' (DbType = Int32), @__p_6='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."ClosedAt", t."Complaint", t."CreatedAt", t."CustomerId", t."DiscountTotal", t."GrandTotal", t."InternalNote", t."LaborTotal", t."OpenedAt", t."OrderNo", t."PaidTotal", t."PartsTotal", t."Status", t."TenantId", t."UpdatedAt", t."VehicleId", t."VehicleKm", t."WorkDescription", s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", s1."Id", s1."CreatedAt", s1."PartName", s1."PartNumber", s1."Quantity", s1."ServiceOrderId", s1."UnitPrice", s1."UpdatedAt", s2."Id", s2."Amount", s2."CreatedAt", s2."Method", s2."PaymentDate", s2."ServiceOrderId", s2."UpdatedAt"
+      FROM (
+          SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND (lower(s."OrderNo") LIKE @__term_1_contains OR (s."Complaint" IS NOT NULL AND lower(s."Complaint") LIKE @__term_1_contains_1) OR s."CustomerId" IN (
+              SELECT c."Id"
+              FROM "Customers" AS c
+              WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."TenantId" = @__8__locals1_tenantId_2 AND c."FullName" ILIKE @__Format_4 ESCAPE ''
+          ) OR s."VehicleId" IN (
+              SELECT v."Id"
+              FROM "Vehicles" AS v
+              WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."TenantId" = @__8__locals1_tenantId_2 AND v."PlateNormalized" LIKE @__normalizedPlate_5_contains
+          ))
+          ORDER BY s."OpenedAt" DESC
+          LIMIT @__p_7 OFFSET @__p_6
+      ) AS t
+      LEFT JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      LEFT JOIN "ServicePartItems" AS s1 ON t."Id" = s1."ServiceOrderId"
+      LEFT JOIN "ServicePayments" AS s2 ON t."Id" = s2."ServiceOrderId"
+      ORDER BY t."OpenedAt" DESC, t."Id", s0."Id", s1."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__todayStart_1='?' (DbType = DateTime), @__todayEnd_2='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."OpenedAt" >= @__todayStart_1 AND s."OpenedAt" < @__todayEnd_2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."Status" IN ('Open', 'InProgress', 'WaitingForParts')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__todayStart_1='?' (DbType = DateTime), @__todayEnd_2='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."Status" IN ('Completed', 'Delivered') AND s."ClosedAt" IS NOT NULL AND s."ClosedAt" >= @__todayStart_1 AND s."ClosedAt" < @__todayEnd_2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."Status" = 'Completed'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__todayStart_1='?' (DbType = DateTime), @__todayEnd_2='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(s0."Amount"), 0.0)
+      FROM "ServiceOrders" AS s
+      INNER JOIN "ServicePayments" AS s0 ON s."Id" = s0."ServiceOrderId"
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s0."PaymentDate" >= @__todayStart_1 AND s0."PaymentDate" < @__todayEnd_2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__todayStart_1='?' (DbType = DateTime), @__todayEnd_2='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(s."GrandTotal"), 0.0)
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."OpenedAt" >= @__todayStart_1 AND s."OpenedAt" < @__todayEnd_2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(s."GrandTotal" - s."PaidTotal"), 0.0)
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."Status" <> 'Cancelled' AND s."GrandTotal" - s."PaidTotal" > 0.0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__startFrom_Value_1='?' (DbType = DateTime), @__endTo_Value_2='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."Complaint", a."CreatedAt", a."CustomerId", a."CustomerName", a."EndAt", a."Note", a."Phone", a."Plate", a."ServiceOrderId", a."StartAt", a."Status", a."TenantId", a."Type", a."UpdatedAt", a."VehicleId"
+      FROM "Appointments" AS a
+      WHERE a."TenantId" = @__ef_filter__CurrentTenantId_0 AND a."TenantId" = @__tenantId_0 AND a."StartAt" >= @__startFrom_Value_1 AND a."StartAt" < @__endTo_Value_2
+      ORDER BY a."StartAt"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT count(*)::int
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0
+warn: Microsoft.EntityFrameworkCore.Query[20504]
+      Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__p_2='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."ClosedAt", t."Complaint", t."CreatedAt", t."CustomerId", t."DiscountTotal", t."GrandTotal", t."InternalNote", t."LaborTotal", t."OpenedAt", t."OrderNo", t."PaidTotal", t."PartsTotal", t."Status", t."TenantId", t."UpdatedAt", t."VehicleId", t."VehicleKm", t."WorkDescription", s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", s1."Id", s1."CreatedAt", s1."PartName", s1."PartNumber", s1."Quantity", s1."ServiceOrderId", s1."UnitPrice", s1."UpdatedAt", s2."Id", s2."Amount", s2."CreatedAt", s2."Method", s2."PaymentDate", s2."ServiceOrderId", s2."UpdatedAt"
+      FROM (
+          SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+          FROM "ServiceOrders" AS s
+          WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0
+          ORDER BY s."OpenedAt" DESC
+          LIMIT @__p_2 OFFSET @__p_1
+      ) AS t
+      LEFT JOIN "ServiceOperationItems" AS s0 ON t."Id" = s0."ServiceOrderId"
+      LEFT JOIN "ServicePartItems" AS s1 ON t."Id" = s1."ServiceOrderId"
+      LEFT JOIN "ServicePayments" AS s2 ON t."Id" = s2."ServiceOrderId"
+      ORDER BY t."OpenedAt" DESC, t."Id", s0."Id", s1."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+      ORDER BY v."Id"
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehicleNotes" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v0."Id", v0."CreatedAt", v0."Description", v0."PhotoUrl", v0."UpdatedAt", v0."VehicleId", t."Id"
+      FROM (
+          SELECT v."Id"
+          FROM "Vehicles" AS v
+          WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."Id" = @__id_0 AND v."TenantId" = @__tenantId_1
+          LIMIT 1
+      ) AS t
+      INNER JOIN "VehiclePhotos" AS v0 ON t."Id" = v0."VehicleId"
+      ORDER BY t."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT t."Id", t."CreatedAt", t."Identifier", t."IsActive", t."Name", t."UpdatedAt"
+      FROM "Tenants" AS t
+      WHERE t."Id" = @__id_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u."Id", u."CreatedAt", u."Email", u."FullName", u."IsActive", u."LastLoginAt", u."PasswordHash", u."Role", u."TenantId", u."UpdatedAt"
+      FROM "Users" AS u
+      WHERE u."Id" = @__id_0 AND u."TenantId" = @__tenantId_1
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__id_0='?' (DbType = Guid), @__tenantId_1='?'], CommandType='Text', CommandTimeout='30']
+      SELECT c."Id", c."CreatedAt", c."Email", c."FullName", c."Notes", c."Phone", c."TenantId", c."UpdatedAt", c."Whatsapp"
+      FROM "Customers" AS c
+      WHERE c."TenantId" = @__ef_filter__CurrentTenantId_0 AND c."Id" = @__id_0 AND c."TenantId" = @__tenantId_1
+      LIMIT 1
+warn: Microsoft.EntityFrameworkCore.Query[20504]
+      Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Brand", v."ChassisNumber", v."Color", v."CreatedAt", v."CurrentCustomerId", v."CurrentKm", v."Model", v."TenantId", v."UpdatedAt", v."Year", v0."Id", v0."Content", v0."CreatedAt", v0."UpdatedAt", v0."VehicleId", v1."Id", v1."CreatedAt", v1."Description", v1."PhotoUrl", v1."UpdatedAt", v1."VehicleId", v."PlateNormalized", v."PlateOriginal"
+      FROM "Vehicles" AS v
+      LEFT JOIN "VehicleNotes" AS v0 ON v."Id" = v0."VehicleId"
+      LEFT JOIN "VehiclePhotos" AS v1 ON v."Id" = v1."VehicleId"
+      WHERE v."TenantId" = @__ef_filter__CurrentTenantId_0 AND v."TenantId" = @__tenantId_0 AND v."CurrentCustomerId" = @__customerId_1
+      ORDER BY v."Brand", v."Model", v."PlateNormalized", v."Id", v0."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."Complaint", a."CreatedAt", a."CustomerId", a."CustomerName", a."EndAt", a."Note", a."Phone", a."Plate", a."ServiceOrderId", a."StartAt", a."Status", a."TenantId", a."Type", a."UpdatedAt", a."VehicleId"
+      FROM "Appointments" AS a
+      WHERE a."TenantId" = @__ef_filter__CurrentTenantId_0 AND a."TenantId" = @__tenantId_0 AND a."CustomerId" = @__customerId_1
+      ORDER BY a."StartAt" DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_Value_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT s."Id", s."ClosedAt", s."Complaint", s."CreatedAt", s."CustomerId", s."DiscountTotal", s."GrandTotal", s."InternalNote", s."LaborTotal", s."OpenedAt", s."OrderNo", s."PaidTotal", s."PartsTotal", s."Status", s."TenantId", s."UpdatedAt", s."VehicleId", s."VehicleKm", s."WorkDescription"
+      FROM "ServiceOrders" AS s
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."CustomerId" = @__customerId_Value_1
+      ORDER BY s."OpenedAt" DESC, s."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_Value_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."Description", s0."Price", s0."ServiceOrderId", s0."UpdatedAt", s."Id"
+      FROM "ServiceOrders" AS s
+      INNER JOIN "ServiceOperationItems" AS s0 ON s."Id" = s0."ServiceOrderId"
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."CustomerId" = @__customerId_Value_1
+      ORDER BY s."OpenedAt" DESC, s."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_Value_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."CreatedAt", s0."PartName", s0."PartNumber", s0."Quantity", s0."ServiceOrderId", s0."UnitPrice", s0."UpdatedAt", s."Id"
+      FROM "ServiceOrders" AS s
+      INNER JOIN "ServicePartItems" AS s0 ON s."Id" = s0."ServiceOrderId"
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."CustomerId" = @__customerId_Value_1
+      ORDER BY s."OpenedAt" DESC, s."Id"
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__ef_filter__CurrentTenantId_0='?', @__tenantId_0='?', @__customerId_Value_1='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT s0."Id", s0."Amount", s0."CreatedAt", s0."Method", s0."PaymentDate", s0."ServiceOrderId", s0."UpdatedAt", s."Id"
+      FROM "ServiceOrders" AS s
+      INNER JOIN "ServicePayments" AS s0 ON s."Id" = s0."ServiceOrderId"
+      WHERE s."TenantId" = @__ef_filter__CurrentTenantId_0 AND s."TenantId" = @__tenantId_0 AND s."CustomerId" = @__customerId_Value_1
+      ORDER BY s."OpenedAt" DESC, s."Id"
