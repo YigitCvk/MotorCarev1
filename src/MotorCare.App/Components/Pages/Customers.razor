@@ -30,7 +30,7 @@
                 <button type="button" class="app-btn-secondary" @onclick="ResetAsync" disabled="@_isLoading">
                     Temizle
                 </button>
-                <select class="form-select" style="width:auto" @bind="_pageSize" @bind:after="SearchAsync">
+                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="SearchAsync">
                     <option value="10">10 / sayfa</option>
                     <option value="20">20 / sayfa</option>
                     <option value="50">50 / sayfa</option>
@@ -92,7 +92,7 @@
         </div>
     </section>
 
-    <section class="card-list mobile-only">
+    <section class="mobile-card-list mobile-only">
         @if (_customers.Count == 0 && !_isLoading)
         {
             <section class="empty-state">

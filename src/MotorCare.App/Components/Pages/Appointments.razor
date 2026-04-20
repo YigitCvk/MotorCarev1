@@ -64,6 +64,14 @@
                 <label class="form-label">Ara</label>
                 <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Müşteri adı, telefon veya plaka ile ara" />
             </div>
+            <div>
+                <label class="form-label">Sayfa boyutu</label>
+                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
+            </div>
         </div>
     </section>
 

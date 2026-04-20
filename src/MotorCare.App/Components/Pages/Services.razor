@@ -3,11 +3,62 @@
 <PageTitle>Hizmetler</PageTitle>
 
 <div class="page-shell">
-    <section class="hero-panel compact">
+    <section class="page-header">
         <div>
-            <div class="eyebrow">Operasyon</div>
+            <div class="eyebrow">Operasyon tanimlari</div>
             <h1 class="page-title">Hizmetler</h1>
-            <p class="page-description">Bakım, onarım, yıkama ve diğer servis kalemleri için yönetim ekranı bu alanda genişletilecek.</p>
+            <p class="page-description">
+                BakimSuite icinde kullanilan hizmet kartlari, kategori mantigi ve fiyat setleri icin tenant bazli yonetim alani.
+            </p>
         </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
+            <button type="button" class="app-btn-primary">Yeni Hizmet</button>
+        </div>
+    </section>
+
+    <section class="admin-grid">
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Periyodik Bakim Paketleri</div>
+                    <div class="section-subtitle">Hazir kontrol listeleri ve standart ucretler</div>
+                </div>
+                <span class="status-badge badge-open">Aktif</span>
+            </div>
+            <p class="admin-card-copy">Yag, filtre, kontrol ve rutin servis kalemleri icin sabit hizmet kartlari tanimlayin.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-primary">Yonet</button>
+                <button type="button" class="app-btn-secondary">Duzenle</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Onarim Iscilikleri</div>
+                    <div class="section-subtitle">Tekil operasyon ve saatlik iscilik tanimlari</div>
+                </div>
+                <span class="status-badge badge-open">Aktif</span>
+            </div>
+            <p class="admin-card-copy">Sik kullanilan iscilikleri, tahmini sure ve ucret mantigi ile siralayin.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-primary">Yonet</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Paket ve Kampanyalar</div>
+                    <div class="section-subtitle">Tematik hizmet paketleri ve promosyonlar</div>
+                </div>
+                <span class="status-badge badge-progress">Planlandi</span>
+            </div>
+            <p class="admin-card-copy">Yikama + bakim veya sezonluk hizmet kampanyalari icin hazir alan.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-secondary">Yakinda</button>
+            </div>
+        </article>
     </section>
 </div>

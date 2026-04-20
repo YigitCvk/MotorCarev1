@@ -1,14 +1,64 @@
 @page "/collections"
 @page "/finance"
 
-<PageTitle>Tahsilatlar</PageTitle>
+<PageTitle>Finans / Kasa</PageTitle>
 
 <div class="page-shell">
-    <section class="hero-panel compact">
+    <section class="page-header">
         <div>
             <div class="eyebrow">Finans</div>
-            <h1 class="page-title">Tahsilatlar</h1>
-            <p class="page-description">Tahsilat, borc-alacak ve odeme akisi icin ayri ekran kabugu planlandi.</p>
+            <h1 class="page-title">Finans / Kasa</h1>
+            <p class="page-description">
+                Tahsilat, odeme, acik bakiye ve gun sonu nakit akislarinin tenant bazli yonetim kabugu.
+            </p>
         </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
+            <button type="button" class="app-btn-primary">Gun Sonu Ozeti</button>
+        </div>
+    </section>
+
+    <section class="admin-grid">
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Tahsilat Akisi</div>
+                    <div class="section-subtitle">Nakit, kart ve havale islemleri</div>
+                </div>
+                <span class="status-badge badge-open">Aktif</span>
+            </div>
+            <p class="admin-card-copy">Servis bazli tahsilat girisleri operasyon akisi icinde mevcut. Bu modul finans gorunumu icin giris saglar.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-primary">Yonet</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Acik Hesaplar</div>
+                    <div class="section-subtitle">Cari ve kalan bakiye takibi</div>
+                </div>
+                <span class="status-badge badge-progress">Planlandi</span>
+            </div>
+            <p class="admin-card-copy">Teslim bekleyen veya eksik tahsil edilmis servisler icin tek ekranda bakiye izlemesi planlanmis durumda.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-secondary">Yakinda</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Kasa ve Gun Sonu</div>
+                    <div class="section-subtitle">Gunluk ciro ve odeme dagilimi</div>
+                </div>
+                <span class="status-badge status-info">Yakinda</span>
+            </div>
+            <p class="admin-card-copy">Dashboard verilerini tenant finans ekranina tasiyacak daha detayli kasa gorunumu icin placeholder.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-secondary">Yakinda</button>
+            </div>
+        </article>
     </section>
 </div>

@@ -1,13 +1,63 @@
 @page "/inventory"
 
-<PageTitle>Stok / Parça</PageTitle>
+<PageTitle>Stok / Parca</PageTitle>
 
 <div class="page-shell">
-    <section class="hero-panel compact">
+    <section class="page-header">
         <div>
             <div class="eyebrow">Envanter</div>
-            <h1 class="page-title">Stok / Parça</h1>
-            <p class="page-description">Parça kartları, stok seviyeleri ve tedarik takibi için bu alan Sprint 2 boyunca genişletilecek.</p>
+            <h1 class="page-title">Stok / Parca</h1>
+            <p class="page-description">
+                Parca kartlari, stok seviyeleri ve servislerde kullanilan sarf hareketleri icin tenant bazli modul girisi.
+            </p>
         </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
+            <button type="button" class="app-btn-primary">Yeni Parca</button>
+        </div>
+    </section>
+
+    <section class="admin-grid">
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Parca Kartlari</div>
+                    <div class="section-subtitle">Kod, marka ve fiyat karti yonetimi</div>
+                </div>
+                <span class="status-badge badge-open">Aktif</span>
+            </div>
+            <p class="admin-card-copy">Servis emirlerinde secilebilir parca kartlarini tenant bazinda standartlastirin.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-primary">Yonet</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Stok Seviyeleri</div>
+                    <div class="section-subtitle">Kritik esik ve bulunurluk takibi</div>
+                </div>
+                <span class="status-badge badge-progress">Planlandi</span>
+            </div>
+            <p class="admin-card-copy">Minimum stok, raf bazli gorunum ve servis oncesi hazirlik kontrolu icin ayrilmis alan.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-secondary">Yakinda</button>
+            </div>
+        </article>
+
+        <article class="app-card admin-card">
+            <div class="admin-card-top">
+                <div>
+                    <div class="section-title">Tedarikci Akisi</div>
+                    <div class="section-subtitle">Siparis ve maliyet kaydi</div>
+                </div>
+                <span class="status-badge status-info">Yakinda</span>
+            </div>
+            <p class="admin-card-copy">Tedarik, alim ve stok maliyet akisini finance modulu ile birlikte baglamak icin placeholder.</p>
+            <div class="admin-card-actions">
+                <button type="button" class="app-btn-secondary">Yakinda</button>
+            </div>
+        </article>
     </section>
 </div>

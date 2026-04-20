@@ -314,6 +314,45 @@ h1:focus { outline: none; }
     line-height: 1.4;
 }
 
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.875rem;
+}
+
+.admin-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    min-height: 100%;
+}
+
+.admin-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.admin-card-copy {
+    color: var(--mc-text-muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+.admin-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.admin-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: auto;
+}
+
 /* ── Metric Cards ───────────────────────────────────────────────── */
 .metric-grid {
     display: grid;
@@ -1721,6 +1760,37 @@ h1:focus { outline: none; }
     flex: 0 0 auto;
 }
 
+.pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: var(--mc-surface);
+    border: 1px solid var(--mc-border);
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.pagination-info {
+    color: var(--mc-text-muted);
+    font-size: 0.9rem;
+}
+
+.pagination-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.page-size-select {
+    width: auto;
+    min-width: 8.5rem;
+}
+
 .sticky-mobile-action {
     margin-top: 1rem;
 }
@@ -1832,7 +1902,8 @@ h1:focus { outline: none; }
 
 @media (max-width: 1024px) {
     .metric-grid,
-    .quick-link-grid {
+    .quick-link-grid,
+    .admin-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -1857,6 +1928,14 @@ h1:focus { outline: none; }
     .quick-actions,
     .action-bar,
     .page-header-actions {
+        width: 100%;
+    }
+
+    .pagination-bar {
+        align-items: stretch;
+    }
+
+    .pagination-actions {
         width: 100%;
     }
 }
@@ -1895,6 +1974,7 @@ h1:focus { outline: none; }
 
     .metric-grid,
     .quick-link-grid,
+    .admin-grid,
     .filter-grid,
     .form-grid,
     .auth-form-grid,
@@ -1920,7 +2000,8 @@ h1:focus { outline: none; }
     .quick-actions > *,
     .action-bar > *,
     .page-header-actions > *,
-    .filter-actions > * {
+    .filter-actions > *,
+    .pagination-actions > * {
         flex: 1 1 100%;
         width: 100%;
     }
@@ -1928,6 +2009,10 @@ h1:focus { outline: none; }
     .filter-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .page-size-select {
+        width: 100%;
     }
 
     .selection-item {
@@ -1958,6 +2043,14 @@ h1:focus { outline: none; }
     .error-state {
         padding: 1rem;
         border-radius: 1rem;
+    }
+
+    .pagination-bar {
+        padding: 1rem;
+    }
+
+    .pagination-info {
+        width: 100%;
     }
 }
 
@@ -2051,4 +2144,40 @@ h1:focus { outline: none; }
     display: flex;
     gap: 0.5rem;
     margin-top: auto;
+    flex-wrap: wrap;
+}
+
+.customer-summary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .tab-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 0.35rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .tab-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-item {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .list-item-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .list-item-row > * {
+        width: 100%;
+    }
 }
