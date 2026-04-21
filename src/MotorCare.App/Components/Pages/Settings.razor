@@ -5,38 +5,38 @@
 <div class="page-shell">
     <section class="page-header">
         <div>
-            <div class="eyebrow">Tenant yonetimi</div>
-            <h1 class="page-title">Ayarlar ve Yonetim</h1>
+            <div class="eyebrow">Tenant yönetimi</div>
+            <h1 class="page-title">Ayarlar ve Yönetim</h1>
             <p class="page-description">
-                BakimSuite tenant ayarlarinizi, ekip rollerinizi ve operasyon tercihlerinizi tek panelden yonetin.
+                İşletmenizin profilini, kullanıcılarını, randevu kurallarını ve bildirim tercihlerini buradan yönetin.
             </p>
         </div>
         <div class="page-header-actions">
-            <a class="app-btn-secondary" href="/dashboard">Panele Don</a>
-            <a class="app-btn-primary" href="/services">Modulleri Gor</a>
+            <a class="app-btn-secondary" href="/dashboard">Panele Dön</a>
+            <a class="app-btn-primary" href="/services">Hizmetleri Yönet</a>
         </div>
     </section>
 
     <section class="metric-grid">
         <div class="metric-card mc-primary">
-            <div class="metric-label">Aktif Modul</div>
+            <div class="metric-label">Aktif Modül</div>
             <div class="metric-value">7</div>
-            <div class="metric-sub">Tenant tarafinda kullanima hazir alanlar</div>
+            <div class="metric-sub">Tenant tarafında kullanıma hazır alanlar</div>
         </div>
         <div class="metric-card mc-success">
-            <div class="metric-label">Hazir Ayarlar</div>
+            <div class="metric-label">Hazır Ayarlar</div>
             <div class="metric-value">4</div>
-            <div class="metric-sub">Hemen duzenlenebilir temel basliklar</div>
+            <div class="metric-sub">Hemen düzenlenebilir temel başlıklar</div>
         </div>
         <div class="metric-card mc-warning">
             <div class="metric-label">Planlanan Alan</div>
             <div class="metric-value">3</div>
-            <div class="metric-sub">Sprint sonrasi derinlesecek moduller</div>
+            <div class="metric-sub">Bir sonraki sprintte derinleşecek modüller</div>
         </div>
         <div class="metric-card mc-teal">
-            <div class="metric-label">Ekip Hazirligi</div>
+            <div class="metric-label">BakımSuite Durumu</div>
             <div class="metric-value">MVP</div>
-            <div class="metric-sub">Tek tenant yonetim kabugu aktif</div>
+            <div class="metric-sub">Tenant yönetim kabuğu aktif</div>
         </div>
     </section>
 
@@ -44,42 +44,43 @@
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
-                    <div class="section-title">Isletme Bilgileri</div>
-                    <div class="section-subtitle">Unvan, iletisim ve servis kabul bilgileri</div>
+                    <div class="section-title">İşletme Bilgileri</div>
+                    <div class="section-subtitle">Unvan, iletişim, adres ve servis kabul bilgileri</div>
                 </div>
                 <span class="status-badge badge-open">Aktif</span>
             </div>
             <p class="admin-card-copy">
-                Isletme adi, telefon, adres, vergi bilgileri ve teslim metinleri gibi temel tenant verileri burada toplanacak.
+                İşletme adı, telefon, adres, vergi bilgileri ve teslim metinleri gibi temel tenant verilerini düzenleyin.
             </p>
             <div class="admin-card-meta">
                 <span class="type-badge">Profil</span>
-                <span class="type-badge">Iletisim</span>
+                <span class="type-badge">İletişim</span>
                 <span class="type-badge">Fatura</span>
             </div>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yonet</button>
-                <button type="button" class="app-btn-secondary">Duzenle</button>
+                <a class="app-btn-primary" href="/settings/business">Yönet</a>
+                <a class="app-btn-secondary" href="/settings/business">Düzenle</a>
             </div>
         </article>
 
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
-                    <div class="section-title">Kullanicilar ve Roller</div>
-                    <div class="section-subtitle">Owner, personel ve yetki dagilimi</div>
+                    <div class="section-title">Kullanıcılar ve Roller</div>
+                    <div class="section-subtitle">Owner, personel ve yetki dağılımı</div>
                 </div>
-                <span class="status-badge badge-progress">Planlandi</span>
+                <span class="status-badge badge-progress">Planlandı</span>
             </div>
             <p class="admin-card-copy">
-                Ekip uyeleri, rol bazli erisim ve operasyon yetkileri Sprint 2 sonrasinda bu modulde derinlestirilecek.
+                Ekip üyeleri, rol bazlı erişim ve operasyon yetkileri için tenant yönetim alanı.
             </p>
             <div class="admin-card-meta">
                 <span class="type-badge">Roller</span>
                 <span class="type-badge">Yetkiler</span>
             </div>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
+                <a class="app-btn-primary" href="/settings/users">Yönet</a>
+                <a class="app-btn-secondary" href="/settings/users">Düzenle</a>
             </div>
         </article>
 
@@ -87,20 +88,21 @@
             <div class="admin-card-top">
                 <div>
                     <div class="section-title">Randevu Tipleri</div>
-                    <div class="section-subtitle">Bakim, onarim, yikama ve kontrol tanimlari</div>
+                    <div class="section-subtitle">Bakım, onarım, yıkama ve kontrol tanımları</div>
                 </div>
                 <span class="status-badge badge-open">Aktif</span>
             </div>
             <p class="admin-card-copy">
-                Kullanilan randevu kategorilerini, renklerini ve operasyon akislarini tenant bazinda sekillendirmek icin giris alani.
+                Kullanılan randevu tiplerini, operasyon karşılıklarını ve görünür etiketleri tenant bazında yönetin.
             </p>
             <div class="admin-card-meta">
-                <span class="type-badge">Bakim</span>
-                <span class="type-badge">Onarim</span>
-                <span class="type-badge">Diger</span>
+                <span class="type-badge">Bakım</span>
+                <span class="type-badge">Onarım</span>
+                <span class="type-badge">Yıkama</span>
             </div>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yonet</button>
+                <a class="app-btn-primary" href="/settings/appointment-types">Yönet</a>
+                <a class="app-btn-secondary" href="/settings/appointment-types">Düzenle</a>
             </div>
         </article>
 
@@ -108,47 +110,54 @@
             <div class="admin-card-top">
                 <div>
                     <div class="section-title">Hizmetler</div>
-                    <div class="section-subtitle">Servis kabulde kullanilan standart kalemler</div>
+                    <div class="section-subtitle">Bakım, yıkama, detailing ve servis katalogları</div>
                 </div>
                 <span class="status-badge badge-open">Aktif</span>
             </div>
             <p class="admin-card-copy">
-                Hazir hizmet kartlari, fiyat yapisi ve paket kalemlerini duzenlemek icin Hizmetler modulune gecin.
+                Hizmet kataloğu modülü hazır. Servis kabul ve randevu akışında kullanılacak standart hizmetleri düzenleyin.
             </p>
+            <div class="admin-card-meta">
+                <span class="type-badge">Katalog</span>
+                <span class="type-badge">Fiyat</span>
+                <span class="type-badge">Süre</span>
+            </div>
             <div class="admin-card-actions">
-                <a class="app-btn-primary" href="/services">Yonet</a>
+                <a class="app-btn-primary" href="/services">Yönet</a>
+                <a class="app-btn-secondary" href="/services/create">Yeni Hizmet</a>
             </div>
         </article>
 
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
-                    <div class="section-title">Calisma Saatleri</div>
-                    <div class="section-subtitle">Gunluk servis kabul pencereleri</div>
+                    <div class="section-title">Çalışma Saatleri</div>
+                    <div class="section-subtitle">Servis kabul pencereleri ve kapasite kuralları</div>
                 </div>
-                <span class="status-badge badge-progress">Planlandi</span>
+                <span class="status-badge badge-progress">Planlandı</span>
             </div>
             <p class="admin-card-copy">
-                Randevu takvimi ile uyumlu gun/saat kapasite ayarlari ve ozel tatil kurallari bu alana eklenecek.
+                Günlük çalışma saatleri, özel tatil günleri ve randevu kapasite pencereleri için başlangıç alanı.
             </p>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
+                <a class="app-btn-primary" href="/settings/working-hours">Yönet</a>
+                <a class="app-btn-secondary" href="/settings/working-hours">Düzenle</a>
             </div>
         </article>
 
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
-                    <div class="section-title">Bildirim Sablonlari</div>
-                    <div class="section-subtitle">Randevu, teslim ve odeme iletileri</div>
+                    <div class="section-title">Bildirim Şablonları</div>
+                    <div class="section-subtitle">Randevu, teslim ve ödeme mesajları</div>
                 </div>
-                <span class="status-badge badge-progress">Planlandi</span>
+                <span class="status-badge status-info">Yakında</span>
             </div>
             <p class="admin-card-copy">
-                WhatsApp, SMS veya e-posta sablonlarini tenant tonunuza gore ozellestirmek icin ayrilmis alan.
+                SMS, WhatsApp veya e-posta metinlerini işletme tonunuza göre özelleştirmek için hazırlanan alan.
             </p>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
+                <a class="app-btn-secondary" href="/settings/notifications">Yakında</a>
             </div>
         </article>
 
@@ -156,15 +165,15 @@
             <div class="admin-card-top">
                 <div>
                     <div class="section-title">Abonelik / Paket</div>
-                    <div class="section-subtitle">Plan durumu ve kullanim gorunumu</div>
+                    <div class="section-subtitle">Plan bilgisi, limitler ve kullanım özeti</div>
                 </div>
-                <span class="status-badge status-info">Yakinda</span>
+                <span class="status-badge status-info">Yakında</span>
             </div>
             <p class="admin-card-copy">
-                Paket bilgisi, limitler ve faturalanabilir moduller bu tenant admin alaninda ozetlenecek.
+                Paket detayları, modül limitleri ve faturalama görünümü bu tenant alanında özetlenecek.
             </p>
             <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
+                <a class="app-btn-secondary" href="/settings/subscription">Yakında</a>
             </div>
         </article>
     </section>

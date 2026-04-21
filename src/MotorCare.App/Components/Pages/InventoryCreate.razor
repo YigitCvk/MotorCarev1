@@ -1,0 +1,138 @@
+@page "/inventory/create"
+@using MotorCare.App.Models.Inventory
+@inject AuthService AuthService
+@inject InventoryService InventoryService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Yeni Parça</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Yeni Parça</h1>
+            <p class="page-description">Servislerde kullanılacak parça ve sarf malzemeyi kataloğunuza ekleyin.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/inventory">Listeye dön</a>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Parça kaydedilemedi</strong>
+            <p>@_error</p>
+        </section>
+    }
+
+    <section class="app-card">
+        <div class="form-grid">
+            <div>
+                <label class="form-label">Parça adı *</label>
+                <InputText class="form-control" @bind-Value="_form.Name" placeholder="Yağ Filtresi" />
+            </div>
+            <div>
+                <label class="form-label">SKU</label>
+                <InputText class="form-control" @bind-Value="_form.Sku" placeholder="YF-001" />
+            </div>
+            <div>
+                <label class="form-label">Barkod</label>
+                <InputText class="form-control" @bind-Value="_form.Barcode" />
+            </div>
+            <div>
+                <label class="form-label">Kategori</label>
+                <InputText class="form-control" @bind-Value="_form.Category" placeholder="Filtre" />
+            </div>
+            <div>
+                <label class="form-label">Marka</label>
+                <InputText class="form-control" @bind-Value="_form.Brand" placeholder="Mann / Castrol" />
+            </div>
+            <div>
+                <label class="form-label">Birim *</label>
+                <InputText class="form-control" @bind-Value="_form.Unit" placeholder="Adet" />
+            </div>
+            <div>
+                <label class="form-label">Birim fiyat *</label>
+                <InputNumber class="form-control" @bind-Value="_form.UnitPrice" />
+            </div>
+            <div>
+                <label class="form-label">Başlangıç stoku *</label>
+                <InputNumber class="form-control" @bind-Value="_form.StockQuantity" />
+            </div>
+            <div>
+                <label class="form-label">Minimum stok *</label>
+                <InputNumber class="form-control" @bind-Value="_form.MinimumStockLevel" />
+            </div>
+            <div>
+                <label class="form-label d-block">Durum</label>
+                <div class="form-check mt-2">
+                    <InputCheckbox class="form-check-input" @bind-Value="_form.IsActive" />
+                    <label class="form-check-label ms-2">Parça aktif olarak başlasın</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="sticky-mobile-action mt-4">
+            <button type="button" class="app-btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                @(_saving ? "Kaydediliyor..." : "Parçayı Kaydet")
+            </button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private readonly CreateInventoryItemRequest _form = new();
+    private string? _error;
+    private bool _saving;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _saving = true;
+            _error = null;
+
+            if (string.IsNullOrWhiteSpace(_form.Name))
+            {
+                _error = "Parça adı zorunludur.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Unit))
+            {
+                _error = "Birim bilgisi zorunludur.";
+                return;
+            }
+
+            if (_form.UnitPrice < 0 || _form.StockQuantity < 0 || _form.MinimumStockLevel < 0)
+            {
+                _error = "Sayısal alanlar negatif olamaz.";
+                return;
+            }
+
+            await InventoryService.CreateAsync(_form);
+            NavigationManager.NavigateTo("/inventory");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -1,0 +1,272 @@
+@page "/inspections"
+@using MotorCare.App.Models.Inspections
+@inject AuthService AuthService
+@inject InspectionsService InspectionsService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Motosiklet Ekspertiz</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Motosiklet Ekspertiz</h1>
+            <p class="page-description">Müşteri, araç ve ekspertiz paketine göre hazırlanan kontrolleri yönetin.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="app-btn-primary" href="/inspections/create">+ Yeni Ekspertiz</a>
+        </div>
+    </section>
+
+    <section class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label class="form-label">Ara</label>
+                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Müşteri, telefon, plaka veya ekspertiz no" />
+            </div>
+            <div>
+                <label class="form-label">Paket</label>
+                <InputSelect class="form-select" @bind-Value="_packageFilter" @bind:after="ResetAndLoadAsync">
+                    <option value="">Tümü</option>
+                    @foreach (var package in Enum.GetValues<MotorcycleInspectionPackageType>())
+                    {
+                        <option value="@((int)package)">@GetPackageText(package)</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="form-label">Durum</label>
+                <InputSelect class="form-select" @bind-Value="_statusFilter" @bind:after="ResetAndLoadAsync">
+                    <option value="">Tümü</option>
+                    @foreach (var status in Enum.GetValues<MotorcycleInspectionStatus>())
+                    {
+                        <option value="@((int)status)">@GetStatusText(status)</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label class="form-label">Sayfa boyutu</label>
+                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Ekspertiz kayıtları yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Ekspertiz kayıtları alınamadı</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else if (_items.Count == 0)
+    {
+        <section class="empty-state">
+            <strong>Ekspertiz kaydı bulunamadı</strong>
+            <p>Yeni bir ekspertiz başlatın veya filtreleri değiştirin.</p>
+        </section>
+    }
+    else
+    {
+        <section class="surface-card desktop-only">
+            <div class="responsive-table">
+                <table class="table modern-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ekspertiz No</th>
+                            <th>Müşteri</th>
+                            <th>Plaka</th>
+                            <th>Paket</th>
+                            <th>Durum</th>
+                            <th>Fiyat</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _items)
+                        {
+                            <tr class="clickable-row" @onclick="() => OpenDetail(item.Id)">
+                                <td class="fw-semibold">@item.InspectionNo</td>
+                                <td>
+                                    <div class="fw-semibold">@item.CustomerName</div>
+                                    <div class="text-muted small">@item.Phone</div>
+                                </td>
+                                <td>@item.Plate</td>
+                                <td>@item.PackageTypeText</td>
+                                <td><span class="status-badge @GetStatusBadgeClass(item.Status)">@item.StatusText</span></td>
+                                <td>@item.PackagePrice.ToString("N2") ₺</td>
+                                <td>@item.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mobile-card-list mobile-only">
+            @foreach (var item in _items)
+            {
+                <article class="app-card" @onclick="() => OpenDetail(item.Id)">
+                    <div class="d-flex justify-content-between gap-3 align-items-start">
+                        <div>
+                            <div class="fw-semibold">@item.InspectionNo</div>
+                            <div class="text-muted small">@item.CustomerName · @item.Phone</div>
+                            <div class="text-muted small">@item.Plate · @item.PackageTypeText</div>
+                        </div>
+                        <span class="status-badge @GetStatusBadgeClass(item.Status)">@item.StatusText</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small mt-3">
+                        <span>@item.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</span>
+                        <strong>@item.PackagePrice.ToString("N2") ₺</strong>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+
+    @if (_totalPages > 1 || _totalCount > 0)
+    {
+        <div class="pagination-bar">
+            <div class="pagination-info">
+                Toplam kayıt: <strong>@_totalCount</strong> · Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+            </div>
+            <div class="pagination-actions">
+                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Önceki</button>
+                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<MotorcycleInspectionListItem> _items = [];
+    private bool _loading;
+    private string? _error;
+    private string? _searchText;
+    private int? _packageFilter;
+    private int? _statusFilter;
+    private int _pageNumber = 1;
+    private int _pageSize = 20;
+    private int _totalCount;
+    private int _totalPages;
+    private bool _hasPreviousPage;
+    private bool _hasNextPage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var result = await InspectionsService.GetInspectionsAsync(
+                _searchText,
+                _packageFilter.HasValue ? (MotorcycleInspectionPackageType?)_packageFilter.Value : null,
+                _statusFilter.HasValue ? (MotorcycleInspectionStatus?)_statusFilter.Value : null,
+                pageNumber: _pageNumber,
+                pageSize: _pageSize);
+
+            _items.Clear();
+            if (result is not null)
+            {
+                _items.AddRange(result.Items);
+                _totalCount = result.TotalCount;
+                _totalPages = result.TotalPages;
+                _hasPreviousPage = result.HasPreviousPage;
+                _hasNextPage = result.HasNextPage;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResetAndLoadAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_pageNumber <= 1)
+        {
+            return;
+        }
+
+        _pageNumber--;
+        await LoadAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!_hasNextPage)
+        {
+            return;
+        }
+
+        _pageNumber++;
+        await LoadAsync();
+    }
+
+    private static string GetPackageText(MotorcycleInspectionPackageType packageType) => packageType switch
+    {
+        MotorcycleInspectionPackageType.MechanicalAndRunningGear => "Mekanik ve Yürüyen Aksam",
+        MotorcycleInspectionPackageType.BodyAndFairing => "Karenaj ve Kaporta",
+        MotorcycleInspectionPackageType.ObdAndElectrical => "OBD Test ve Elektrik/Elektronik",
+        _ => "Full Ekspertiz"
+    };
+
+    private static string GetStatusText(MotorcycleInspectionStatus status) => status switch
+    {
+        MotorcycleInspectionStatus.Draft => "Taslak",
+        MotorcycleInspectionStatus.InProgress => "Devam Ediyor",
+        MotorcycleInspectionStatus.Completed => "Tamamlandı",
+        _ => "İptal"
+    };
+
+    private static string GetStatusBadgeClass(MotorcycleInspectionStatus status) => status switch
+    {
+        MotorcycleInspectionStatus.Draft => "badge-muted",
+        MotorcycleInspectionStatus.InProgress => "badge-progress",
+        MotorcycleInspectionStatus.Completed => "badge-completed",
+        MotorcycleInspectionStatus.Cancelled => "badge-cancelled",
+        _ => "badge-muted"
+    };
+
+    private void OpenDetail(Guid id)
+        => NavigationManager.NavigateTo($"/inspections/{id}");
+}

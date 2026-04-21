@@ -1,5 +1,6 @@
 @inherits LayoutComponentBase
 @implements IDisposable
+@using Microsoft.AspNetCore.Components.Web
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -8,12 +9,65 @@
 
     <div class="app-main">
         <header class="app-topbar">
-            <div class="app-topbar-search">
-                <input type="text" class="app-search-input" placeholder="Ara, plaka, müşteri veya servis no" />
+            <div class="app-topbar-search" @onfocusout="HandleSearchFocusOutAsync">
+                <input type="text"
+                       class="app-search-input"
+                       placeholder="Ara, plaka, müşteri veya servis no"
+                       value="@_searchQuery"
+                       @oninput="HandleSearchInput"
+                       @onkeydown="HandleSearchKeyDownAsync"
+                       @onfocus="HandleSearchFocus" />
+
+                @if (_isSearchOpen)
+                {
+                    <div class="app-topbar-panel app-search-panel">
+                        @if (!string.IsNullOrWhiteSpace(_searchError))
+                        {
+                            <div class="app-topbar-panel-state app-topbar-panel-error">@_searchError</div>
+                        }
+                        else if (SearchShortcuts.Count == 0)
+                        {
+                            <div class="app-topbar-panel-state">En az 2 karakter girin.</div>
+                        }
+                        else
+                        {
+                            <div class="app-topbar-panel-title">Hızlı arama</div>
+
+                            @foreach (var shortcut in SearchShortcuts)
+                            {
+                                <button type="button"
+                                        class="app-search-link"
+                                        @onclick="@(() => NavigateTo(shortcut.Href))">
+                                    <span class="app-search-link-title">@shortcut.Title</span>
+                                    <span class="app-search-link-copy">@shortcut.Description</span>
+                                </button>
+                            }
+                        }
+                    </div>
+                }
             </div>
 
-            <div class="app-topbar-actions">
-                <a class="app-btn-primary" href="/service-orders/create">+ Yeni</a>
+            <div class="app-topbar-actions" @onfocusout="HandleCreateMenuFocusOutAsync">
+                <div class="app-topbar-menu-wrap">
+                    <button type="button" class="app-btn-primary" @onclick="ToggleCreateMenu">
+                        + Yeni
+                    </button>
+
+                    @if (_isCreateMenuOpen)
+                    {
+                        <div class="app-topbar-panel app-create-menu">
+                            @foreach (var createAction in CreateActions)
+                            {
+                                <button type="button"
+                                        class="app-menu-link"
+                                        @onclick="@(() => NavigateTo(createAction.Href))">
+                                    <span class="app-menu-link-title">@createAction.Title</span>
+                                    <span class="app-menu-link-copy">@createAction.Description</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
 
                 @if (_currentUser is not null)
                 {
@@ -71,6 +125,38 @@
 
 @code {
     private CurrentUserResponse? _currentUser;
+    private string _searchQuery = string.Empty;
+    private string? _searchError;
+    private bool _isSearchOpen;
+    private bool _isCreateMenuOpen;
+
+    private IReadOnlyList<SearchShortcut> SearchShortcuts =>
+        string.IsNullOrWhiteSpace(_searchQuery) || _searchQuery.Trim().Length < 2
+            ? Array.Empty<SearchShortcut>()
+            : new[]
+            {
+                new SearchShortcut(
+                    "Müşterilerde ara",
+                    "Ad, telefon veya e-posta içinde ara",
+                    $"/customers?q={Uri.EscapeDataString(_searchQuery.Trim())}"),
+                new SearchShortcut(
+                    "Servislerde ara",
+                    "Servis no, plaka veya müşteri üzerinden devam et",
+                    $"/service-orders?q={Uri.EscapeDataString(_searchQuery.Trim())}"),
+                new SearchShortcut(
+                    "Randevularda ara",
+                    "Bugünkü ve geçmiş randevular içinde ara",
+                    $"/appointments?q={Uri.EscapeDataString(_searchQuery.Trim())}")
+            };
+
+    private static readonly IReadOnlyList<QuickActionLink> CreateActions =
+    [
+        new("Yeni Randevu", "Yeni kabul ve randevu kaydı oluştur", "/appointments/create"),
+        new("Yeni Servis", "Yeni servis emri aç", "/service-orders/create"),
+        new("Yeni Müşteri", "Yeni müşteri kartı oluştur", "/customers/create"),
+        new("Yeni Araç", "Yeni araç veya motosiklet ekle", "/vehicles/create"),
+        new("Yeni Hizmet", "Hizmet kataloğuna yeni kalem ekle", "/services/create")
+    ];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -85,8 +171,16 @@
 
     private async void HandleAuthenticationStateChanged()
     {
-        await RefreshCurrentUserAsync();
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await RefreshCurrentUserAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            _currentUser = null;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task RefreshCurrentUserAsync()
@@ -100,6 +194,86 @@
         _currentUser = await AuthService.GetCurrentUserAsync();
     }
 
+    private void HandleSearchFocus()
+    {
+        if (!string.IsNullOrWhiteSpace(_searchQuery) && _searchQuery.Trim().Length >= 2)
+        {
+            _searchError = null;
+            _isSearchOpen = true;
+        }
+    }
+
+    private void HandleSearchInput(ChangeEventArgs args)
+    {
+        try
+        {
+            _searchQuery = args.Value?.ToString() ?? string.Empty;
+            _searchError = null;
+            _isSearchOpen = _searchQuery.Trim().Length >= 2;
+        }
+        catch
+        {
+            _searchError = "Arama sırasında hata oluştu.";
+            _isSearchOpen = true;
+        }
+    }
+
+    private Task HandleSearchKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key is "Enter")
+        {
+            var query = _searchQuery.Trim();
+            if (query.Length >= 2)
+            {
+                NavigateTo($"/service-orders?q={Uri.EscapeDataString(query)}");
+            }
+        }
+        else if (args.Key is "Escape")
+        {
+            CloseSearch();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleSearchFocusOutAsync(FocusEventArgs _)
+    {
+        await Task.Delay(120);
+        _isSearchOpen = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleCreateMenu()
+    {
+        _isCreateMenuOpen = !_isCreateMenuOpen;
+        _isSearchOpen = false;
+    }
+
+    private async Task HandleCreateMenuFocusOutAsync(FocusEventArgs _)
+    {
+        if (!_isCreateMenuOpen)
+        {
+            return;
+        }
+
+        await Task.Delay(120);
+        _isCreateMenuOpen = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void NavigateTo(string href)
+    {
+        _isCreateMenuOpen = false;
+        CloseSearch();
+        NavigationManager.NavigateTo(href);
+    }
+
+    private void CloseSearch()
+    {
+        _isSearchOpen = false;
+        _searchError = null;
+    }
+
     private async Task LogoutAsync()
     {
         await AuthService.LogoutAsync();
@@ -110,4 +284,7 @@
     {
         AuthService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
     }
+
+    private sealed record SearchShortcut(string Title, string Description, string Href);
+    private sealed record QuickActionLink(string Title, string Description, string Href);
 }

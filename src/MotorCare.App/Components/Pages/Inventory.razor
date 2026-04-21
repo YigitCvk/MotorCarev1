@@ -1,63 +1,452 @@
 @page "/inventory"
+@using MotorCare.App.Models.Inventory
+@inject AuthService AuthService
+@inject InventoryService InventoryService
+@inject NavigationManager NavigationManager
 
-<PageTitle>Stok / Parca</PageTitle>
+<PageTitle>Stok / Parça</PageTitle>
 
 <div class="page-shell">
     <section class="page-header">
         <div>
-            <div class="eyebrow">Envanter</div>
-            <h1 class="page-title">Stok / Parca</h1>
-            <p class="page-description">
-                Parca kartlari, stok seviyeleri ve servislerde kullanilan sarf hareketleri icin tenant bazli modul girisi.
-            </p>
+            <h1 class="page-title">Stok / Parça</h1>
+            <p class="page-description">Parça ve sarf malzeme kataloğunuzu yönetin.</p>
         </div>
         <div class="page-header-actions">
-            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
-            <button type="button" class="app-btn-primary">Yeni Parca</button>
+            <a class="app-btn-primary" href="/inventory/create">+ Yeni Parça</a>
         </div>
     </section>
 
-    <section class="admin-grid">
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Parca Kartlari</div>
-                    <div class="section-subtitle">Kod, marka ve fiyat karti yonetimi</div>
-                </div>
-                <span class="status-badge badge-open">Aktif</span>
+    <section class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label class="form-label">Ara</label>
+                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Parça adı, SKU veya barkod ara" />
             </div>
-            <p class="admin-card-copy">Servis emirlerinde secilebilir parca kartlarini tenant bazinda standartlastirin.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yonet</button>
+            <div>
+                <label class="form-label">Kategori</label>
+                <InputText class="form-control" @bind-Value="_categoryFilter" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Filtre, yağ, sarf..." />
             </div>
-        </article>
-
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Stok Seviyeleri</div>
-                    <div class="section-subtitle">Kritik esik ve bulunurluk takibi</div>
-                </div>
-                <span class="status-badge badge-progress">Planlandi</span>
+            <div>
+                <label class="form-label">Durum</label>
+                <InputSelect class="form-select" @bind-Value="_activeFilter" @bind:after="ResetAndLoadAsync">
+                    <option value="">Tümü</option>
+                    <option value="true">Aktif</option>
+                    <option value="false">Pasif</option>
+                </InputSelect>
             </div>
-            <p class="admin-card-copy">Minimum stok, raf bazli gorunum ve servis oncesi hazirlik kontrolu icin ayrilmis alan.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
+            <div>
+                <label class="form-label">Sayfa boyutu</label>
+                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
+                    <option value="10">10 / sayfa</option>
+                    <option value="20">20 / sayfa</option>
+                    <option value="50">50 / sayfa</option>
+                </select>
             </div>
-        </article>
-
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Tedarikci Akisi</div>
-                    <div class="section-subtitle">Siparis ve maliyet kaydi</div>
-                </div>
-                <span class="status-badge status-info">Yakinda</span>
-            </div>
-            <p class="admin-card-copy">Tedarik, alim ve stok maliyet akisini finance modulu ile birlikte baglamak icin placeholder.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakinda</button>
-            </div>
-        </article>
+        </div>
+        <div class="action-bar">
+            <label class="d-flex align-items-center gap-2">
+                <InputCheckbox @bind-Value="_lowStockOnly" @bind:after="ResetAndLoadAsync" />
+                <span>Sadece düşük stok</span>
+            </label>
+        </div>
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <section class="loading-state">
+            <strong>@_message</strong>
+        </section>
+    }
+
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Stok listesi yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Stok listesi alınamadı</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else if (_items.Count == 0)
+    {
+        <section class="empty-state">
+            <strong>Kayıtlı parça bulunamadı</strong>
+            <p>Henüz hizmet tanımlanmamış. Stok kartlarınızı Yeni Parça ile ekleyebilirsiniz.</p>
+        </section>
+    }
+    else
+    {
+        <section class="surface-card desktop-only">
+            <div class="responsive-table">
+                <table class="table modern-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Parça</th>
+                            <th>Kategori</th>
+                            <th>Marka</th>
+                            <th>Birim Fiyat</th>
+                            <th>Stok</th>
+                            <th>Durum</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@item.Name</div>
+                                    <div class="text-muted small">@BuildIdentityLine(item)</div>
+                                </td>
+                                <td>@(item.Category ?? "-")</td>
+                                <td>@(item.Brand ?? "-")</td>
+                                <td>@item.UnitPrice.ToString("N2") ₺</td>
+                                <td>@item.StockQuantity.ToString("N2") @item.Unit</td>
+                                <td>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="status-badge badge-open">Aktif</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge badge-muted">Pasif</span>
+                                        }
+                                        @if (item.IsLowStock)
+                                        {
+                                            <span class="status-badge badge-waiting">Düşük Stok</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                                        <a class="app-btn-secondary" href="@($"/inventory/{item.Id}/edit")">Düzenle</a>
+                                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleAdjustPanel(item.Id)">Stok Güncelle</button>
+                                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleActiveAsync(item)" disabled="_loadingActionId == item.Id">
+                                            @(item.IsActive ? "Pasife Al" : "Aktifleştir")
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @if (_adjustItemId == item.Id)
+                            {
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="app-card">
+                                            <div class="form-grid compact-grid">
+                                                <div>
+                                                    <label class="form-label">Miktar Değişimi</label>
+                                                    <InputNumber class="form-control" @bind-Value="_adjustQuantityDelta" />
+                                                </div>
+                                                <div class="full-span">
+                                                    <label class="form-label">Neden</label>
+                                                    <InputText class="form-control" @bind-Value="_adjustReason" placeholder="İlk stok girişi / kullanım / düzeltme" />
+                                                </div>
+                                                <div class="filter-actions full-span">
+                                                    <button type="button" class="app-btn-primary" @onclick="() => AdjustStockAsync(item.Id)" disabled="_loadingActionId == item.Id">Kaydet</button>
+                                                    <button type="button" class="app-btn-secondary" @onclick="CloseAdjustPanel">Vazgeç</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mobile-card-list mobile-only">
+            @foreach (var item in _items)
+            {
+                <article class="app-card">
+                    <div class="d-flex justify-content-between gap-3 align-items-start">
+                        <div>
+                            <div class="fw-semibold">@item.Name</div>
+                            <div class="text-muted small">@BuildIdentityLine(item)</div>
+                        </div>
+                        <div class="d-flex flex-column gap-2 align-items-end">
+                            @if (item.IsActive)
+                            {
+                                <span class="status-badge badge-open">Aktif</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-muted">Pasif</span>
+                            }
+                            @if (item.IsLowStock)
+                            {
+                                <span class="status-badge badge-waiting">Düşük Stok</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="detail-list mt-3">
+                        <dt>Kategori</dt>
+                        <dd>@(item.Category ?? "-")</dd>
+                        <dt>Marka</dt>
+                        <dd>@(item.Brand ?? "-")</dd>
+                        <dt>Birim fiyat</dt>
+                        <dd>@item.UnitPrice.ToString("N2") ₺</dd>
+                        <dt>Stok</dt>
+                        <dd>@item.StockQuantity.ToString("N2") @item.Unit</dd>
+                    </div>
+
+                    <div class="action-bar mt-3">
+                        <a class="app-btn-secondary" href="@($"/inventory/{item.Id}/edit")">Düzenle</a>
+                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleAdjustPanel(item.Id)">Stok Güncelle</button>
+                        <button type="button" class="app-btn-secondary" @onclick="() => ToggleActiveAsync(item)" disabled="_loadingActionId == item.Id">
+                            @(item.IsActive ? "Pasife Al" : "Aktifleştir")
+                        </button>
+                    </div>
+
+                    @if (_adjustItemId == item.Id)
+                    {
+                        <div class="app-card mt-3">
+                            <div class="form-grid">
+                                <div>
+                                    <label class="form-label">Miktar Değişimi</label>
+                                    <InputNumber class="form-control" @bind-Value="_adjustQuantityDelta" />
+                                </div>
+                                <div class="full-span">
+                                    <label class="form-label">Neden</label>
+                                    <InputText class="form-control" @bind-Value="_adjustReason" placeholder="İlk stok girişi / kullanım / düzeltme" />
+                                </div>
+                                <div class="full-span action-bar">
+                                    <button type="button" class="app-btn-primary" @onclick="() => AdjustStockAsync(item.Id)" disabled="_loadingActionId == item.Id">Kaydet</button>
+                                    <button type="button" class="app-btn-secondary" @onclick="CloseAdjustPanel">Vazgeç</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    @if (_totalPages > 1 || _totalCount > 0)
+    {
+        <div class="pagination-bar">
+            <div class="pagination-info">
+                Toplam kayıt: <strong>@_totalCount</strong> · Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+            </div>
+            <div class="pagination-actions">
+                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Önceki</button>
+                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
+            </div>
+        </div>
+    }
 </div>
+
+@code {
+    private readonly List<InventoryItem> _items = [];
+    private bool _loading;
+    private Guid? _loadingActionId;
+    private string? _error;
+    private string? _message;
+    private string? _searchText;
+    private string? _categoryFilter;
+    private bool? _activeFilter;
+    private bool _lowStockOnly;
+    private int _pageNumber = 1;
+    private int _pageSize = 20;
+    private int _totalCount;
+    private int _totalPages;
+    private bool _hasPreviousPage;
+    private bool _hasNextPage;
+    private Guid? _adjustItemId;
+    private decimal _adjustQuantityDelta;
+    private string _adjustReason = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var result = await InventoryService.GetInventoryItemsAsync(_searchText, _categoryFilter, _activeFilter, _lowStockOnly, _pageNumber, _pageSize);
+            _items.Clear();
+
+            if (result is not null)
+            {
+                _items.AddRange(result.Items);
+                _totalCount = result.TotalCount;
+                _totalPages = result.TotalPages;
+                _hasPreviousPage = result.HasPreviousPage;
+                _hasNextPage = result.HasNextPage;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ResetAndLoadAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_pageNumber <= 1)
+        {
+            return;
+        }
+
+        _pageNumber--;
+        await LoadAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (!_hasNextPage)
+        {
+            return;
+        }
+
+        _pageNumber++;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(InventoryItem item)
+    {
+        try
+        {
+            _loadingActionId = item.Id;
+            _error = null;
+            _message = null;
+
+            if (item.IsActive)
+            {
+                await InventoryService.DeactivateAsync(item.Id);
+                _message = "Parça pasife alındı.";
+            }
+            else
+            {
+                await InventoryService.ActivateAsync(item.Id);
+                _message = "Parça aktifleştirildi.";
+            }
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loadingActionId = null;
+        }
+    }
+
+    private void ToggleAdjustPanel(Guid id)
+    {
+        if (_adjustItemId == id)
+        {
+            CloseAdjustPanel();
+            return;
+        }
+
+        _adjustItemId = id;
+        _adjustQuantityDelta = 0;
+        _adjustReason = string.Empty;
+        _error = null;
+        _message = null;
+    }
+
+    private void CloseAdjustPanel()
+    {
+        _adjustItemId = null;
+        _adjustQuantityDelta = 0;
+        _adjustReason = string.Empty;
+    }
+
+    private async Task AdjustStockAsync(Guid id)
+    {
+        try
+        {
+            _loadingActionId = id;
+            _error = null;
+            _message = null;
+
+            if (_adjustQuantityDelta == 0)
+            {
+                _error = "Stok değişim miktarı sıfır olamaz.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_adjustReason))
+            {
+                _error = "Stok güncelleme nedeni gereklidir.";
+                return;
+            }
+
+            await InventoryService.AdjustStockAsync(id, new AdjustInventoryStockRequest
+            {
+                QuantityDelta = _adjustQuantityDelta,
+                Reason = _adjustReason
+            });
+
+            _message = $"Stok hareketi kaydedildi ({_adjustQuantityDelta:+0.##;-0.##;0}).";
+            CloseAdjustPanel();
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loadingActionId = null;
+        }
+    }
+
+    private static string BuildIdentityLine(InventoryItem item)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(item.Sku))
+        {
+            parts.Add($"SKU: {item.Sku}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.Barcode))
+        {
+            parts.Add($"Barkod: {item.Barcode}");
+        }
+
+        return parts.Count == 0 ? "Tanımlı kod bilgisi yok" : string.Join(" · ", parts);
+    }
+}

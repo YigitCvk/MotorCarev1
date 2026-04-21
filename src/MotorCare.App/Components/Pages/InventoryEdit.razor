@@ -1,0 +1,259 @@
+@page "/inventory/{Id:guid}/edit"
+@using MotorCare.App.Models.Inventory
+@inject AuthService AuthService
+@inject InventoryService InventoryService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Parça Düzenle</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Parça Düzenle</h1>
+            <p class="page-description">Parça kartını güncelleyin ve stok hareketi ekleyin.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/inventory">Listeye dön</a>
+        </div>
+    </section>
+
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Parça yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Parça yüklenemedi</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <section class="loading-state">
+                <strong>@_message</strong>
+            </section>
+        }
+
+        <section class="app-card">
+            <div class="form-grid">
+                <div>
+                    <label class="form-label">Parça adı *</label>
+                    <InputText class="form-control" @bind-Value="_form.Name" />
+                </div>
+                <div>
+                    <label class="form-label">SKU</label>
+                    <InputText class="form-control" @bind-Value="_form.Sku" />
+                </div>
+                <div>
+                    <label class="form-label">Barkod</label>
+                    <InputText class="form-control" @bind-Value="_form.Barcode" />
+                </div>
+                <div>
+                    <label class="form-label">Kategori</label>
+                    <InputText class="form-control" @bind-Value="_form.Category" />
+                </div>
+                <div>
+                    <label class="form-label">Marka</label>
+                    <InputText class="form-control" @bind-Value="_form.Brand" />
+                </div>
+                <div>
+                    <label class="form-label">Birim *</label>
+                    <InputText class="form-control" @bind-Value="_form.Unit" />
+                </div>
+                <div>
+                    <label class="form-label">Birim fiyat *</label>
+                    <InputNumber class="form-control" @bind-Value="_form.UnitPrice" />
+                </div>
+                <div>
+                    <label class="form-label">Stok *</label>
+                    <InputNumber class="form-control" @bind-Value="_form.StockQuantity" />
+                </div>
+                <div>
+                    <label class="form-label">Minimum stok *</label>
+                    <InputNumber class="form-control" @bind-Value="_form.MinimumStockLevel" />
+                </div>
+                <div>
+                    <label class="form-label d-block">Durum</label>
+                    <div class="form-check mt-2">
+                        <InputCheckbox class="form-check-input" @bind-Value="_form.IsActive" />
+                        <label class="form-check-label ms-2">Parça aktif</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sticky-mobile-action mt-4">
+                <button type="button" class="app-btn-primary" @onclick="SaveAsync" disabled="@_saving">
+                    @(_saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet")
+                </button>
+            </div>
+        </section>
+
+        <section class="app-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Stok Güncelle</div>
+                    <div class="section-subtitle">Pozitif veya negatif hareket girebilirsiniz.</div>
+                </div>
+            </div>
+
+            <div class="form-grid compact-grid">
+                <div>
+                    <label class="form-label">Miktar Değişimi</label>
+                    <InputNumber class="form-control" @bind-Value="_adjustRequest.QuantityDelta" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Neden</label>
+                    <InputText class="form-control" @bind-Value="_adjustRequest.Reason" placeholder="İlk stok girişi / kullanım / düzeltme" />
+                </div>
+                <div class="filter-actions full-span">
+                    <button type="button" class="app-btn-secondary" @onclick="AdjustStockAsync" disabled="@_saving">Stok Güncelle</button>
+                </div>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private readonly UpdateInventoryItemRequest _form = new();
+    private readonly AdjustInventoryStockRequest _adjustRequest = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+    private string? _message;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var item = await InventoryService.GetByIdAsync(Id);
+            if (item is null)
+            {
+                _error = "Parça bulunamadı.";
+                return;
+            }
+
+            _form.Name = item.Name;
+            _form.Sku = item.Sku;
+            _form.Barcode = item.Barcode;
+            _form.Category = item.Category;
+            _form.Brand = item.Brand;
+            _form.Unit = item.Unit;
+            _form.UnitPrice = item.UnitPrice;
+            _form.StockQuantity = item.StockQuantity;
+            _form.MinimumStockLevel = item.MinimumStockLevel;
+            _form.IsActive = item.IsActive;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _saving = true;
+            _error = null;
+            _message = null;
+
+            if (string.IsNullOrWhiteSpace(_form.Name))
+            {
+                _error = "Parça adı zorunludur.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Unit))
+            {
+                _error = "Birim bilgisi zorunludur.";
+                return;
+            }
+
+            if (_form.UnitPrice < 0 || _form.StockQuantity < 0 || _form.MinimumStockLevel < 0)
+            {
+                _error = "Sayısal alanlar negatif olamaz.";
+                return;
+            }
+
+            await InventoryService.UpdateAsync(Id, _form);
+            _message = "Parça kartı güncellendi.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task AdjustStockAsync()
+    {
+        try
+        {
+            _saving = true;
+            _error = null;
+            _message = null;
+
+            if (_adjustRequest.QuantityDelta == 0)
+            {
+                _error = "Stok değişim miktarı sıfır olamaz.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_adjustRequest.Reason))
+            {
+                _error = "Stok güncelleme nedeni gereklidir.";
+                return;
+            }
+
+            await InventoryService.AdjustStockAsync(Id, _adjustRequest);
+            _message = $"Stok hareketi kaydedildi ({_adjustRequest.QuantityDelta:+0.##;-0.##;0}).";
+            _adjustRequest.QuantityDelta = 0;
+            _adjustRequest.Reason = string.Empty;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
