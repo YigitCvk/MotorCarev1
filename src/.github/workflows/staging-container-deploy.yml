@@ -1,0 +1,69 @@
+name: Staging Container Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lowercase owner
+        id: owner
+        run: echo "value=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Set image names
+        id: meta
+        run: |
+          echo "api=${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/bakimsuite-api:staging" >> "$GITHUB_OUTPUT"
+          echo "app=${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/bakimsuite-app:staging" >> "$GITHUB_OUTPUT"
+          echo "migrator=${{ env.REGISTRY }}/${{ steps.owner.outputs.value }}/bakimsuite-migrator:staging" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MotorCare.Api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.api }}
+
+      - name: Build and push App
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MotorCare.App/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.app }}
+
+      - name: Build and push Migrator
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MotorCare.Api/Dockerfile.migrator
+          push: true
+          tags: ${{ steps.meta.outputs.migrator }}
+
+      - name: Trigger Portainer webhook
+        if: ${{ secrets.PORTAINER_STAGING_WEBHOOK != '' }}
+        run: curl -fsS -X POST "${{ secrets.PORTAINER_STAGING_WEBHOOK }}"

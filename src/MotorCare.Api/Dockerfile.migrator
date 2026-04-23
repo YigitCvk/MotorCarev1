@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+WORKDIR /src
+
+COPY MotorCare.Domain/MotorCare.Domain.csproj MotorCare.Domain/
+COPY MotorCare.Application/MotorCare.Application.csproj MotorCare.Application/
+COPY MotorCare.Infrastructure/MotorCare.Infrastructure.csproj MotorCare.Infrastructure/
+COPY MotorCare.Api/MotorCare.Api.csproj MotorCare.Api/
+RUN dotnet restore MotorCare.Api/MotorCare.Api.csproj
+
+COPY . .
+
+RUN dotnet tool install --global dotnet-ef --version 8.*
+ENV PATH="${PATH}:/root/.dotnet/tools"
+ENV ASPNETCORE_ENVIRONMENT=Staging
+
+ENTRYPOINT ["dotnet", "ef", "database", "update", "--project", "MotorCare.Infrastructure/MotorCare.Infrastructure.csproj", "--startup-project", "MotorCare.Api/MotorCare.Api.csproj"]

@@ -1,0 +1,932 @@
+/* _content/MotorCare.App/Components/Layout/AppSidebar.razor.rz.scp.css */
+.app-sidebar[b-difdyeq00m] {
+  width: 280px;
+  min-height: 100vh;
+  background: #0F172A;
+  color: #fff;
+  padding: 20px 16px;
+  position: sticky;
+  top: 0;
+}
+
+.app-sidebar__brand[b-difdyeq00m] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 28px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.app-sidebar__brand-mark[b-difdyeq00m] {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #F97316, #FACC15);
+  color: #111827;
+  font-weight: 900;
+  box-shadow: 0 14px 34px rgba(249,115,22,.32);
+}
+
+.app-sidebar__nav[b-difdyeq00m] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app-sidebar__link[b-difdyeq00m] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: rgba(255,255,255,.72);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.app-sidebar__link:hover[b-difdyeq00m] {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.app-sidebar__link.active[b-difdyeq00m] {
+  background: rgba(249,115,22,.14);
+  color: #FDBA74;
+  box-shadow: inset 3px 0 0 #F97316;
+}
+
+.app-sidebar .icon[b-difdyeq00m] {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+}
+
+.app-sidebar__footer[b-difdyeq00m] {
+  margin-top: 28px;
+  padding: 14px 12px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.45);
+  font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+  .app-sidebar[b-difdyeq00m] {
+    width: 84px;
+    padding: 18px 12px;
+  }
+
+  .app-sidebar__brand span:last-child[b-difdyeq00m],
+  .app-sidebar__link span[b-difdyeq00m],
+  .app-sidebar__footer[b-difdyeq00m] {
+    display: none;
+  }
+
+  .app-sidebar__link[b-difdyeq00m] {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-sidebar[b-difdyeq00m] {
+    display: none;
+  }
+}
+/* _content/MotorCare.App/Components/Layout/MainLayout.razor.rz.scp.css */
+.app-shell[b-m6tjem501a] {
+    min-height: 100vh;
+    display: flex;
+    background: var(--mc-bg, #F8FAFC);
+}
+
+.app-sidebar[b-m6tjem501a] {
+    width: 288px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at top, rgba(37, 99, 235, 0.16), transparent 20rem),
+        linear-gradient(180deg, #07111f 0%, #0f172a 100%);
+    color: #e2e8f0;
+    border-right: 1px solid rgba(226, 232, 240, 0.08);
+    scrollbar-width: none;
+}
+
+.app-sidebar[b-m6tjem501a]::-webkit-scrollbar {
+    display: none;
+}
+
+.app-main[b-m6tjem501a] {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-topbar[b-m6tjem501a] {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    min-height: 72px;
+    border-bottom: 1px solid var(--mc-border, #E2E8F0);
+    background: rgba(248, 250, 252, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.app-topbar-search[b-m6tjem501a] {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.app-search-input[b-m6tjem501a] {
+    width: min(100%, 34rem);
+    border: 1px solid var(--mc-border, #E2E8F0);
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.9rem 1.15rem;
+    color: var(--mc-text, #0F172A);
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.app-search-input[b-m6tjem501a]::placeholder {
+    color: var(--mc-text-muted, #64748B);
+}
+
+.app-topbar-actions[b-m6tjem501a] {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.app-topbar-menu-wrap[b-m6tjem501a] {
+    position: relative;
+}
+
+.app-topbar-panel[b-m6tjem501a] {
+    position: absolute;
+    top: calc(100% + 0.65rem);
+    z-index: 40;
+    min-width: 18rem;
+    padding: 0.6rem;
+    border-radius: 1rem;
+    background: var(--mc-surface, #fff);
+    border: 1px solid var(--mc-border, #E2E8F0);
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+}
+
+.app-search-panel[b-m6tjem501a] {
+    left: 0;
+    width: min(100%, 34rem);
+}
+
+.app-create-menu[b-m6tjem501a] {
+    right: 0;
+    width: min(22rem, calc(100vw - 2rem));
+}
+
+.app-topbar-panel-title[b-m6tjem501a] {
+    padding: 0.35rem 0.55rem 0.55rem;
+    color: var(--mc-text-muted, #64748B);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.app-topbar-panel-state[b-m6tjem501a] {
+    padding: 0.7rem 0.8rem;
+    border-radius: 0.85rem;
+    color: var(--mc-text-muted, #64748B);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.app-topbar-panel-error[b-m6tjem501a] {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.app-search-link[b-m6tjem501a],
+.app-menu-link[b-m6tjem501a] {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.8rem 0.85rem;
+    border: 0;
+    background: transparent;
+    border-radius: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.app-search-link:hover[b-m6tjem501a],
+.app-menu-link:hover[b-m6tjem501a] {
+    background: rgba(37, 99, 235, 0.08);
+    transform: translateY(-1px);
+}
+
+.app-search-link-title[b-m6tjem501a],
+.app-menu-link-title[b-m6tjem501a] {
+    color: var(--mc-text, #0F172A);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.app-search-link-copy[b-m6tjem501a],
+.app-menu-link-copy[b-m6tjem501a] {
+    color: var(--mc-text-muted, #64748B);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.app-user-chip[b-m6tjem501a] {
+    padding: 0.55rem 0.95rem;
+    border-radius: 14px;
+    background: var(--mc-surface, #fff);
+    border: 1px solid var(--mc-border, #E2E8F0);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.app-user-chip-label[b-m6tjem501a] {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--mc-text-muted, #64748B);
+    font-weight: 600;
+}
+
+.app-user-chip-value[b-m6tjem501a] {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--mc-text, #0F172A);
+    white-space: nowrap;
+}
+
+.app-user-chip-muted .app-user-chip-value[b-m6tjem501a] {
+    color: var(--mc-text-muted, #64748B);
+}
+
+.app-content[b-m6tjem501a] {
+    flex: 1;
+    width: 100%;
+    max-width: 1440px;
+    align-self: flex-start;
+    padding: 1.5rem;
+    padding-bottom: 5rem;
+    min-width: 0;
+}
+
+.mobile-bottom-nav[b-m6tjem501a] {
+    display: none;
+}
+
+#blazor-error-ui[b-m6tjem501a] {
+    background: #fff8e1;
+    bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
+    display: none;
+    left: 0;
+    padding: 0.75rem 1.5rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    font-size: 0.9rem;
+    border-top: 2px solid #fbbf24;
+}
+
+#blazor-error-ui .dismiss[b-m6tjem501a] {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 0.7rem;
+    font-size: 1.1rem;
+    color: #92400e;
+}
+
+@media (max-width: 960px) {
+    .app-shell[b-m6tjem501a] {
+        display: block;
+    }
+
+    .app-sidebar[b-m6tjem501a] {
+        position: static;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .app-user-chip[b-m6tjem501a] {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-topbar[b-m6tjem501a] {
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .app-topbar-search[b-m6tjem501a] {
+        order: 2;
+        width: 100%;
+    }
+
+    .app-search-input[b-m6tjem501a] {
+        width: 100%;
+        font-size: 0.88rem;
+    }
+
+    .app-topbar-actions[b-m6tjem501a] {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .app-topbar-menu-wrap[b-m6tjem501a] {
+        flex: 1 1 auto;
+    }
+
+    .app-topbar-menu-wrap > .app-btn-primary[b-m6tjem501a] {
+        width: 100%;
+    }
+
+    .app-topbar-panel[b-m6tjem501a] {
+        position: absolute;
+        left: 0;
+        right: 0;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .app-create-menu[b-m6tjem501a] {
+        right: auto;
+    }
+
+    .app-topbar-actions .app-btn-secondary[b-m6tjem501a] {
+        display: none;
+    }
+
+    .app-content[b-m6tjem501a] {
+        padding: 1rem;
+        padding-bottom: 6.5rem;
+    }
+
+    .mobile-bottom-nav[b-m6tjem501a] {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 30;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        padding: 0.5rem 0.25rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+        background: rgba(7, 17, 31, 0.97);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+    }
+
+    .mobile-bottom-nav a[b-m6tjem501a] {
+        text-decoration: none;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.5rem 0.2rem;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .mobile-bottom-nav a:hover[b-m6tjem501a],
+    .mobile-bottom-nav a.active[b-m6tjem501a] {
+        color: #fff;
+    }
+
+    .mobile-bottom-nav .nav-icon[b-m6tjem501a] {
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+}
+/* _content/MotorCare.App/Components/Layout/NavMenu.razor.rz.scp.css */
+.brand-block[b-qmlekspime] {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1.5rem 1.25rem 1.15rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-mark[b-qmlekspime] {
+    width: 2.8rem;
+    height: 2.8rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.95rem;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.92rem;
+    letter-spacing: -0.03em;
+    box-shadow: 0 1rem 2.4rem rgba(249, 115, 22, 0.26);
+    flex-shrink: 0;
+}
+
+.brand-title[b-qmlekspime] {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+}
+
+.brand-subtitle[b-qmlekspime] {
+    margin-top: 0.12rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.nav-scrollable[b-qmlekspime] {
+    display: block;
+    overflow-y: auto;
+    height: calc(100vh - 5rem);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.menu-stack[b-qmlekspime] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+    padding: 1rem 0.85rem 1.4rem;
+}
+
+.menu-link[b-qmlekspime],
+.logout-button[b-qmlekspime] {
+    display: flex;
+    align-items: center;
+    gap: 0.78rem;
+    width: 100%;
+    padding: 0.82rem 0.95rem;
+    border-radius: 1rem;
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.menu-link[b-qmlekspime] {
+    color: #cbd5e1;
+    border: 1px solid transparent;
+}
+
+.menu-link:hover[b-qmlekspime] {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(2px);
+}
+
+.menu-link.active[b-qmlekspime] {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(249, 115, 22, 0.18));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.menu-link.active .nav-icon[b-qmlekspime] {
+    background: linear-gradient(135deg, #2563eb, #f97316);
+    color: #fff;
+}
+
+.nav-icon[b-qmlekspime] {
+    width: 2rem;
+    height: 2rem;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.subtle-link[b-qmlekspime] {
+    color: #94a3b8;
+}
+
+.menu-divider[b-qmlekspime] {
+    margin: 0.75rem 0.25rem 0.35rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.logout-button[b-qmlekspime] {
+    border: 1px solid rgba(220, 38, 38, 0.24);
+    background: rgba(220, 38, 38, 0.08);
+    color: #fecaca;
+    cursor: pointer;
+}
+
+.logout-button:hover[b-qmlekspime] {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fff1f2;
+}
+
+@media (max-width: 960px) {
+    .brand-block[b-qmlekspime] {
+        padding-top: 1.15rem;
+    }
+
+    .nav-scrollable[b-qmlekspime] {
+        height: auto;
+        overflow: visible;
+    }
+}
+/* _content/MotorCare.App/Components/Shared/MotorcycleBodyMap.razor.rz.scp.css */
+.motorcycle-map[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: 1.4rem;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98)),
+        radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 28%);
+    border: 1px solid var(--mc-border);
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.motorcycle-map__header[b-zisk13d8f9],
+.motorcycle-map__editor-header[b-zisk13d8f9],
+.motorcycle-map__summary-header[b-zisk13d8f9],
+.motorcycle-map__view-header[b-zisk13d8f9] {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.motorcycle-map__title[b-zisk13d8f9] {
+    margin: 0;
+    color: var(--mc-text);
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.motorcycle-map__description[b-zisk13d8f9],
+.motorcycle-map__view-header p[b-zisk13d8f9],
+.motorcycle-map__editor-header p[b-zisk13d8f9],
+.motorcycle-map__summary-header span[b-zisk13d8f9],
+.motorcycle-map__summary-copy small[b-zisk13d8f9],
+.motorcycle-map__summary-meta small[b-zisk13d8f9],
+.motorcycle-map__empty p[b-zisk13d8f9],
+.part-label__content small[b-zisk13d8f9] {
+    margin: 0.35rem 0 0;
+    color: var(--mc-text-muted);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.motorcycle-map__toolbar[b-zisk13d8f9],
+.motorcycle-map__inline-statuses[b-zisk13d8f9],
+.status-legend[b-zisk13d8f9],
+.motorcycle-map__view-switcher[b-zisk13d8f9] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.motorcycle-map__chip[b-zisk13d8f9],
+.motorcycle-map__mini-chip[b-zisk13d8f9],
+.motorcycle-map__view-toggle[b-zisk13d8f9] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 2.5rem;
+    padding: 0.58rem 0.92rem;
+    border-radius: 999px;
+    border: 1px solid var(--mc-border);
+    background: #fff;
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 700;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.motorcycle-map__mini-chip[b-zisk13d8f9] {
+    min-height: 2.3rem;
+    padding: 0.48rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.motorcycle-map__chip:hover[b-zisk13d8f9],
+.motorcycle-map__mini-chip:hover[b-zisk13d8f9],
+.motorcycle-map__view-toggle:hover[b-zisk13d8f9],
+.part-label:hover[b-zisk13d8f9],
+.motorcycle-map__summary-item:hover[b-zisk13d8f9],
+.motorcycle-map__hotspot:hover[b-zisk13d8f9] {
+    transform: translateY(-1px);
+}
+
+.motorcycle-map__chip.is-active[b-zisk13d8f9],
+.motorcycle-map__mini-chip.is-active[b-zisk13d8f9],
+.motorcycle-map__view-toggle.is-active[b-zisk13d8f9] {
+    border-color: rgba(37,99,235,.34);
+    background: linear-gradient(180deg, #eff6ff, #dbeafe);
+    color: var(--mc-primary);
+}
+
+.motorcycle-map__chip--ghost[b-zisk13d8f9] {
+    background: #f8fafc;
+}
+
+.motorcycle-map__chip-dot[b-zisk13d8f9],
+.status-legend__dot[b-zisk13d8f9],
+.motorcycle-map__summary-swatch[b-zisk13d8f9] {
+    width: .8rem;
+    height: .8rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.status-legend__item[b-zisk13d8f9] {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--mc-text-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.motorcycle-map__view-shell[b-zisk13d8f9],
+.motorcycle-map__editor[b-zisk13d8f9],
+.motorcycle-map__summary[b-zisk13d8f9] {
+    border: 1px solid var(--mc-border);
+    border-radius: 1.25rem;
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.motorcycle-map__view-shell[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.motorcycle-map__view-card[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.motorcycle-map__view-header h4[b-zisk13d8f9],
+.motorcycle-map__editor-header h4[b-zisk13d8f9],
+.motorcycle-map__summary-header h4[b-zisk13d8f9] {
+    margin: 0;
+    color: var(--mc-text);
+    font-size: 0.96rem;
+    font-weight: 800;
+}
+
+.motorcycle-map__canvas[b-zisk13d8f9] {
+    margin-top: .25rem;
+    overflow: hidden;
+}
+
+.motorcycle-map__image-stage[b-zisk13d8f9] {
+    position: relative;
+    aspect-ratio: 1448 / 1086;
+    min-height: 24rem;
+    border: 1px solid rgba(226,232,240,.9);
+    border-radius: 1.2rem;
+    overflow: hidden;
+    background-color: #f8fafc;
+}
+
+.motorcycle-map__image[b-zisk13d8f9] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.motorcycle-map__hotspot[b-zisk13d8f9] {
+    position: absolute;
+    width: 2.45rem;
+    height: 2.45rem;
+    margin-left: -1.225rem;
+    margin-top: -1.225rem;
+    border-radius: 999px;
+    border: 3px solid rgba(255,255,255,.96);
+    background: color-mix(in srgb, var(--part-color) 16%, #ffffff 84%);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--part-color) 60%, #cbd5e1 40%), 0 10px 20px rgba(15,23,42,.12);
+    color: #0f172a;
+    font-weight: 900;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.motorcycle-map__hotspot.is-unmarked[b-zisk13d8f9] {
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 0 0 2px #cbd5e1, 0 10px 20px rgba(15,23,42,.08);
+}
+
+.motorcycle-map__hotspot.is-selected[b-zisk13d8f9] {
+    box-shadow: 0 0 0 3px #0f172a, 0 0 0 7px rgba(37,99,235,.2), 0 10px 22px rgba(15,23,42,.14);
+}
+
+.motorcycle-map__hotspot-number[b-zisk13d8f9] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.motorcycle-map__part-list[b-zisk13d8f9] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+}
+
+.part-label[b-zisk13d8f9] {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    width: 100%;
+    padding: .72rem .8rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 1rem;
+    background: #fff;
+    text-align: left;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.part-label.is-selected[b-zisk13d8f9] {
+    border-color: rgba(37,99,235,.24);
+    box-shadow: 0 10px 22px rgba(15,23,42,.08);
+}
+
+.part-label__badge[b-zisk13d8f9] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: .2rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.part-label__content[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+}
+
+.part-label__content strong[b-zisk13d8f9],
+.motorcycle-map__summary-meta strong[b-zisk13d8f9],
+.motorcycle-map__summary-copy strong[b-zisk13d8f9],
+.motorcycle-map__empty strong[b-zisk13d8f9] {
+    color: var(--mc-text);
+    font-size: .88rem;
+}
+
+.motorcycle-map__bottom[b-zisk13d8f9] {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+}
+
+.motorcycle-map__status-pill[b-zisk13d8f9] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.motorcycle-map__summary-list[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    margin-top: .85rem;
+}
+
+.motorcycle-map__summary-item[b-zisk13d8f9] {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .7rem;
+    width: 100%;
+    padding: .78rem .85rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 1rem;
+    background: #fff;
+    text-align: left;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.motorcycle-map__summary-item.is-active[b-zisk13d8f9],
+.motorcycle-map__summary-item:hover[b-zisk13d8f9],
+.part-label:hover[b-zisk13d8f9] {
+    border-color: rgba(37,99,235,.22);
+    box-shadow: 0 10px 22px rgba(15,23,42,.08);
+}
+
+.motorcycle-map__summary-meta[b-zisk13d8f9],
+.motorcycle-map__summary-copy[b-zisk13d8f9] {
+    display: flex;
+    flex-direction: column;
+    gap: .12rem;
+}
+
+@media (max-width: 1024px) {
+    .motorcycle-map__bottom[b-zisk13d8f9] {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .motorcycle-map[b-zisk13d8f9] {
+        padding: 1rem;
+    }
+
+    .motorcycle-map__header[b-zisk13d8f9],
+    .motorcycle-map__editor-header[b-zisk13d8f9],
+    .motorcycle-map__summary-header[b-zisk13d8f9],
+    .motorcycle-map__view-header[b-zisk13d8f9] {
+        flex-direction: column;
+    }
+
+    .motorcycle-map__chip[b-zisk13d8f9],
+    .motorcycle-map__mini-chip[b-zisk13d8f9],
+    .motorcycle-map__view-toggle[b-zisk13d8f9] {
+        flex: 1 1 calc(50% - .55rem);
+    }
+
+    .motorcycle-map__part-list[b-zisk13d8f9] {
+        grid-template-columns: 1fr;
+    }
+
+    .motorcycle-map__image-stage[b-zisk13d8f9] {
+        min-height: 18rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .motorcycle-map__chip[b-zisk13d8f9],
+    .motorcycle-map__mini-chip[b-zisk13d8f9],
+    .motorcycle-map__view-toggle[b-zisk13d8f9],
+    .part-label[b-zisk13d8f9],
+    .motorcycle-map__summary-item[b-zisk13d8f9] {
+        width: 100%;
+    }
+
+    .motorcycle-map__image-stage[b-zisk13d8f9] {
+        min-height: 15rem;
+    }
+
+    .motorcycle-map__hotspot[b-zisk13d8f9] {
+        width: 2.1rem;
+        height: 2.1rem;
+        margin-left: -1.05rem;
+        margin-top: -1.05rem;
+    }
+}

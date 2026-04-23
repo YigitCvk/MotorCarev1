@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.vscode/
+publish-fix/
+publish-ssl/
+.git/
+.github/
+*.log
+*.user
+*.suo
+*.db
+*.sqlite
+*.nupkg
+node_modules/

@@ -10,6 +10,19 @@ It assumes:
 - systemd for service supervision
 - optional external Elasticsearch / Kibana
 
+Current applied staging reference:
+
+- provider: Hetzner Cloud
+- server IP: `46.225.166.254`
+- API bind: `127.0.0.1:5002`
+- App bind: `127.0.0.1:5001`
+- publish folders:
+  - `/var/www/motorcare/publish/api`
+  - `/var/www/motorcare/publish/app`
+- service names:
+  - `motorcare-api.service`
+  - `motorcare-app.service`
+
 ## 1. Recommended Provider
 
 Recommended first choice:
@@ -67,16 +80,25 @@ Recommended:
 - UI: `staging.bakimsuite.com`
 - API: `staging-api.bakimsuite.com`
 
+Required DNS records:
+
+- `A staging.bakimsuite.com -> 46.225.166.254`
+- `A staging-api.bakimsuite.com -> 46.225.166.254`
+
 ## 4. Folder Layout
 
 Use:
 
 ```text
 /var/www/motorcare/
-  api/
-  app/
+  publish/
+    api/
+    app/
   releases/
   shared/
+    dataprotection/
+      api/
+      app/
 /etc/motorcare/
   api.env
   app.env
@@ -86,8 +108,8 @@ Use:
 Recommended conventions:
 
 - current publish output goes into:
-  - `/var/www/motorcare/api`
-  - `/var/www/motorcare/app`
+  - `/var/www/motorcare/publish/api`
+  - `/var/www/motorcare/publish/app`
 - keep env files root-owned under `/etc/motorcare`
 - keep service-level logs in journald
 - do not deploy directly from the git working tree
@@ -155,21 +177,21 @@ sudo -u postgres psql
 Create user and database:
 
 ```sql
-CREATE USER bakimsuite WITH PASSWORD 'CHANGE_ME_STRONG_PASSWORD';
-CREATE DATABASE bakimsuite_staging OWNER bakimsuite;
+CREATE USER motorcare_user WITH PASSWORD 'CHANGE_ME_STRONG_PASSWORD';
+CREATE DATABASE motorcare_staging OWNER motorcare_user;
 \q
 ```
 
 Connection string example:
 
 ```text
-Host=127.0.0.1;Port=5432;Database=bakimsuite_staging;Username=bakimsuite;Password=CHANGE_ME_STRONG_PASSWORD
+Host=127.0.0.1;Port=5432;Database=motorcare_staging;Username=motorcare_user;Password=CHANGE_ME_STRONG_PASSWORD
 ```
 
 Verify:
 
 ```bash
-psql "host=127.0.0.1 port=5432 dbname=bakimsuite_staging user=bakimsuite password=CHANGE_ME_STRONG_PASSWORD" -c '\dt'
+psql "host=127.0.0.1 port=5432 dbname=motorcare_staging user=motorcare_user password=CHANGE_ME_STRONG_PASSWORD" -c '\dt'
 ```
 
 ## 8. Create Deploy Folders
@@ -177,13 +199,16 @@ psql "host=127.0.0.1 port=5432 dbname=bakimsuite_staging user=bakimsuite passwor
 Run:
 
 ```bash
-sudo mkdir -p /var/www/motorcare/api
-sudo mkdir -p /var/www/motorcare/app
+sudo mkdir -p /var/www/motorcare/publish/api
+sudo mkdir -p /var/www/motorcare/publish/app
 sudo mkdir -p /var/www/motorcare/releases
 sudo mkdir -p /var/www/motorcare/shared
+sudo mkdir -p /var/www/motorcare/shared/dataprotection/api
+sudo mkdir -p /var/www/motorcare/shared/dataprotection/app
 sudo mkdir -p /etc/motorcare
 sudo mkdir -p /var/log/motorcare
 sudo chown -R $USER:$USER /var/www/motorcare
+sudo chown -R www-data:www-data /var/www/motorcare/shared/dataprotection
 ```
 
 ## 9. Publish From Local or CI
@@ -198,8 +223,8 @@ dotnet publish src/MotorCare.App/MotorCare.App.csproj -c Release -o ./publish/ap
 Upload with `rsync`:
 
 ```bash
-rsync -avz ./publish/api/ user@SERVER_IP:/var/www/motorcare/api/
-rsync -avz ./publish/app/ user@SERVER_IP:/var/www/motorcare/app/
+rsync -avz ./publish/api/ user@SERVER_IP:/var/www/motorcare/publish/api/
+rsync -avz ./publish/app/ user@SERVER_IP:/var/www/motorcare/publish/app/
 ```
 
 ## 10. Environment Variable Files
@@ -210,17 +235,18 @@ Create API env file:
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Staging
-ASPNETCORE_URLS=http://127.0.0.1:5099
-ConnectionStrings__DefaultConnection=Host=127.0.0.1;Port=5432;Database=bakimsuite_staging;Username=bakimsuite;Password=CHANGE_ME_STRONG_PASSWORD
-Jwt__Issuer=BakimSuite.Staging
-Jwt__Audience=BakimSuite.Staging.Client
+ASPNETCORE_URLS=http://127.0.0.1:5002
+ConnectionStrings__DefaultConnection=Host=127.0.0.1;Port=5432;Database=motorcare_staging;Username=motorcare_user;Password=CHANGE_ME_STRONG_PASSWORD
+Jwt__Issuer=BakimSuite
+Jwt__Audience=BakimSuite
 Jwt__Key=CHANGE_ME_LONG_RANDOM_JWT_KEY
 Jwt__AccessTokenMinutes=60
 Jwt__RefreshTokenDays=7
-Elastic__Uri=http://ELASTIC_HOST:9200
-Elastic__Username=elastic
-Elastic__Password=CHANGE_ME
-Elastic__IndexFormat=motorcare-api-staging-{0:yyyy.MM}
+Elastic__Uri=
+Elastic__Username=
+Elastic__Password=
+Elastic__IndexFormat=motorcare-api-{0:yyyy.MM}
+DataProtection__KeysPath=/var/www/motorcare/shared/dataprotection/api
 ```
 
 Create App env file:
@@ -229,8 +255,9 @@ Create App env file:
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Staging
-ASPNETCORE_URLS=http://127.0.0.1:5100
+ASPNETCORE_URLS=http://127.0.0.1:5001
 ApiBaseUrl=https://staging-api.bakimsuite.com
+DataProtection__KeysPath=/var/www/motorcare/shared/dataprotection/app
 ```
 
 Lock permissions:
@@ -261,20 +288,20 @@ If CI/CD handles schema rollout, run the equivalent migration step there before 
 
 Create API service:
 
-`/etc/systemd/system/bakimsuite-api.service`
+`/etc/systemd/system/motorcare-api.service`
 
 ```ini
 [Unit]
-Description=BakimSuite API
+Description=MotorCare API Staging
 After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
-WorkingDirectory=/var/www/motorcare/api
-ExecStart=/usr/bin/dotnet /var/www/motorcare/api/MotorCare.Api.dll
+WorkingDirectory=/var/www/motorcare/publish/api
+ExecStart=/usr/bin/dotnet /var/www/motorcare/publish/api/MotorCare.Api.dll
 Restart=always
 RestartSec=5
-SyslogIdentifier=bakimsuite-api
+SyslogIdentifier=motorcare-api
 User=www-data
 EnvironmentFile=/etc/motorcare/api.env
 
@@ -284,19 +311,19 @@ WantedBy=multi-user.target
 
 Create App service:
 
-`/etc/systemd/system/bakimsuite-app.service`
+`/etc/systemd/system/motorcare-app.service`
 
 ```ini
 [Unit]
-Description=BakimSuite App
+Description=MotorCare App Staging
 After=network.target
 
 [Service]
-WorkingDirectory=/var/www/motorcare/app
-ExecStart=/usr/bin/dotnet /var/www/motorcare/app/MotorCare.App.dll
+WorkingDirectory=/var/www/motorcare/publish/app
+ExecStart=/usr/bin/dotnet /var/www/motorcare/publish/app/MotorCare.App.dll
 Restart=always
 RestartSec=5
-SyslogIdentifier=bakimsuite-app
+SyslogIdentifier=motorcare-app
 User=www-data
 EnvironmentFile=/etc/motorcare/app.env
 
@@ -308,64 +335,89 @@ Enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable bakimsuite-api
-sudo systemctl enable bakimsuite-app
-sudo systemctl start bakimsuite-api
-sudo systemctl start bakimsuite-app
+sudo systemctl enable motorcare-api
+sudo systemctl enable motorcare-app
+sudo systemctl start motorcare-api
+sudo systemctl start motorcare-app
 ```
 
 Check:
 
 ```bash
-sudo systemctl status bakimsuite-api --no-pager
-sudo systemctl status bakimsuite-app --no-pager
-journalctl -u bakimsuite-api -n 100 --no-pager
-journalctl -u bakimsuite-app -n 100 --no-pager
+sudo systemctl status motorcare-api --no-pager
+sudo systemctl status motorcare-app --no-pager
+journalctl -u motorcare-api -n 100 --no-pager
+journalctl -u motorcare-app -n 100 --no-pager
 ```
 
 ## 13. Nginx Reverse Proxy Config
 
-API site:
+Domain-based staging config:
 
-`/etc/nginx/sites-available/bakimsuite-staging-api`
+`/etc/nginx/sites-available/motorcare-staging`
 
 ```nginx
 server {
     listen 80;
-    server_name staging-api.bakimsuite.com;
+    listen [::]:80;
+    server_name staging.bakimsuite.com staging-api.bakimsuite.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
 
     location / {
-        proxy_pass http://127.0.0.1:5099;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Request-Id $request_id;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection keep-alive;
-        proxy_cache_bypass $http_upgrade;
+        return 301 https://$host$request_uri;
     }
 }
-```
 
-App site:
-
-`/etc/nginx/sites-available/bakimsuite-staging-app`
-
-```nginx
 server {
-    listen 80;
-    server_name staging.bakimsuite.com;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name staging-api.bakimsuite.com;
 
-    location / {
-        proxy_pass http://127.0.0.1:5100;
+    ssl_certificate /etc/letsencrypt/live/staging-api.bakimsuite.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/staging-api.bakimsuite.com/privkey.pem;
+
+    location = /health {
+        proxy_pass http://127.0.0.1:5002/health;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Request-Id $request_id;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:5002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Request-Id $request_id;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name staging.bakimsuite.com;
+
+    ssl_certificate /etc/letsencrypt/live/staging.bakimsuite.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/staging.bakimsuite.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Request-Id $request_id;
         proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection keep-alive;
+        proxy_set_header Connection "upgrade";
         proxy_cache_bypass $http_upgrade;
     }
 }
@@ -374,10 +426,10 @@ server {
 Enable:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/bakimsuite-staging-api /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/bakimsuite-staging-app /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -s /etc/nginx/sites-available/motorcare-staging /etc/nginx/sites-enabled/motorcare-staging
 sudo nginx -t
-sudo systemctl reload nginx
+sudo systemctl restart nginx
 ```
 
 ## 14. SSL Setup
@@ -386,6 +438,7 @@ Use Let's Encrypt:
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
+sudo mkdir -p /var/www/certbot
 sudo certbot --nginx -d staging.bakimsuite.com -d staging-api.bakimsuite.com
 ```
 
@@ -401,15 +454,15 @@ sudo certbot renew --dry-run
 Server-local checks:
 
 ```bash
-curl http://127.0.0.1:5099/health
-curl -I http://127.0.0.1:5100
+curl http://127.0.0.1:5002/health
+curl -I http://127.0.0.1:5001
 ```
 
 Public checks:
 
 ```bash
-curl https://staging-api.bakimsuite.com/health
 curl -I https://staging.bakimsuite.com
+curl https://staging-api.bakimsuite.com/health
 ```
 
 Expected API health response:
@@ -474,9 +527,9 @@ Run this in staging immediately after rollout:
 9. run migrations
 10. install systemd services
 11. start services
-12. configure Nginx
+12. configure domain-based Nginx
 13. issue SSL certificates
-14. verify `/health`
+14. verify `https://staging-api.bakimsuite.com/health`
 15. run smoke checklist
 16. verify Kibana logs
 

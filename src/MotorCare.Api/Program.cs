@@ -3,6 +3,7 @@ using System.Text;
 using Carter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
@@ -18,7 +19,6 @@ using Serilog.Events;
 using Serilog.Exceptions;
 using Serilog.Sinks.Elasticsearch;
 
-// ── Bootstrap logger (captures startup errors before full config is loaded) ──
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .Enrich.FromLogContext()
@@ -31,12 +31,17 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // ── Serilog full configuration ───────────────────────────────────────────
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+        options.ForwardLimit = 1;
+    });
+
     builder.Host.UseSerilog((ctx, services, cfg) =>
     {
-        var env   = ctx.HostingEnvironment;
-        var serilogSection = ctx.Configuration.GetSection("Serilog");
-        var minLevel = env.IsDevelopment() ? LogEventLevel.Debug : LogEventLevel.Information;
+        var env = ctx.HostingEnvironment;
 
         cfg
             .ReadFrom.Configuration(ctx.Configuration, sectionName: "Serilog")
@@ -53,28 +58,30 @@ try
             .WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{EventId.Name}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
-        // Elasticsearch sink — only when Uri is configured
         var elasticUri = ctx.Configuration["Elastic:Uri"];
         if (!string.IsNullOrWhiteSpace(elasticUri))
         {
             var indexFormat = ctx.Configuration["Elastic:IndexFormat"] ?? "motorcare-api-{0:yyyy.MM}";
-            var username    = ctx.Configuration["Elastic:Username"];
-            var password    = ctx.Configuration["Elastic:Password"];
+            var username = ctx.Configuration["Elastic:Username"];
+            var password = ctx.Configuration["Elastic:Password"];
 
             var sinkOptions = new ElasticsearchSinkOptions(new Uri(elasticUri))
             {
-                AutoRegisterTemplate          = true,
-                AutoRegisterTemplateVersion   = AutoRegisterTemplateVersion.ESv7,
-                IndexFormat                   = indexFormat,
-                EmitEventFailure              = EmitEventFailureHandling.WriteToSelfLog,
-                FailureCallback               = e => Console.Error.WriteLine($"[Elastic sink failure] {e.MessageTemplate}"),
-                MinimumLogEventLevel          = LogEventLevel.Information,
-                NumberOfReplicas              = 1,
-                NumberOfShards                = 2,
-                ModifyConnectionSettings      = conn =>
+                AutoRegisterTemplate = true,
+                AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv7,
+                IndexFormat = indexFormat,
+                EmitEventFailure = EmitEventFailureHandling.WriteToSelfLog,
+                FailureCallback = e => Console.Error.WriteLine($"[Elastic sink failure] {e.MessageTemplate}"),
+                MinimumLogEventLevel = LogEventLevel.Information,
+                NumberOfReplicas = 1,
+                NumberOfShards = 2,
+                ModifyConnectionSettings = conn =>
                 {
                     if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+                    {
                         conn.BasicAuthentication(username, password);
+                    }
+
                     return conn;
                 }
             };
@@ -83,16 +90,17 @@ try
         }
     });
 
-    // ── Data protection (dev only) ───────────────────────────────────────────
-    if (builder.Environment.IsDevelopment())
+    var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
+    if (string.IsNullOrWhiteSpace(dataProtectionPath))
     {
-        var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
-        Directory.CreateDirectory(dataProtectionPath);
-
-        builder.Services.AddDataProtection()
-            .SetApplicationName("MotorCare.Api")
-            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+        dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
     }
+
+    Directory.CreateDirectory(dataProtectionPath);
+
+    builder.Services.AddDataProtection()
+        .SetApplicationName("MotorCare.Api")
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
@@ -103,18 +111,17 @@ try
     {
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
-            Name        = "Authorization",
-            Type        = SecuritySchemeType.Http,
-            Scheme      = "bearer",
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
             BearerFormat = "JWT",
-            In          = ParameterLocation.Header,
+            In = ParameterLocation.Header,
             Description = "Paste the JWT access token here. Example: Bearer eyJ..."
         });
 
         options.OperationFilter<AuthorizeOperationFilter>();
     });
 
-    // ── JWT authentication ───────────────────────────────────────────────────
     var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
     if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
     {
@@ -123,19 +130,18 @@ try
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer           = true,
-                    ValidateAudience         = true,
-                    ValidateIssuerSigningKey  = true,
-                    ValidateLifetime         = true,
-                    ValidIssuer              = jwtOptions.Issuer,
-                    ValidAudience            = jwtOptions.Audience,
-                    IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
-                    ClockSkew                = TimeSpan.FromMinutes(1)
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                    ClockSkew = TimeSpan.FromMinutes(1)
                 };
             });
     }
 
-    // ── Authorization policies ───────────────────────────────────────────────
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
@@ -182,18 +188,18 @@ try
 
     var app = builder.Build();
 
+    app.UseForwardedHeaders();
+
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
     }
 
-    // ── Middleware pipeline ──────────────────────────────────────────────────
     app.UseExceptionHandler();
     app.UseHttpsRedirection();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
-
     app.UseAuthentication();
     app.UseMiddleware<UserContextLoggingMiddleware>();
 
@@ -206,6 +212,7 @@ try
                 : ctx.Response.StatusCode >= 400
                     ? LogEventLevel.Warning
                     : LogEventLevel.Information;
+
         options.EnrichDiagnosticContext = static (diag, ctx) =>
         {
             diag.Set("RequestHost", ctx.Request.Host.Value);
