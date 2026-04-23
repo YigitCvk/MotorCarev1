@@ -18,7 +18,7 @@ services:
       - bakimsuite
 
   api:
-    image: ${API_IMAGE:-ghcr.io/your-org/bakimsuite-api:staging}
+    image: ${API_IMAGE:-ghcr.io/yigitcvk/bakimsuite-api:staging}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile
@@ -54,7 +54,7 @@ services:
       - bakimsuite
 
   app:
-    image: ${APP_IMAGE:-ghcr.io/your-org/bakimsuite-app:staging}
+    image: ${APP_IMAGE:-ghcr.io/yigitcvk/bakimsuite-app:staging}
     build:
       context: .
       dockerfile: MotorCare.App/Dockerfile
@@ -82,7 +82,7 @@ services:
 
   migrator:
     profiles: ["tools"]
-    image: ${MIGRATOR_IMAGE:-ghcr.io/your-org/bakimsuite-migrator:staging}
+    image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/bakimsuite-migrator:staging}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile.migrator

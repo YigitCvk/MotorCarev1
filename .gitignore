@@ -98,3 +98,11 @@ desktop.ini
 
 ## Antigravity
 .antigravity/cache/
+
+## Claude Code
+.claude/settings.local.json
+**/settings.local.json
+
+## Temp scripts
+temp-*.sh
+src/temp-*.sh
