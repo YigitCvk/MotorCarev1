@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public sealed class UpdateServiceCatalogItemCommandHandler : IRequestHandler<Upd
 {
     private readonly IServiceCatalogRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateServiceCatalogItemCommandHandler> _logger;
 
-    public UpdateServiceCatalogItemCommandHandler(IServiceCatalogRepository repository, ITenantProvider tenantProvider)
+    public UpdateServiceCatalogItemCommandHandler(
+        IServiceCatalogRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<UpdateServiceCatalogItemCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(UpdateServiceCatalogItemCommand request, CancellationToken cancellationToken)
@@ -27,7 +34,7 @@ public sealed class UpdateServiceCatalogItemCommandHandler : IRequestHandler<Upd
         var existing = await _repository.GetByNameAsync(tenantId, request.Name, cancellationToken);
         if (existing is not null && existing.Id != request.Id)
         {
-            throw new ConflictException("Bu isimle bir hizmet zaten kayıtlı.");
+            throw new ConflictException("Bu isimle bir hizmet zaten kayitli.");
         }
 
         item.Update(
@@ -40,5 +47,13 @@ public sealed class UpdateServiceCatalogItemCommandHandler : IRequestHandler<Upd
 
         _repository.Update(item);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceCatalog.ServiceCatalogItemUpdated,
+            "Service catalog item {ServiceCatalogItemId} updated for tenant {TenantId}. Category={Category} IsActive={IsActive}",
+            item.Id,
+            tenantId,
+            item.Category,
+            item.IsActive);
     }
 }

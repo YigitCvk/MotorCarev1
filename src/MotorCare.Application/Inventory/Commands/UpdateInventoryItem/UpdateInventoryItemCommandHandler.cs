@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public sealed class UpdateInventoryItemCommandHandler : IRequestHandler<UpdateIn
 {
     private readonly IInventoryRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateInventoryItemCommandHandler> _logger;
 
-    public UpdateInventoryItemCommandHandler(IInventoryRepository repository, ITenantProvider tenantProvider)
+    public UpdateInventoryItemCommandHandler(
+        IInventoryRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<UpdateInventoryItemCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(UpdateInventoryItemCommand request, CancellationToken cancellationToken)
@@ -22,12 +29,12 @@ public sealed class UpdateInventoryItemCommandHandler : IRequestHandler<UpdateIn
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var item = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
-            ?? throw new NotFoundException("Parça bulunamadı.");
+            ?? throw new NotFoundException("Parca bulunamadi.");
 
         var byName = await _repository.GetByNameAsync(tenantId, request.Name, cancellationToken);
         if (byName is not null && byName.Id != request.Id)
         {
-            throw new ConflictException("Bu isimle bir parça zaten kayıtlı.");
+            throw new ConflictException("Bu isimle bir parca zaten kayitli.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.Sku))
@@ -35,7 +42,7 @@ public sealed class UpdateInventoryItemCommandHandler : IRequestHandler<UpdateIn
             var bySku = await _repository.GetBySkuAsync(tenantId, request.Sku, cancellationToken);
             if (bySku is not null && bySku.Id != request.Id)
             {
-                throw new ConflictException("Bu SKU ile bir parça zaten kayıtlı.");
+                throw new ConflictException("Bu SKU ile bir parca zaten kayitli.");
             }
         }
 
@@ -44,7 +51,7 @@ public sealed class UpdateInventoryItemCommandHandler : IRequestHandler<UpdateIn
             var byBarcode = await _repository.GetByBarcodeAsync(tenantId, request.Barcode, cancellationToken);
             if (byBarcode is not null && byBarcode.Id != request.Id)
             {
-                throw new ConflictException("Bu barkod ile bir parça zaten kayıtlı.");
+                throw new ConflictException("Bu barkod ile bir parca zaten kayitli.");
             }
         }
 
@@ -62,5 +69,14 @@ public sealed class UpdateInventoryItemCommandHandler : IRequestHandler<UpdateIn
 
         _repository.Update(item);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Inventory.InventoryItemUpdated,
+            "Inventory item {InventoryItemId} updated for tenant {TenantId}. StockQuantity={StockQuantity} MinimumStockLevel={MinimumStockLevel} IsActive={IsActive}",
+            item.Id,
+            tenantId,
+            item.StockQuantity,
+            item.MinimumStockLevel,
+            item.IsActive);
     }
 }

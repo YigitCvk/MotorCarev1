@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public class RemoveOperationFromOrderCommandHandler : IRequestHandler<RemoveOper
 {
     private readonly IServiceOrderRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<RemoveOperationFromOrderCommandHandler> _logger;
 
-    public RemoveOperationFromOrderCommandHandler(IServiceOrderRepository repository, ITenantProvider tenantProvider)
+    public RemoveOperationFromOrderCommandHandler(
+        IServiceOrderRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<RemoveOperationFromOrderCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(RemoveOperationFromOrderCommand request, CancellationToken cancellationToken)
@@ -28,6 +35,13 @@ public class RemoveOperationFromOrderCommandHandler : IRequestHandler<RemoveOper
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.OperationRemoved,
+            "Operation {OperationId} removed from service order {ServiceOrderId} for tenant {TenantId}.",
+            request.OperationId,
+            order.Id,
+            tenantId);
 
         return Unit.Value;
     }

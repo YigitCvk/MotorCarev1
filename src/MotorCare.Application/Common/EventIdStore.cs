@@ -78,6 +78,7 @@ public static class EventIdStore
         public static readonly EventId InspectionItemUpdated = new(1602, nameof(InspectionItemUpdated));
         public static readonly EventId InspectionCompleted   = new(1603, nameof(InspectionCompleted));
         public static readonly EventId InspectionCancelled   = new(1604, nameof(InspectionCancelled));
+        public static readonly EventId InspectionUpdated     = new(1605, nameof(InspectionUpdated));
     }
 
     // ── ServiceCatalog  1700-1799 ───────────────────────────────────────────
@@ -96,6 +97,8 @@ public static class EventIdStore
         public static readonly EventId InventoryItemUpdated  = new(1801, nameof(InventoryItemUpdated));
         public static readonly EventId InventoryStockAdjusted = new(1802, nameof(InventoryStockAdjusted));
         public static readonly EventId LowStockDetected      = new(1803, nameof(LowStockDetected));
+        public static readonly EventId InventoryItemActivated = new(1804, nameof(InventoryItemActivated));
+        public static readonly EventId InventoryItemDeactivated = new(1805, nameof(InventoryItemDeactivated));
     }
 
     // ── Dashboard  1900-1999 ────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using MotorCare.Application.Appointments;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
@@ -13,19 +15,22 @@ public sealed class GetCustomerSummaryQueryHandler : IRequestHandler<GetCustomer
     private readonly IAppointmentRepository _appointments;
     private readonly IServiceOrderRepository _serviceOrders;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetCustomerSummaryQueryHandler> _logger;
 
     public GetCustomerSummaryQueryHandler(
         ICustomerRepository customers,
         IVehicleRepository vehicles,
         IAppointmentRepository appointments,
         IServiceOrderRepository serviceOrders,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<GetCustomerSummaryQueryHandler> logger)
     {
         _customers = customers;
         _vehicles = vehicles;
         _appointments = appointments;
         _serviceOrders = serviceOrders;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<CustomerSummaryDto?> Handle(GetCustomerSummaryQuery request, CancellationToken cancellationToken)
@@ -34,20 +39,16 @@ public sealed class GetCustomerSummaryQueryHandler : IRequestHandler<GetCustomer
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var customer = await _customers.GetByIdAsync(request.CustomerId, tenantId, cancellationToken);
-        if (customer is null) return null;
+        if (customer is null)
+        {
+            return null;
+        }
 
-        // Sequential awaits are required: all repositories share one scoped DbContext
-        // which is not thread-safe — parallel Task.WhenAll would cause a concurrency error.
         var vehicles = await _vehicles.GetByCustomerIdAsync(tenantId, request.CustomerId, cancellationToken);
         var appointments = await _appointments.GetByCustomerIdAsync(tenantId, request.CustomerId, cancellationToken);
         var orders = await _serviceOrders.GetFilteredAsync(tenantId, request.CustomerId, null, null, null, null, cancellationToken);
 
-        // Build a map of vehicleId → plate for service order enrichment
         var vehiclePlateMap = vehicles.ToDictionary(v => v.Id, v => v.Plate.OriginalValue);
-
-        // For service orders that reference vehicles not in the customer's current vehicle list
-        // (e.g. vehicle was reassigned), we still need the plate. We look it up from order history
-        // via the map; if absent, we leave it null.
 
         var vehicleDtos = vehicles.Select(v =>
         {
@@ -110,6 +111,15 @@ public sealed class GetCustomerSummaryQueryHandler : IRequestHandler<GetCustomer
                 paymentDtos);
         }).ToList();
 
+        _logger.LogInformation(
+            EventIdStore.Customer.CustomerSummaryFetched,
+            "Customer summary fetched for customer {CustomerId} in tenant {TenantId}. VehicleCount={VehicleCount} AppointmentCount={AppointmentCount} ServiceOrderCount={ServiceOrderCount}",
+            customer.Id,
+            tenantId,
+            vehicleDtos.Count,
+            appointmentDtos.Count,
+            orderDtos.Count);
+
         return new CustomerSummaryDto(
             customer.Id,
             customer.FullName,
@@ -124,19 +134,19 @@ public sealed class GetCustomerSummaryQueryHandler : IRequestHandler<GetCustomer
 
     private static string ToStatusText(ServiceOrderStatus status) => status switch
     {
-        ServiceOrderStatus.Open => "Açık",
-        ServiceOrderStatus.InProgress => "İşlemde",
-        ServiceOrderStatus.WaitingForParts => "Parça Bekliyor",
-        ServiceOrderStatus.Completed => "Tamamlandı",
+        ServiceOrderStatus.Open => "Acik",
+        ServiceOrderStatus.InProgress => "Islemde",
+        ServiceOrderStatus.WaitingForParts => "Parca Bekliyor",
+        ServiceOrderStatus.Completed => "Tamamlandi",
         ServiceOrderStatus.Delivered => "Teslim Edildi",
-        ServiceOrderStatus.Cancelled => "İptal",
+        ServiceOrderStatus.Cancelled => "Iptal",
         _ => status.ToString()
     };
 
     private static string ToPaymentMethodText(PaymentMethod method) => method switch
     {
         PaymentMethod.Cash => "Nakit",
-        PaymentMethod.CreditCard => "Kredi Kartı",
+        PaymentMethod.CreditCard => "Kredi Karti",
         PaymentMethod.BankTransfer => "Banka Transferi",
         _ => method.ToString()
     };

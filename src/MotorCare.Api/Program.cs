@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
+using MotorCare.Api.Logging;
 using MotorCare.Api.Middleware;
 using MotorCare.Api.Swagger;
 using MotorCare.Application;
@@ -47,6 +48,8 @@ try
             .Enrich.WithThreadId()
             .Enrich.WithExceptionDetails()
             .Enrich.WithProperty("ApplicationName", "MotorCare.Api")
+            .Enrich.WithProperty("Environment", env.EnvironmentName)
+            .Enrich.With(new EventNameEnricher())
             .WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{EventId.Name}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
@@ -191,6 +194,9 @@ try
 
     app.UseMiddleware<CorrelationIdMiddleware>();
 
+    app.UseAuthentication();
+    app.UseMiddleware<UserContextLoggingMiddleware>();
+
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
@@ -204,11 +210,11 @@ try
         {
             diag.Set("RequestHost", ctx.Request.Host.Value);
             diag.Set("RequestScheme", ctx.Request.Scheme);
+            diag.Set("RequestId", ctx.TraceIdentifier);
+            diag.Set("CorrelationId", ctx.Response.Headers["X-Correlation-Id"].ToString());
         };
     });
 
-    app.UseAuthentication();
-    app.UseMiddleware<UserContextLoggingMiddleware>();
     app.UseMiddleware<ActiveTenantUserGuardMiddleware>();
     app.UseAuthorization();
     app.MapCarter();

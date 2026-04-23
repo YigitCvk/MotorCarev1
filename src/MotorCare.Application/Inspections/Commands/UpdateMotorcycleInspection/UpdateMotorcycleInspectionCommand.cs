@@ -1,7 +1,10 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
+using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
 
 namespace MotorCare.Application.Inspections.Commands.UpdateMotorcycleInspection;
@@ -21,7 +24,7 @@ public sealed record UpdateMotorcycleInspectionCommand(
     string? EngineNumber,
     string? Query5664,
     string? MileageQuery,
-    Domain.Enums.MotorcycleInspectionPackageType PackageType,
+    MotorcycleInspectionPackageType PackageType,
     string? GeneralNotes,
     string? TestRideNotes,
     string? CosmeticNotes) : IRequest;
@@ -51,13 +54,16 @@ public sealed class UpdateMotorcycleInspectionCommandHandler : IRequestHandler<U
 {
     private readonly IMotorcycleInspectionRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateMotorcycleInspectionCommandHandler> _logger;
 
     public UpdateMotorcycleInspectionCommandHandler(
         IMotorcycleInspectionRepository repository,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<UpdateMotorcycleInspectionCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(UpdateMotorcycleInspectionCommand request, CancellationToken cancellationToken)
@@ -66,7 +72,7 @@ public sealed class UpdateMotorcycleInspectionCommandHandler : IRequestHandler<U
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var inspection = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
-            ?? throw new NotFoundException("Ekspertiz kaydı bulunamadı.");
+            ?? throw new NotFoundException("Ekspertiz kaydi bulunamadi.");
 
         inspection.UpdateDetails(
             request.CustomerId,
@@ -90,5 +96,14 @@ public sealed class UpdateMotorcycleInspectionCommandHandler : IRequestHandler<U
 
         _repository.Update(inspection);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Inspection.InspectionUpdated,
+            "Inspection {InspectionId} updated for tenant {TenantId}. PackageType={PackageType} VehicleId={VehicleId} CustomerId={CustomerId}",
+            inspection.Id,
+            tenantId,
+            inspection.PackageType,
+            inspection.VehicleId,
+            inspection.CustomerId);
     }
 }

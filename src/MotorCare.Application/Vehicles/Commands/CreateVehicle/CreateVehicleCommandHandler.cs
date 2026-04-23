@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -33,14 +34,22 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
         var tenantId = _tenantProvider.GetTenantId()
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
-        _logger.LogInformation("Starting vehicle registration for plate {Plate} in tenant {TenantId}.", request.Plate, tenantId);
+        _logger.LogInformation(
+            EventIdStore.Vehicle.VehicleCreated,
+            "Starting vehicle registration for plate {Plate} in tenant {TenantId}.",
+            request.Plate,
+            tenantId);
 
         var plate = PlateNumber.Create(request.Plate);
 
         var existing = await _repository.GetByPlateAsync(tenantId, plate.NormalizedValue, cancellationToken);
         if (existing != null)
         {
-            _logger.LogWarning("Vehicle registration failed: Plate {NormalizedPlate} already exists in tenant {TenantId}.", plate.NormalizedValue, tenantId);
+            _logger.LogWarning(
+                EventIdStore.Vehicle.VehicleCreated,
+                "Vehicle registration failed: Plate {NormalizedPlate} already exists in tenant {TenantId}.",
+                plate.NormalizedValue,
+                tenantId);
             throw new ConflictException("A vehicle with this plate already exists for the tenant.");
         }
 
@@ -60,7 +69,7 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
             {
                 throw new AppValidationException(
                 [
-                    new ValidationFailure(nameof(request.CurrentCustomerId), "Seçilen müşteri bu işletme altında bulunamadı.")
+                    new ValidationFailure(nameof(request.CurrentCustomerId), "Secilen musteri bu isletme altinda bulunamadi.")
                 ]);
             }
 
@@ -70,7 +79,13 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
         await _repository.AddAsync(vehicle, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Successfully registered vehicle {VehicleId} with plate {NormalizedPlate} in tenant {TenantId}.", vehicle.Id, vehicle.Plate.NormalizedValue, tenantId);
+        _logger.LogInformation(
+            EventIdStore.Vehicle.VehicleCreated,
+            "Successfully registered vehicle {VehicleId} with plate {NormalizedPlate} in tenant {TenantId}. CustomerId={CustomerId}",
+            vehicle.Id,
+            vehicle.Plate.NormalizedValue,
+            tenantId,
+            vehicle.CurrentCustomerId);
 
         return vehicle.Id;
     }

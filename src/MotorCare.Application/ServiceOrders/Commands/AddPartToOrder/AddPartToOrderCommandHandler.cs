@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public class AddPartToOrderCommandHandler : IRequestHandler<AddPartToOrderComman
 {
     private readonly IServiceOrderRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<AddPartToOrderCommandHandler> _logger;
 
-    public AddPartToOrderCommandHandler(IServiceOrderRepository repository, ITenantProvider tenantProvider)
+    public AddPartToOrderCommandHandler(
+        IServiceOrderRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<AddPartToOrderCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(AddPartToOrderCommand request, CancellationToken cancellationToken)
@@ -28,6 +35,15 @@ public class AddPartToOrderCommandHandler : IRequestHandler<AddPartToOrderComman
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.PartAdded,
+            "Part added to service order {ServiceOrderId} for tenant {TenantId}. PartName={PartName} Quantity={Quantity} UnitPrice={UnitPrice}",
+            order.Id,
+            tenantId,
+            request.PartName,
+            request.Quantity,
+            request.UnitPrice);
 
         return Unit.Value;
     }

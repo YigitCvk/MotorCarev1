@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
@@ -8,11 +10,16 @@ public class GetCustomerByIdQueryHandler : IRequestHandler<GetCustomerByIdQuery,
 {
     private readonly ICustomerRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetCustomerByIdQueryHandler> _logger;
 
-    public GetCustomerByIdQueryHandler(ICustomerRepository repository, ITenantProvider tenantProvider)
+    public GetCustomerByIdQueryHandler(
+        ICustomerRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<GetCustomerByIdQueryHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<CustomerDto?> Handle(GetCustomerByIdQuery request, CancellationToken cancellationToken)
@@ -25,6 +32,12 @@ public class GetCustomerByIdQueryHandler : IRequestHandler<GetCustomerByIdQuery,
         {
             return null;
         }
+
+        _logger.LogInformation(
+            EventIdStore.Customer.CustomerFetched,
+            "Customer {CustomerId} fetched for tenant {TenantId}.",
+            customer.Id,
+            tenantId);
 
         return new CustomerDto(
             customer.Id,

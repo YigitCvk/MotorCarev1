@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
@@ -10,13 +12,16 @@ public sealed class GetMotorcycleInspectionByIdQueryHandler : IRequestHandler<Ge
 {
     private readonly IMotorcycleInspectionRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetMotorcycleInspectionByIdQueryHandler> _logger;
 
     public GetMotorcycleInspectionByIdQueryHandler(
         IMotorcycleInspectionRepository repository,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<GetMotorcycleInspectionByIdQueryHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<MotorcycleInspectionDto?> Handle(GetMotorcycleInspectionByIdQuery request, CancellationToken cancellationToken)
@@ -29,6 +34,15 @@ public sealed class GetMotorcycleInspectionByIdQueryHandler : IRequestHandler<Ge
         {
             return null;
         }
+
+        _logger.LogInformation(
+            EventIdStore.Inspection.InspectionFetched,
+            "Inspection {InspectionId} fetched for tenant {TenantId}. VehicleId={VehicleId} CustomerId={CustomerId} ItemCount={ItemCount}",
+            inspection.Id,
+            tenantId,
+            inspection.VehicleId,
+            inspection.CustomerId,
+            inspection.Items.Count);
 
         return new MotorcycleInspectionDto(
             inspection.Id,

@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -11,17 +13,20 @@ public sealed class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppo
     private readonly ITenantProvider _tenantProvider;
     private readonly ICustomerRepository _customerRepository;
     private readonly IVehicleRepository _vehicleRepository;
+    private readonly ILogger<UpdateAppointmentCommandHandler> _logger;
 
     public UpdateAppointmentCommandHandler(
         IAppointmentRepository appointmentRepository,
         ITenantProvider tenantProvider,
         ICustomerRepository customerRepository,
-        IVehicleRepository vehicleRepository)
+        IVehicleRepository vehicleRepository,
+        ILogger<UpdateAppointmentCommandHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _tenantProvider = tenantProvider;
         _customerRepository = customerRepository;
         _vehicleRepository = vehicleRepository;
+        _logger = logger;
     }
 
     public async Task<AppointmentDto> Handle(UpdateAppointmentCommand request, CancellationToken cancellationToken)
@@ -64,6 +69,16 @@ public sealed class UpdateAppointmentCommandHandler : IRequestHandler<UpdateAppo
 
         _appointmentRepository.Update(appointment);
         await _appointmentRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Appointment.AppointmentUpdated,
+            "Appointment {AppointmentId} updated for tenant {TenantId}. CustomerId={CustomerId} VehicleId={VehicleId} StartAt={StartAt} EndAt={EndAt}",
+            appointment.Id,
+            tenantId,
+            appointment.CustomerId,
+            appointment.VehicleId,
+            appointment.StartAt,
+            appointment.EndAt);
 
         return new AppointmentDto(
             appointment.Id,

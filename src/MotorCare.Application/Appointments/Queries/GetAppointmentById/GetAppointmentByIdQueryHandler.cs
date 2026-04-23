@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
@@ -8,11 +10,16 @@ public sealed class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointm
 {
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetAppointmentByIdQueryHandler> _logger;
 
-    public GetAppointmentByIdQueryHandler(IAppointmentRepository appointmentRepository, ITenantProvider tenantProvider)
+    public GetAppointmentByIdQueryHandler(
+        IAppointmentRepository appointmentRepository,
+        ITenantProvider tenantProvider,
+        ILogger<GetAppointmentByIdQueryHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<AppointmentDto?> Handle(GetAppointmentByIdQuery request, CancellationToken cancellationToken)
@@ -25,6 +32,14 @@ public sealed class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointm
         {
             return null;
         }
+
+        _logger.LogInformation(
+            EventIdStore.Appointment.AppointmentFetched,
+            "Appointment {AppointmentId} fetched for tenant {TenantId}. CustomerId={CustomerId} VehicleId={VehicleId}",
+            appointment.Id,
+            tenantId,
+            appointment.CustomerId,
+            appointment.VehicleId);
 
         return new AppointmentDto(
             appointment.Id,

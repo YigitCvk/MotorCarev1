@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
@@ -10,17 +12,20 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
     private readonly ICustomerRepository _customerRepository;
     private readonly IVehicleRepository _vehicleRepository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetServiceOrderByIdQueryHandler> _logger;
 
     public GetServiceOrderByIdQueryHandler(
         IServiceOrderRepository repository,
         ICustomerRepository customerRepository,
         IVehicleRepository vehicleRepository,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<GetServiceOrderByIdQueryHandler> logger)
     {
         _repository = repository;
         _customerRepository = customerRepository;
         _vehicleRepository = vehicleRepository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<ServiceOrderDto?> Handle(GetServiceOrderByIdQuery request, CancellationToken cancellationToken)
@@ -33,6 +38,17 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
         {
             return null;
         }
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.ServiceOrderFetched,
+            "Service order {ServiceOrderId} fetched for tenant {TenantId}. CustomerId={CustomerId} VehicleId={VehicleId} OperationCount={OperationCount} PartCount={PartCount} PaymentCount={PaymentCount}",
+            order.Id,
+            tenantId,
+            order.CustomerId,
+            order.VehicleId,
+            order.Operations.Count,
+            order.Parts.Count,
+            order.Payments.Count);
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId, tenantId, cancellationToken);
         var vehicle = await _vehicleRepository.GetByIdAsync(order.VehicleId, tenantId, cancellationToken);

@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public sealed class ActivateInventoryItemCommandHandler : IRequestHandler<Activa
 {
     private readonly IInventoryRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<ActivateInventoryItemCommandHandler> _logger;
 
-    public ActivateInventoryItemCommandHandler(IInventoryRepository repository, ITenantProvider tenantProvider)
+    public ActivateInventoryItemCommandHandler(
+        IInventoryRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<ActivateInventoryItemCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(ActivateInventoryItemCommand request, CancellationToken cancellationToken)
@@ -22,10 +29,16 @@ public sealed class ActivateInventoryItemCommandHandler : IRequestHandler<Activa
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var item = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
-            ?? throw new NotFoundException("Parça bulunamadı.");
+            ?? throw new NotFoundException("Parca bulunamadi.");
 
         item.Activate();
         _repository.Update(item);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Inventory.InventoryItemActivated,
+            "Inventory item {InventoryItemId} activated for tenant {TenantId}.",
+            item.Id,
+            tenantId);
     }
 }
