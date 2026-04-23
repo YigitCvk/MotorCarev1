@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Customers;
@@ -11,11 +13,16 @@ public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerComman
 {
     private readonly ICustomerRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<CreateCustomerCommandHandler> _logger;
 
-    public CreateCustomerCommandHandler(ICustomerRepository repository, ITenantProvider tenantProvider)
+    public CreateCustomerCommandHandler(
+        ICustomerRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<CreateCustomerCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
@@ -37,6 +44,12 @@ public class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerComman
 
         await _repository.AddAsync(customer, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Customer.CustomerCreated,
+            "Customer created. CustomerId={CustomerId} FullName={FullName}",
+            customer.Id,
+            request.FullName);
 
         return customer.Id;
     }

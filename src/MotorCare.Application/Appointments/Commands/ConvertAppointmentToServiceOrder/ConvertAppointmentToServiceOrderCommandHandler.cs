@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -14,6 +16,7 @@ public sealed class ConvertAppointmentToServiceOrderCommandHandler : IRequestHan
     private readonly IVehicleRepository _vehicleRepository;
     private readonly ITenantProvider _tenantProvider;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
+    private readonly ILogger<ConvertAppointmentToServiceOrderCommandHandler> _logger;
 
     public ConvertAppointmentToServiceOrderCommandHandler(
         IAppointmentRepository appointmentRepository,
@@ -21,7 +24,8 @@ public sealed class ConvertAppointmentToServiceOrderCommandHandler : IRequestHan
         ICustomerRepository customerRepository,
         IVehicleRepository vehicleRepository,
         ITenantProvider tenantProvider,
-        IOrderNumberGenerator orderNumberGenerator)
+        IOrderNumberGenerator orderNumberGenerator,
+        ILogger<ConvertAppointmentToServiceOrderCommandHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _serviceOrderRepository = serviceOrderRepository;
@@ -29,6 +33,7 @@ public sealed class ConvertAppointmentToServiceOrderCommandHandler : IRequestHan
         _vehicleRepository = vehicleRepository;
         _tenantProvider = tenantProvider;
         _orderNumberGenerator = orderNumberGenerator;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(ConvertAppointmentToServiceOrderCommand request, CancellationToken cancellationToken)
@@ -70,6 +75,13 @@ public sealed class ConvertAppointmentToServiceOrderCommandHandler : IRequestHan
         await _serviceOrderRepository.AddAsync(serviceOrder, cancellationToken);
         _appointmentRepository.Update(appointment);
         await _serviceOrderRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Appointment.AppointmentConvertedToServiceOrder,
+            "Appointment converted to service order. AppointmentId={AppointmentId} ServiceOrderId={ServiceOrderId} OrderNo={OrderNo}",
+            request.Id,
+            serviceOrder.Id,
+            orderNo);
 
         return serviceOrder.Id;
     }

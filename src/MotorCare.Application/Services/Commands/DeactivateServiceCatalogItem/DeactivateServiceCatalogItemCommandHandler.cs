@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public sealed class DeactivateServiceCatalogItemCommandHandler : IRequestHandler
 {
     private readonly IServiceCatalogRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<DeactivateServiceCatalogItemCommandHandler> _logger;
 
-    public DeactivateServiceCatalogItemCommandHandler(IServiceCatalogRepository repository, ITenantProvider tenantProvider)
+    public DeactivateServiceCatalogItemCommandHandler(
+        IServiceCatalogRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<DeactivateServiceCatalogItemCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(DeactivateServiceCatalogItemCommand request, CancellationToken cancellationToken)
@@ -27,5 +34,10 @@ public sealed class DeactivateServiceCatalogItemCommandHandler : IRequestHandler
         item.Deactivate();
         _repository.Update(item);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceCatalog.ServiceCatalogItemDeactivated,
+            "Service catalog item deactivated. ItemId={ItemId}",
+            item.Id);
     }
 }

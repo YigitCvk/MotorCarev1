@@ -1,5 +1,7 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -20,13 +22,16 @@ public sealed class CompleteMotorcycleInspectionCommandHandler : IRequestHandler
 {
     private readonly IMotorcycleInspectionRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<CompleteMotorcycleInspectionCommandHandler> _logger;
 
     public CompleteMotorcycleInspectionCommandHandler(
         IMotorcycleInspectionRepository repository,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<CompleteMotorcycleInspectionCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task Handle(CompleteMotorcycleInspectionCommand request, CancellationToken cancellationToken)
@@ -40,5 +45,11 @@ public sealed class CompleteMotorcycleInspectionCommandHandler : IRequestHandler
         inspection.Complete();
         _repository.Update(inspection);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Inspection.InspectionCompleted,
+            "Motorcycle inspection completed. InspectionId={InspectionId} InspectionNo={InspectionNo}",
+            inspection.Id,
+            inspection.InspectionNo);
     }
 }

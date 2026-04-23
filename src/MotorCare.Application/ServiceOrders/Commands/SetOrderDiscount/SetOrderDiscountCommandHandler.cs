@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public class SetOrderDiscountCommandHandler : IRequestHandler<SetOrderDiscountCo
 {
     private readonly IServiceOrderRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<SetOrderDiscountCommandHandler> _logger;
 
-    public SetOrderDiscountCommandHandler(IServiceOrderRepository repository, ITenantProvider tenantProvider)
+    public SetOrderDiscountCommandHandler(
+        IServiceOrderRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<SetOrderDiscountCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(SetOrderDiscountCommand request, CancellationToken cancellationToken)
@@ -28,6 +35,12 @@ public class SetOrderDiscountCommandHandler : IRequestHandler<SetOrderDiscountCo
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.DiscountUpdated,
+            "Discount updated. ServiceOrderId={ServiceOrderId} Discount={Discount}",
+            request.Id,
+            request.Discount);
 
         return Unit.Value;
     }

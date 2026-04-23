@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -13,19 +15,22 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
     private readonly ICustomerRepository _customerRepository;
     private readonly ITenantProvider _tenantProvider;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
+    private readonly ILogger<CreateServiceOrderCommandHandler> _logger;
 
     public CreateServiceOrderCommandHandler(
         IServiceOrderRepository serviceOrderRepository,
         IVehicleRepository vehicleRepository,
         ICustomerRepository customerRepository,
         ITenantProvider tenantProvider,
-        IOrderNumberGenerator orderNumberGenerator)
+        IOrderNumberGenerator orderNumberGenerator,
+        ILogger<CreateServiceOrderCommandHandler> logger)
     {
         _serviceOrderRepository = serviceOrderRepository;
         _vehicleRepository = vehicleRepository;
         _customerRepository = customerRepository;
         _tenantProvider = tenantProvider;
         _orderNumberGenerator = orderNumberGenerator;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(CreateServiceOrderCommand request, CancellationToken cancellationToken)
@@ -57,6 +62,14 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
 
         await _serviceOrderRepository.AddAsync(order, cancellationToken);
         await _serviceOrderRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.ServiceOrderCreated,
+            "Service order created. ServiceOrderId={ServiceOrderId} OrderNo={OrderNo} CustomerId={CustomerId} VehicleId={VehicleId}",
+            order.Id,
+            orderNo,
+            request.CustomerId,
+            request.VehicleId);
 
         return order.Id;
     }

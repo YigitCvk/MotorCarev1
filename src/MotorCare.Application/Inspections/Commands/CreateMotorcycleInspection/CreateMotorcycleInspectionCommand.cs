@@ -1,5 +1,7 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Inspections;
@@ -53,13 +55,16 @@ public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<C
     private static readonly string[] TurkeyTimeZoneIds = ["Turkey Standard Time", "Europe/Istanbul"];
     private readonly IMotorcycleInspectionRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<CreateMotorcycleInspectionCommandHandler> _logger;
 
     public CreateMotorcycleInspectionCommandHandler(
         IMotorcycleInspectionRepository repository,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<CreateMotorcycleInspectionCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(CreateMotorcycleInspectionCommand request, CancellationToken cancellationToken)
@@ -110,6 +115,14 @@ public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<C
 
         await _repository.AddAsync(inspection, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Inspection.InspectionCreated,
+            "Motorcycle inspection created. InspectionId={InspectionId} InspectionNo={InspectionNo} Plate={Plate} PackageType={PackageType}",
+            inspection.Id,
+            inspectionNo,
+            request.Plate,
+            request.PackageType);
 
         return inspection.Id;
     }

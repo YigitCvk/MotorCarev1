@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using MotorCare.Application.Appointments;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
@@ -13,19 +15,22 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
     private readonly ICustomerRepository _customers;
     private readonly IVehicleRepository _vehicles;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<GetDailySummaryQueryHandler> _logger;
 
     public GetDailySummaryQueryHandler(
         IServiceOrderRepository serviceOrders,
         IAppointmentRepository appointments,
         ICustomerRepository customers,
         IVehicleRepository vehicles,
-        ITenantProvider tenantProvider)
+        ITenantProvider tenantProvider,
+        ILogger<GetDailySummaryQueryHandler> logger)
     {
         _serviceOrders = serviceOrders;
         _appointments = appointments;
         _customers = customers;
         _vehicles = vehicles;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<DailySummaryDto> Handle(GetDailySummaryQuery request, CancellationToken cancellationToken)
@@ -100,7 +105,7 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
                 order.GrandTotal));
         }
 
-        return new DailySummaryDto(
+        var result = new DailySummaryDto(
             appointmentItems.Count,
             summary.ActiveServiceOrders,
             summary.CompletedServiceOrdersToday,
@@ -110,6 +115,15 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
             summary.PendingAmount,
             appointmentItems,
             recentOrderItems);
+
+        _logger.LogInformation(
+            EventIdStore.Dashboard.DailySummaryFetched,
+            "Daily summary fetched. ActiveOrders={ActiveOrders} TodayAppointments={TodayAppointments} TotalPaymentsToday={TotalPaymentsToday}",
+            summary.ActiveServiceOrders,
+            appointmentItems.Count,
+            summary.TotalPaymentsToday);
+
+        return result;
     }
 
     private static (DateTimeOffset Start, DateTimeOffset End) GetIstanbulDayRange()

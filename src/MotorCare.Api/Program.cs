@@ -12,116 +12,214 @@ using MotorCare.Application;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
 using MotorCare.Infrastructure.Security;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
+using Serilog.Sinks.Elasticsearch;
 
-var builder = WebApplication.CreateBuilder(args);
+// ── Bootstrap logger (captures startup errors before full config is loaded) ──
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-if (builder.Environment.IsDevelopment())
+try
 {
-    var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
-    Directory.CreateDirectory(dataProtectionPath);
+    Log.Information("Starting MotorCare API");
 
-    builder.Services.AddDataProtection()
-        .SetApplicationName("MotorCare.Api")
-        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
-}
+    var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
-
-builder.Services.AddCarter();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // ── Serilog full configuration ───────────────────────────────────────────
+    builder.Host.UseSerilog((ctx, services, cfg) =>
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Paste the JWT access token here. Example: Bearer eyJ..."
+        var env   = ctx.HostingEnvironment;
+        var serilogSection = ctx.Configuration.GetSection("Serilog");
+        var minLevel = env.IsDevelopment() ? LogEventLevel.Debug : LogEventLevel.Information;
+
+        cfg
+            .ReadFrom.Configuration(ctx.Configuration, sectionName: "Serilog")
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithMachineName()
+            .Enrich.WithProcessId()
+            .Enrich.WithThreadId()
+            .Enrich.WithExceptionDetails()
+            .Enrich.WithProperty("ApplicationName", "MotorCare.Api")
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{EventId.Name}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+
+        // Elasticsearch sink — only when Uri is configured
+        var elasticUri = ctx.Configuration["Elastic:Uri"];
+        if (!string.IsNullOrWhiteSpace(elasticUri))
+        {
+            var indexFormat = ctx.Configuration["Elastic:IndexFormat"] ?? "motorcare-api-{0:yyyy.MM}";
+            var username    = ctx.Configuration["Elastic:Username"];
+            var password    = ctx.Configuration["Elastic:Password"];
+
+            var sinkOptions = new ElasticsearchSinkOptions(new Uri(elasticUri))
+            {
+                AutoRegisterTemplate          = true,
+                AutoRegisterTemplateVersion   = AutoRegisterTemplateVersion.ESv7,
+                IndexFormat                   = indexFormat,
+                EmitEventFailure              = EmitEventFailureHandling.WriteToSelfLog,
+                FailureCallback               = e => Console.Error.WriteLine($"[Elastic sink failure] {e.MessageTemplate}"),
+                MinimumLogEventLevel          = LogEventLevel.Information,
+                NumberOfReplicas              = 1,
+                NumberOfShards                = 2,
+                ModifyConnectionSettings      = conn =>
+                {
+                    if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+                        conn.BasicAuthentication(username, password);
+                    return conn;
+                }
+            };
+
+            cfg.WriteTo.Elasticsearch(sinkOptions);
+        }
     });
 
-    options.OperationFilter<AuthorizeOperationFilter>();
-});
+    // ── Data protection (dev only) ───────────────────────────────────────────
+    if (builder.Environment.IsDevelopment())
+    {
+        var dataProtectionPath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+        Directory.CreateDirectory(dataProtectionPath);
 
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
-{
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
+        builder.Services.AddDataProtection()
+            .SetApplicationName("MotorCare.Api")
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+    }
+
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails();
+
+    builder.Services.AddCarter();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateIssuerSigningKey = true,
-                ValidateLifetime = true,
-                ValidIssuer = jwtOptions.Issuer,
-                ValidAudience = jwtOptions.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
-                ClockSkew = TimeSpan.FromMinutes(1)
-            };
+            Name        = "Authorization",
+            Type        = SecuritySchemeType.Http,
+            Scheme      = "bearer",
+            BearerFormat = "JWT",
+            In          = ParameterLocation.Header,
+            Description = "Paste the JWT access token here. Example: Bearer eyJ..."
         });
+
+        options.OperationFilter<AuthorizeOperationFilter>();
+    });
+
+    // ── JWT authentication ───────────────────────────────────────────────────
+    var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
+    if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
+    {
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer           = true,
+                    ValidateAudience         = true,
+                    ValidateIssuerSigningKey  = true,
+                    ValidateLifetime         = true,
+                    ValidIssuer              = jwtOptions.Issuer,
+                    ValidAudience            = jwtOptions.Audience,
+                    IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                    ClockSkew                = TimeSpan.FromMinutes(1)
+                };
+            });
+    }
+
+    // ── Authorization policies ───────────────────────────────────────────────
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
+            policy.RequireRole(UserRole.Owner.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.TenantManagement, policy =>
+            policy.RequireRole(UserRole.Owner.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.CustomerOperations, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString(),
+                UserRole.Receptionist.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.ServiceOrderRead, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString(),
+                UserRole.Receptionist.ToString(),
+                UserRole.Technician.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.ServiceOrderWrite, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString(),
+                UserRole.Receptionist.ToString(),
+                UserRole.Technician.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.ServiceOrderPayments, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString(),
+                UserRole.Receptionist.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.DashboardRead, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString(),
+                UserRole.Receptionist.ToString()));
+    });
+
+    builder.Services.AddApplication();
+    builder.Services.AddInfrastructure(builder.Configuration);
+
+    var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    // ── Middleware pipeline ──────────────────────────────────────────────────
+    app.UseExceptionHandler();
+    app.UseHttpsRedirection();
+
+    app.UseMiddleware<CorrelationIdMiddleware>();
+
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
+        options.GetLevel = static (ctx, elapsed, ex) =>
+            ex is not null || ctx.Response.StatusCode >= 500
+                ? LogEventLevel.Error
+                : ctx.Response.StatusCode >= 400
+                    ? LogEventLevel.Warning
+                    : LogEventLevel.Information;
+        options.EnrichDiagnosticContext = static (diag, ctx) =>
+        {
+            diag.Set("RequestHost", ctx.Request.Host.Value);
+            diag.Set("RequestScheme", ctx.Request.Scheme);
+        };
+    });
+
+    app.UseAuthentication();
+    app.UseMiddleware<UserContextLoggingMiddleware>();
+    app.UseMiddleware<ActiveTenantUserGuardMiddleware>();
+    app.UseAuthorization();
+    app.MapCarter();
+
+    app.Run();
 }
-
-builder.Services.AddAuthorization(options =>
+catch (Exception ex) when (ex is not HostAbortedException)
 {
-    options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
-        policy.RequireRole(UserRole.Owner.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.TenantManagement, policy =>
-        policy.RequireRole(UserRole.Owner.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.CustomerOperations, policy =>
-        policy.RequireRole(
-            UserRole.Owner.ToString(),
-            UserRole.Admin.ToString(),
-            UserRole.Receptionist.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.ServiceOrderRead, policy =>
-        policy.RequireRole(
-            UserRole.Owner.ToString(),
-            UserRole.Admin.ToString(),
-            UserRole.Receptionist.ToString(),
-            UserRole.Technician.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.ServiceOrderWrite, policy =>
-        policy.RequireRole(
-            UserRole.Owner.ToString(),
-            UserRole.Admin.ToString(),
-            UserRole.Receptionist.ToString(),
-            UserRole.Technician.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.ServiceOrderPayments, policy =>
-        policy.RequireRole(
-            UserRole.Owner.ToString(),
-            UserRole.Admin.ToString(),
-            UserRole.Receptionist.ToString()));
-
-    options.AddPolicy(AuthorizationPolicies.DashboardRead, policy =>
-        policy.RequireRole(
-            UserRole.Owner.ToString(),
-            UserRole.Admin.ToString(),
-            UserRole.Receptionist.ToString()));
-});
-
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Log.Fatal(ex, "MotorCare API terminated unexpectedly");
 }
-
-app.UseExceptionHandler();
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseMiddleware<ActiveTenantUserGuardMiddleware>();
-app.UseAuthorization();
-app.MapCarter();
-
-app.Run();
+finally
+{
+    Log.CloseAndFlush();
+}

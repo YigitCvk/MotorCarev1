@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
@@ -13,42 +15,62 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
         ITenantRepository tenantRepository,
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IRefreshTokenGenerator refreshTokenGenerator)
+        IRefreshTokenGenerator refreshTokenGenerator,
+        ILogger<LoginCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _refreshTokenGenerator = refreshTokenGenerator;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var tenant = await _tenantRepository.GetByIdentifierAsync(request.TenantIdentifier, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Invalid tenant or credentials.");
+        _logger.LogInformation(
+            EventIdStore.Auth.LoginAttempt,
+            "Login attempt for TenantIdentifier={TenantIdentifier}",
+            request.TenantIdentifier);
 
-        if (!tenant.IsActive)
+        var tenant = await _tenantRepository.GetByIdentifierAsync(request.TenantIdentifier, cancellationToken);
+        if (tenant is null || !tenant.IsActive)
         {
-            throw new UnauthorizedAccessException("The tenant is inactive.");
+            _logger.LogWarning(
+                EventIdStore.Auth.LoginFailed,
+                "Login failed: tenant not found or inactive. TenantIdentifier={TenantIdentifier}",
+                request.TenantIdentifier);
+
+            throw new UnauthorizedAccessException("Invalid tenant or credentials.");
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-        var user = await _userRepository.GetByEmailAsync(tenant.Identifier, normalizedEmail, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Invalid tenant or credentials.");
-
-        if (!user.IsActive)
+        var user = await _userRepository.GetByEmailAsync(tenant.Identifier, normalizedEmail, cancellationToken);
+        if (user is null || !user.IsActive)
         {
-            throw new UnauthorizedAccessException("The user is inactive.");
+            _logger.LogWarning(
+                EventIdStore.Auth.LoginFailed,
+                "Login failed: user not found or inactive. TenantIdentifier={TenantIdentifier}",
+                request.TenantIdentifier);
+
+            throw new UnauthorizedAccessException("Invalid tenant or credentials.");
         }
 
         if (!_passwordHasher.Verify(user.PasswordHash, request.Password))
         {
+            _logger.LogWarning(
+                EventIdStore.Auth.LoginFailed,
+                "Login failed: invalid password. TenantIdentifier={TenantIdentifier} UserId={UserId}",
+                request.TenantIdentifier,
+                user.Id);
+
             throw new UnauthorizedAccessException("Invalid tenant or credentials.");
         }
 
@@ -60,6 +82,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
         _userRepository.Update(user);
         _userRepository.AddRefreshToken(refreshTokenEntity);
         await _userRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Auth.LoginSucceeded,
+            "Login succeeded. UserId={UserId} TenantIdentifier={TenantIdentifier} Role={Role}",
+            user.Id,
+            tenant.Identifier,
+            user.Role);
 
         return new AuthResponseDto(
             _jwtTokenGenerator.GenerateAccessToken(user, tenant),

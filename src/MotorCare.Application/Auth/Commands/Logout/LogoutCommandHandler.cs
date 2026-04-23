@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using MotorCare.Application.Auth.Commands.Login;
+using MotorCare.Application.Common;
 using MotorCare.Domain.Repositories;
 
 namespace MotorCare.Application.Auth.Commands.Logout;
@@ -7,10 +9,12 @@ namespace MotorCare.Application.Auth.Commands.Logout;
 public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Unit>
 {
     private readonly IUserRepository _userRepository;
+    private readonly ILogger<LogoutCommandHandler> _logger;
 
-    public LogoutCommandHandler(IUserRepository userRepository)
+    public LogoutCommandHandler(IUserRepository userRepository, ILogger<LogoutCommandHandler> logger)
     {
         _userRepository = userRepository;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(LogoutCommand request, CancellationToken cancellationToken)
@@ -25,6 +29,11 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Unit>
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync(cancellationToken);
         }
+
+        _logger.LogInformation(
+            EventIdStore.Auth.LogoutSucceeded,
+            "Logout succeeded. UserId={UserId}",
+            user.Id);
 
         return Unit.Value;
     }

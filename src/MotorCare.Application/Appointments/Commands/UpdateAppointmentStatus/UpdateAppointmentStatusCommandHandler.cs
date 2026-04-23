@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -9,11 +11,16 @@ public sealed class UpdateAppointmentStatusCommandHandler : IRequestHandler<Upda
 {
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateAppointmentStatusCommandHandler> _logger;
 
-    public UpdateAppointmentStatusCommandHandler(IAppointmentRepository appointmentRepository, ITenantProvider tenantProvider)
+    public UpdateAppointmentStatusCommandHandler(
+        IAppointmentRepository appointmentRepository,
+        ITenantProvider tenantProvider,
+        ILogger<UpdateAppointmentStatusCommandHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(UpdateAppointmentStatusCommand request, CancellationToken cancellationToken)
@@ -28,6 +35,13 @@ public sealed class UpdateAppointmentStatusCommandHandler : IRequestHandler<Upda
 
         _appointmentRepository.Update(appointment);
         await _appointmentRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Appointment.AppointmentStatusUpdated,
+            "Appointment status updated. AppointmentId={AppointmentId} NewStatus={NewStatus}",
+            request.Id,
+            request.Status);
+
         return Unit.Value;
     }
 }

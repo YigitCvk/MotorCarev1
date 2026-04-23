@@ -3,7 +3,9 @@
     "allow": [
       "Read(//c/Users/yigit/Desktop/MotorCare/**)",
       "Bash(dotnet build *)",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(dotnet add *)",
+      "Bash(dotnet list *)"
     ]
   }
 }

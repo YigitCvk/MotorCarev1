@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Common;
@@ -11,11 +13,16 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
 {
     private readonly IServiceOrderRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateServiceOrderStatusCommandHandler> _logger;
 
-    public UpdateServiceOrderStatusCommandHandler(IServiceOrderRepository repository, ITenantProvider tenantProvider)
+    public UpdateServiceOrderStatusCommandHandler(
+        IServiceOrderRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<UpdateServiceOrderStatusCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(UpdateServiceOrderStatusCommand request, CancellationToken cancellationToken)
@@ -52,11 +59,22 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
                 break;
             case ServiceOrderStatus.Open:
             default:
+                _logger.LogWarning(
+                    EventIdStore.ServiceOrder.BusinessRuleBlocked,
+                    "Service order status transition blocked. ServiceOrderId={ServiceOrderId} RequestedStatus={RequestedStatus}",
+                    request.Id,
+                    request.Status);
                 throw new DomainException("Transition to the requested status is not supported.");
         }
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.ServiceOrder.ServiceOrderStatusUpdated,
+            "Service order status updated. ServiceOrderId={ServiceOrderId} NewStatus={NewStatus}",
+            request.Id,
+            request.Status);
 
         return Unit.Value;
     }

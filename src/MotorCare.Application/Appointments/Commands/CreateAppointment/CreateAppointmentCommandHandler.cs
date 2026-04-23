@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Appointments;
 using MotorCare.Domain.Repositories;
@@ -11,17 +13,20 @@ public sealed class CreateAppointmentCommandHandler : IRequestHandler<CreateAppo
     private readonly ITenantProvider _tenantProvider;
     private readonly ICustomerRepository _customerRepository;
     private readonly IVehicleRepository _vehicleRepository;
+    private readonly ILogger<CreateAppointmentCommandHandler> _logger;
 
     public CreateAppointmentCommandHandler(
         IAppointmentRepository appointmentRepository,
         ITenantProvider tenantProvider,
         ICustomerRepository customerRepository,
-        IVehicleRepository vehicleRepository)
+        IVehicleRepository vehicleRepository,
+        ILogger<CreateAppointmentCommandHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _tenantProvider = tenantProvider;
         _customerRepository = customerRepository;
         _vehicleRepository = vehicleRepository;
+        _logger = logger;
     }
 
     public async Task<AppointmentDto> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
@@ -62,6 +67,14 @@ public sealed class CreateAppointmentCommandHandler : IRequestHandler<CreateAppo
 
         await _appointmentRepository.AddAsync(appointment, cancellationToken);
         await _appointmentRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Appointment.AppointmentCreated,
+            "Appointment created. AppointmentId={AppointmentId} CustomerName={CustomerName} Type={Type} StartAt={StartAt}",
+            appointment.Id,
+            request.CustomerName,
+            request.Type,
+            request.StartAt);
 
         return new AppointmentDto(
             appointment.Id,

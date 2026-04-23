@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Domain.Common;
 
@@ -28,7 +29,14 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         var (statusCode, title, detail, errors) = MapException(exception, _environment.IsDevelopment());
 
-        _logger.LogError(exception, "Unhandled exception. StatusCode={StatusCode}, Title={Title}", statusCode, title);
+        _logger.LogError(
+            EventIdStore.Common.UnhandledException,
+            exception,
+            "Unhandled exception. StatusCode={StatusCode} Title={Title} Path={Path} CorrelationId={CorrelationId}",
+            statusCode,
+            title,
+            httpContext.Request.Path,
+            httpContext.TraceIdentifier);
 
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/problem+json";

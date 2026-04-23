@@ -1,4 +1,6 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
@@ -10,11 +12,16 @@ public class UpdateCustomerCommandHandler : IRequestHandler<UpdateCustomerComman
 {
     private readonly ICustomerRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ILogger<UpdateCustomerCommandHandler> _logger;
 
-    public UpdateCustomerCommandHandler(ICustomerRepository repository, ITenantProvider tenantProvider)
+    public UpdateCustomerCommandHandler(
+        ICustomerRepository repository,
+        ITenantProvider tenantProvider,
+        ILogger<UpdateCustomerCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _logger = logger;
     }
 
     public async Task<Unit> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
@@ -40,6 +47,11 @@ public class UpdateCustomerCommandHandler : IRequestHandler<UpdateCustomerComman
 
         _repository.Update(customer);
         await _repository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Customer.CustomerUpdated,
+            "Customer updated. CustomerId={CustomerId}",
+            request.Id);
 
         return Unit.Value;
     }
