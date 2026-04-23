@@ -64,10 +64,14 @@ public sealed class AuthService
         {
             return await _apiClient.GetAsync<CurrentUserResponse>("/api/auth/me", authorized: true, cancellationToken);
         }
-        catch
+        catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             await _tokenStorageService.ClearAsync();
             AuthenticationStateChanged?.Invoke();
+            return null;
+        }
+        catch
+        {
             return null;
         }
     }

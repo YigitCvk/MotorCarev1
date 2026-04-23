@@ -103,6 +103,10 @@ desktop.ini
 .claude/settings.local.json
 **/settings.local.json
 
+## Markdown (docs)
+*.md
+!.github/**/*.md
+
 ## Temp scripts
 temp-*.sh
 src/temp-*.sh

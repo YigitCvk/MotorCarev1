@@ -335,42 +335,50 @@
             return;
         }
 
-        if (!await AuthService.IsAuthenticatedAsync())
+        try
         {
-            NavigationManager.NavigateTo("/login");
-            return;
-        }
-
-        await LoadActiveServicesAsync();
-
-        if (CustomerId.HasValue)
-        {
-            try
+            if (!await AuthService.IsAuthenticatedAsync())
             {
-                var customer = await CustomersService.GetByIdAsync(CustomerId.Value);
-                if (customer is not null)
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            await LoadActiveServicesAsync();
+
+            if (CustomerId.HasValue)
+            {
+                try
                 {
-                    await SelectCustomerAsync(customer);
+                    var customer = await CustomersService.GetByIdAsync(CustomerId.Value);
+                    if (customer is not null)
+                    {
+                        await SelectCustomerAsync(customer);
+                    }
+                }
+                catch
+                {
                 }
             }
-            catch
+
+            if (!string.IsNullOrWhiteSpace(PlateQuery))
             {
+                _vehicleLookupPlate = PlateQuery;
+                _plate = PlateQuery;
+                await LookupVehicleAsync();
             }
-        }
 
-        if (!string.IsNullOrWhiteSpace(PlateQuery))
+            if (!string.IsNullOrWhiteSpace(ComplaintQuery))
+            {
+                _complaint = ComplaintQuery;
+            }
+
+            ApplyPrefilledRecommendations();
+        }
+        catch (Exception ex)
         {
-            _vehicleLookupPlate = PlateQuery;
-            _plate = PlateQuery;
-            await LookupVehicleAsync();
+            _error = $"Sayfa yüklenirken hata oluştu: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
         }
-
-        if (!string.IsNullOrWhiteSpace(ComplaintQuery))
-        {
-            _complaint = ComplaintQuery;
-        }
-
-        ApplyPrefilledRecommendations();
     }
 
     private void ApplyPrefilledRecommendations()
