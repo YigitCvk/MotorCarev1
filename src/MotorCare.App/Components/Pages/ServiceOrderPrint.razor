@@ -1,0 +1,242 @@
+@page "/service-orders/{Id:guid}/print"
+@layout MotorCare.App.Components.Layout.PrintLayout
+@using System.Net
+@using MotorCare.App.Models.Auth
+@using ServiceOrderPrintModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
+@inject AuthService AuthService
+@inject ServiceOrdersService ServiceOrdersService
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(_order?.OrderNo ?? "Servis Raporu")</PageTitle>
+
+<div class="print-page-shell">
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>Servis raporu hazırlanıyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Servis raporu alınamadı</strong>
+            <p>@_error</p>
+        </section>
+    }
+    else if (_order is not null)
+    {
+        <div class="print-toolbar no-print">
+            <a class="app-btn-secondary" href="@($"/service-orders/{Id}")">Detaya Dön</a>
+            <button type="button" class="app-btn-primary" onclick="window.print()">Yazdır / PDF Al</button>
+        </div>
+
+        <article class="print-report">
+            <header class="print-header">
+                <div>
+                    <div class="print-brand">BakımSuite</div>
+                    <h1>Servis Emri Raporu</h1>
+                    <p>@(_currentUser?.TenantIdentifier ?? "İşletme") · @DateTime.Now.ToString("dd.MM.yyyy HH:mm")</p>
+                </div>
+                <div class="print-header-meta">
+                    <strong>@_order.OrderNo</strong>
+                    <span>@GetStatusLabel(_order.Status)</span>
+                </div>
+            </header>
+
+            <section class="print-grid print-grid--two">
+                <section class="print-card">
+                    <h2>Müşteri ve Araç</h2>
+                    <dl class="detail-list">
+                        <dt>Müşteri</dt>
+                        <dd>@(_order.CustomerName ?? "-")</dd>
+                        <dt>Plaka</dt>
+                        <dd>@(_order.VehiclePlate ?? "-")</dd>
+                        <dt>Araç</dt>
+                        <dd>@(_order.VehicleDisplay ?? "-")</dd>
+                        <dt>Açılış</dt>
+                        <dd>@_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dt>Kapanış</dt>
+                        <dd>@(_order.ClosedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
+                        <dt>Araç KM</dt>
+                        <dd>@_order.VehicleKm.ToString("N0")</dd>
+                    </dl>
+                </section>
+
+                <section class="print-card">
+                    <h2>Finansal Özet</h2>
+                    <div class="print-stat-grid">
+                        <div><strong>@_order.LaborTotal.ToString("N2") ₺</strong><span>İşçilik</span></div>
+                        <div><strong>@_order.PartsTotal.ToString("N2") ₺</strong><span>Parça</span></div>
+                        <div><strong>@_order.PaidTotal.ToString("N2") ₺</strong><span>Tahsilat</span></div>
+                        <div><strong>@_order.GrandTotal.ToString("N2") ₺</strong><span>Genel Toplam</span></div>
+                        <div><strong>@Math.Max(0, _order.RemainingTotal).ToString("N2") ₺</strong><span>Kalan</span></div>
+                    </div>
+                </section>
+            </section>
+
+            <section class="print-card">
+                <h2>Şikayet / Açıklama</h2>
+                <p>@(string.IsNullOrWhiteSpace(_order.Complaint) ? "Şikayet girilmemiş." : _order.Complaint)</p>
+                @if (!string.IsNullOrWhiteSpace(_order.WorkDescription))
+                {
+                    <h2 class="mt-4">Yapılan İş</h2>
+                    <p>@_order.WorkDescription</p>
+                }
+            </section>
+
+            <section class="print-grid print-grid--two">
+                <section class="print-card">
+                    <h2>İşçilik / Operasyonlar</h2>
+                    @if (_order.Operations.Count == 0)
+                    {
+                        <p>Operasyon kaydı yok.</p>
+                    }
+                    else
+                    {
+                        <div class="print-table">
+                            <div class="print-table-row print-table-head">
+                                <span>Açıklama</span>
+                                <span>Tutar</span>
+                            </div>
+                            @foreach (var op in _order.Operations)
+                            {
+                                <div class="print-table-row">
+                                    <span>@op.Description</span>
+                                    <span>@op.Price.ToString("N2") ₺</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="print-card">
+                    <h2>Parçalar</h2>
+                    @if (_order.Parts.Count == 0)
+                    {
+                        <p>Parça kaydı yok.</p>
+                    }
+                    else
+                    {
+                        <div class="print-table">
+                            <div class="print-table-row print-table-head">
+                                <span>Parça</span>
+                                <span>Tutar</span>
+                            </div>
+                            @foreach (var part in _order.Parts)
+                            {
+                                <div class="print-table-row">
+                                    <span>@part.PartName (@part.Quantity x @part.UnitPrice.ToString("N2") ₺)</span>
+                                    <span>@part.TotalPrice.ToString("N2") ₺</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            </section>
+
+            <section class="print-card">
+                <h2>Ödemeler</h2>
+                @if (_order.Payments.Count == 0)
+                {
+                    <p>Ödeme kaydı yok.</p>
+                }
+                else
+                {
+                    <div class="print-table">
+                        <div class="print-table-row print-table-head">
+                            <span>Yöntem</span>
+                            <span>Tutar</span>
+                        </div>
+                        @foreach (var payment in _order.Payments)
+                        {
+                            <div class="print-table-row">
+                                <span>@GetPaymentLabel(payment.Method) · @payment.PaymentDate.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</span>
+                                <span>@payment.Amount.ToString("N2") ₺</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+        </article>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ServiceOrderPrintModel? _order;
+    private CurrentUserResponse? _currentUser;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+            await InvokeAsync(StateHasChanged);
+
+            _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
+            if (_order is null)
+            {
+                _error = "Servis raporu bulunamadı.";
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string GetStatusLabel(string status) => status switch
+    {
+        "Open" => "Açık",
+        "InProgress" => "İşlemde",
+        "WaitingForParts" => "Parça Bekliyor",
+        "Completed" => "Tamamlandı",
+        "Delivered" => "Teslim Edildi",
+        "Cancelled" => "İptal",
+        _ => status
+    };
+
+    private static string GetPaymentLabel(string method) => method switch
+    {
+        "Cash" => "Nakit",
+        "CreditCard" => "Kredi Kartı",
+        "BankTransfer" => "Havale / EFT",
+        _ => method
+    };
+}

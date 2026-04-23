@@ -98,6 +98,10 @@ public static class MotorcycleInspectionTextMapper
         MotorcycleInspectionResult.NotExists => "Yok",
         MotorcycleInspectionResult.Damaged => "Hasarlı",
         MotorcycleInspectionResult.Painted => "Boyalı",
+        MotorcycleInspectionResult.Original => "Orijinal",
+        MotorcycleInspectionResult.Changed => "Değişen",
+        MotorcycleInspectionResult.Scratched => "Çizik",
+        MotorcycleInspectionResult.Missing => "Yok",
         _ => result.ToString()
     };
 }

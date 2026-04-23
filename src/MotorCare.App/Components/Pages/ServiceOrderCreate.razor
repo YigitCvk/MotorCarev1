@@ -298,6 +298,8 @@
 @code {
     [SupplyParameterFromQuery] public Guid? CustomerId { get; set; }
     [SupplyParameterFromQuery(Name = "plate")] public string? PlateQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "complaint")] public string? ComplaintQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "recommendations")] public string? RecommendationsQuery { get; set; }
 
     private readonly List<CustomerLookupResponse> _customerResults = [];
     private readonly List<VehicleLookupResponse> _customerVehicles = [];
@@ -324,6 +326,7 @@
     private bool _vehicleCreateLoading;
     private bool _customerVehiclesLoading;
     private bool _servicesLoading;
+    private readonly List<string> _prefilledRecommendations = [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -360,6 +363,52 @@
             _vehicleLookupPlate = PlateQuery;
             _plate = PlateQuery;
             await LookupVehicleAsync();
+        }
+
+        if (!string.IsNullOrWhiteSpace(ComplaintQuery))
+        {
+            _complaint = ComplaintQuery;
+        }
+
+        ApplyPrefilledRecommendations();
+    }
+
+    private void ApplyPrefilledRecommendations()
+    {
+        _prefilledRecommendations.Clear();
+
+        if (string.IsNullOrWhiteSpace(RecommendationsQuery))
+        {
+            return;
+        }
+
+        var parsed = RecommendationsQuery
+            .Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Split("##", StringSplitOptions.None))
+            .Where(parts => parts.Length >= 3)
+            .Select(parts => $"{parts[0]} [{parts[1]}] - {parts[2]}")
+            .Distinct()
+            .ToList();
+
+        if (parsed.Count == 0)
+        {
+            return;
+        }
+
+        _prefilledRecommendations.AddRange(parsed);
+
+        var recommendationBlock = "Servis Önerileri:" + Environment.NewLine +
+                                  string.Join(Environment.NewLine, _prefilledRecommendations.Select(x => $"- {x}"));
+
+        if (string.IsNullOrWhiteSpace(_complaint))
+        {
+            _complaint = recommendationBlock;
+            return;
+        }
+
+        if (!_complaint.Contains("Servis Önerileri:", StringComparison.OrdinalIgnoreCase))
+        {
+            _complaint = _complaint.Trim() + Environment.NewLine + Environment.NewLine + recommendationBlock;
         }
     }
 
@@ -676,6 +725,34 @@
                 {
                     _successMessage = $"Servis emri oluşturuldu ancak seçilen hizmet operasyon olarak eklenemedi: {ex.Message}";
                     return;
+                }
+            }
+
+            if (_prefilledRecommendations.Count > 0)
+            {
+                foreach (var recommendation in _prefilledRecommendations)
+                {
+                    try
+                    {
+                        await ServiceOrdersService.AddOperationAsync(id, new AddOperationRequest
+                        {
+                            Description = recommendation,
+                            Price = 0m
+                        });
+                    }
+                    catch (ApiException ex)
+                    {
+                        _successMessage = $"Servis emri oluşturuldu ancak bazı ekspertiz önerileri operasyon olarak eklenemedi: {ex.Message}";
+                        _errorEndpoint = ex.Endpoint;
+                        NavigationManager.NavigateTo($"/service-orders/{id}");
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        _successMessage = $"Servis emri oluşturuldu ancak bazı ekspertiz önerileri operasyon olarak eklenemedi: {ex.Message}";
+                        NavigationManager.NavigateTo($"/service-orders/{id}");
+                        return;
+                    }
                 }
             }
 

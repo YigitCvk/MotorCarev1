@@ -33,8 +33,8 @@ public sealed class InspectionsService(ApiClient apiClient)
     public Task<MotorcycleInspectionDetail?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => apiClient.GetAsync<MotorcycleInspectionDetail>($"/api/inspections/{id}", authorized: true, ct);
 
-    public Task<Guid> CreateAsync(CreateMotorcycleInspectionRequest request, CancellationToken ct = default)
-        => apiClient.PostAsync<CreateMotorcycleInspectionRequest, Guid>("/api/inspections", request, authorized: true, ct)!;
+    public Task<CreateMotorcycleInspectionResponse?> CreateAsync(CreateMotorcycleInspectionRequest request, CancellationToken ct = default)
+        => apiClient.PostAsync<CreateMotorcycleInspectionRequest, CreateMotorcycleInspectionResponse>("/api/inspections", request, authorized: true, ct);
 
     public Task UpdateAsync(Guid id, UpdateMotorcycleInspectionRequest request, CancellationToken ct = default)
         => apiClient.PutAsync($"/api/inspections/{id}", request, authorized: true, ct);

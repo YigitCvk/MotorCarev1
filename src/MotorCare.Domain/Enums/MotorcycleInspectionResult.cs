@@ -10,5 +10,9 @@ public enum MotorcycleInspectionResult
     Exists = 5,
     NotExists = 6,
     Damaged = 7,
-    Painted = 8
+    Painted = 8,
+    Original = 9,
+    Changed = 10,
+    Scratched = 11,
+    Missing = 12
 }

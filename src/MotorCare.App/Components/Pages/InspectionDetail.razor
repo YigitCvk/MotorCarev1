@@ -1,6 +1,7 @@
 @page "/inspections/{Id:guid}"
+@using System.Net
+@using MotorCare.App.Components.Shared
 @using MotorCare.App.Models.Inspections
-@inject AuthService AuthService
 @inject InspectionsService InspectionsService
 @inject NavigationManager NavigationManager
 
@@ -21,7 +22,14 @@
             <p>@_error</p>
         </section>
     }
-    else if (_inspection is not null)
+    else if (_inspection is null)
+    {
+        <section class="empty-state">
+            <strong>Ekspertiz kaydı bulunamadı.</strong>
+            <p>Listeye dönüp başka bir kayıt seçebilirsiniz.</p>
+        </section>
+    }
+    else
     {
         <section class="page-header">
             <div>
@@ -30,6 +38,7 @@
                 <p class="page-description">@_inspection.CustomerName · @_inspection.Phone · @_inspection.Plate</p>
             </div>
             <div class="page-header-actions">
+                <a href="@($"/inspections/{Id}/print")" class="app-btn-secondary">Yazdır / PDF Al</a>
                 <span class="status-badge @GetStatusBadgeClass(_inspection.Status)">@_inspection.StatusText</span>
                 <a href="/inspections" class="app-btn-secondary">Listeye Dön</a>
             </div>
@@ -42,7 +51,193 @@
             </section>
         }
 
+        <section class="surface-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Ekspertiz Özeti</div>
+                    <div class="section-subtitle">Ekspertiz kaydını rapor gibi okuyabileceğiniz özet görünüm.</div>
+                </div>
+                @if (HasCriticalFindings)
+                {
+                    <button type="button" class="app-btn-primary" @onclick="NavigateToServiceOrderSuggestion">
+                        @(CanCreateServiceOrder ? "Servis Emri Oluştur" : "Servis Önerisi Oluştur")
+                    </button>
+                }
+            </div>
+
+            <div class="content-grid">
+                <section class="surface-card">
+                    <div class="section-title mb-3">Rapor Kartı</div>
+                    <dl class="detail-list">
+                        <dt>Ekspertiz No</dt>
+                        <dd>@_inspection.InspectionNo</dd>
+                        <dt>Müşteri</dt>
+                        <dd>@_inspection.CustomerName</dd>
+                        <dt>Araç</dt>
+                        <dd>@VehicleDisplayText</dd>
+                        <dt>Paket</dt>
+                        <dd>@_inspection.PackageTypeText</dd>
+                        <dt>Oluşturma</dt>
+                        <dd>@_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dt>Durum</dt>
+                        <dd>@_inspection.StatusText</dd>
+                    </dl>
+                </section>
+
+                <section class="surface-card">
+                    <div class="section-title mb-3">Durum Özeti</div>
+                    <div class="metric-grid">
+                        <article class="metric-card mc-success">
+                            <div class="metric-label">Orijinal</div>
+                            <div class="metric-value">@OriginalCount</div>
+                        </article>
+                        <article class="metric-card mc-primary">
+                            <div class="metric-label">Boyalı</div>
+                            <div class="metric-value">@PaintedCount</div>
+                        </article>
+                        <article class="metric-card mc-warning">
+                            <div class="metric-label">Değişen</div>
+                            <div class="metric-value">@ChangedCount</div>
+                        </article>
+                        <article class="metric-card mc-danger">
+                            <div class="metric-label">Hasarlı</div>
+                            <div class="metric-value">@DamagedCount</div>
+                        </article>
+                        <article class="metric-card mc-warning">
+                            <div class="metric-label">Çizik</div>
+                            <div class="metric-value">@ScratchedCount</div>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </section>
+
         <div class="content-grid">
+            <section class="surface-card">
+                <div class="section-title mb-3">Kritik Bulgular</div>
+                @if (CriticalItems.Count == 0)
+                {
+                    <section class="empty-state">
+                        <strong>Kritik bulgu yok</strong>
+                        <p>Hasarlı veya değişen olarak işaretlenmiş kalem bulunmuyor.</p>
+                    </section>
+                }
+                else
+                {
+                    <div class="summary-list">
+                        @foreach (var item in CriticalItems)
+                        {
+                            <div class="summary-list-item">
+                                <strong>@item.Name</strong>
+                                <span class="status-badge @GetResultBadgeClass(item.Result)">@item.ResultText</span>
+                                <span>@item.CategoryText</span>
+                                @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                {
+                                    <span class="small text-muted">@item.Notes</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="surface-card">
+                <div class="section-title mb-3">Servis Önerileri</div>
+                @if (ServiceRecommendations.Count == 0)
+                {
+                    <section class="empty-state">
+                        <strong>Servis önerisi yok</strong>
+                        <p>Hasarlı, değişen veya çizik bulgulardan öneri üretilemedi.</p>
+                    </section>
+                }
+                else
+                {
+                    <div class="mobile-card-list">
+                        @foreach (var recommendation in ServiceRecommendations)
+                        {
+                            <label class="selection-item @(recommendation.Selected ? "selected" : string.Empty)">
+                                <div class="d-flex flex-column gap-1">
+                                    <strong>@recommendation.SourceItemName</strong>
+                                    <span class="status-badge @GetRecommendationSeverityBadgeClass(recommendation.Severity)">@recommendation.SeverityText</span>
+                                    <span>@recommendation.SuggestedAction</span>
+                                </div>
+                                <InputCheckbox @bind-Value="recommendation.Selected" />
+                            </label>
+                        }
+                    </div>
+
+                    <div class="action-bar mt-3">
+                        <button type="button" class="app-btn-primary" @onclick="CreateServiceOrderWithSelectedRecommendations" disabled="@(!SelectedRecommendations.Any())">
+                            Seçilenlerle Servis Emri Oluştur
+                        </button>
+                        <button type="button" class="app-btn-secondary" @onclick="CreateServiceOrderWithAllRecommendations">
+                            Tümünü Servis Emrine Aktar
+                        </button>
+                    </div>
+                }
+            </section>
+        </div>
+
+        <div class="content-grid">
+            <section class="surface-card">
+                <div class="section-title mb-3">Kaporta Özeti</div>
+                @if (BodySummaryItems.Count == 0)
+                {
+                    <section class="empty-state">
+                        <strong>Kaporta özeti boş</strong>
+                        <p>Karenaj / kaporta tarafında işaretlenmiş kalem bulunmuyor.</p>
+                    </section>
+                }
+                else
+                {
+                    <div class="summary-list">
+                        @foreach (var item in BodySummaryItems)
+                        {
+                            <div class="summary-list-item">
+                                <strong>@item.Name</strong>
+                                <span class="status-badge @GetResultBadgeClass(item.Result)">@item.ResultText</span>
+                                @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                {
+                                    <span class="small text-muted">@item.Notes</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="surface-card">
+                <div class="section-title mb-3">Test Sürüşü Notları</div>
+                @if (string.IsNullOrWhiteSpace(_inspection.TestRideNotes))
+                {
+                    <section class="empty-state">
+                        <strong>Test sürüşü notu girilmemiş</strong>
+                        <p>Bu ekspertiz için test sürüşü notu bulunmuyor.</p>
+                    </section>
+                }
+                else
+                {
+                    <p class="page-description">@_inspection.TestRideNotes</p>
+                }
+            </section>
+        </div>
+
+        <div class="content-grid">
+            <section class="surface-card">
+                <div class="section-title mb-3">Genel Açıklama</div>
+                @if (string.IsNullOrWhiteSpace(_inspection.GeneralNotes))
+                {
+                    <section class="empty-state">
+                        <strong>Genel açıklama girilmemiş</strong>
+                        <p>Bu ekspertiz için genel açıklama notu bulunmuyor.</p>
+                    </section>
+                }
+                else
+                {
+                    <p class="page-description">@_inspection.GeneralNotes</p>
+                }
+            </section>
+
             <section class="surface-card">
                 <div class="section-title mb-3">Araç Bilgileri / Genel Bilgiler</div>
                 <dl class="detail-list">
@@ -53,7 +248,7 @@
                     <dt>Plaka</dt>
                     <dd>@_inspection.Plate</dd>
                     <dt>Marka / Model</dt>
-                    <dd>@($"{_inspection.Brand} {_inspection.Model}".Trim())</dd>
+                    <dd>@VehicleDisplayText</dd>
                     <dt>Yıl</dt>
                     <dd>@(_inspection.Year?.ToString() ?? "-")</dd>
                     <dt>Kilometre</dt>
@@ -68,35 +263,35 @@
                     <dd>@(_inspection.MileageQuery ?? "-")</dd>
                 </dl>
             </section>
-
-            <section class="surface-card">
-                <div class="section-title mb-3">Paket Özeti</div>
-                <dl class="detail-list">
-                    <dt>Paket</dt>
-                    <dd>@_inspection.PackageTypeText</dd>
-                    <dt>Fiyat</dt>
-                    <dd>@_inspection.PackagePrice.ToString("N2") ₺</dd>
-                    <dt>Durum</dt>
-                    <dd>@_inspection.StatusText</dd>
-                    <dt>Oluşturma</dt>
-                    <dd>@_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
-                    <dt>Tamamlanma</dt>
-                    <dd>@(_inspection.CompletedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
-                </dl>
-
-                <div class="action-bar mt-4">
-                    <button type="button" class="app-btn-primary" @onclick="CompleteAsync" disabled="@(!_canEdit || _savingAction)">
-                        @(_savingAction ? "Kaydediliyor..." : "Ekspertizi Tamamla")
-                    </button>
-                    <button type="button" class="app-btn-secondary" @onclick="CancelAsync" disabled="@(!_canEdit || _savingAction)">
-                        İptal Et
-                    </button>
-                    <button type="button" class="app-btn-secondary" disabled>
-                        Rapor Oluştur Yakında
-                    </button>
-                </div>
-            </section>
         </div>
+
+        <section class="surface-card">
+            <div class="section-title mb-3">Paket Özeti</div>
+            <dl class="detail-list">
+                <dt>Paket</dt>
+                <dd>@_inspection.PackageTypeText</dd>
+                <dt>Fiyat</dt>
+                <dd>@_inspection.PackagePrice.ToString("N2") ₺</dd>
+                <dt>Durum</dt>
+                <dd>@_inspection.StatusText</dd>
+                <dt>Oluşturma</dt>
+                <dd>@_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                <dt>Tamamlanma</dt>
+                <dd>@(_inspection.CompletedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
+            </dl>
+
+            <div class="action-bar mt-4">
+                <button type="button" class="app-btn-primary" @onclick="CompleteAsync" disabled="@(!_canEdit || _savingAction)">
+                    @(_savingAction ? "Kaydediliyor..." : "Ekspertizi Tamamla")
+                </button>
+                <button type="button" class="app-btn-secondary" @onclick="CancelAsync" disabled="@(!_canEdit || _savingAction)">
+                    İptal Et
+                </button>
+                <button type="button" class="app-btn-secondary" disabled>
+                    Rapor Oluştur Yakında
+                </button>
+            </div>
+        </section>
 
         <div class="tab-bar mt-4 mb-3">
             @foreach (var tab in _tabs)
@@ -113,6 +308,11 @@
         }
         else if (_activeTab == "Karenaj/Kaporta")
         {
+            <MotorcycleBodyMap @key="_inspection.Id"
+                               Items="@BodyAndFairingItems"
+                               CanEdit="@_canEdit"
+                               Saving="@_savingAction"
+                               OnSave="SaveItemAsync" />
             @RenderItems(MotorcycleInspectionCategory.BodyAndFairing)
         }
         else if (_activeTab == "OBD/Elektronik")
@@ -123,7 +323,9 @@
         {
             <section class="surface-card">
                 <div class="section-title mb-3">Test Sürüşü İzlenimleri</div>
-                <InputTextArea class="form-control" @bind-Value="_inspection.TestRideNotes" rows="4" disabled="@(!_canEdit)" />
+                <textarea class="form-control" rows="4" disabled="@(!_canEdit)"
+                          value="@_inspection.TestRideNotes"
+                          @oninput="e => _inspection.TestRideNotes = e.Value?.ToString()"></textarea>
                 @RenderItems(MotorcycleInspectionCategory.TestRide)
             </section>
         }
@@ -134,15 +336,21 @@
                 <div class="form-grid">
                     <div class="full-span">
                         <label class="form-label">Kozmetik Notlar</label>
-                        <InputTextArea class="form-control" @bind-Value="_inspection.CosmeticNotes" rows="4" disabled="@(!_canEdit)" />
+                        <textarea class="form-control" rows="4" disabled="@(!_canEdit)"
+                                  value="@_inspection.CosmeticNotes"
+                                  @oninput="e => _inspection.CosmeticNotes = e.Value?.ToString()"></textarea>
                     </div>
                     <div class="full-span">
                         <label class="form-label">Genel Açıklama</label>
-                        <InputTextArea class="form-control" @bind-Value="_inspection.GeneralNotes" rows="4" disabled="@(!_canEdit)" />
+                        <textarea class="form-control" rows="4" disabled="@(!_canEdit)"
+                                  value="@_inspection.GeneralNotes"
+                                  @oninput="e => _inspection.GeneralNotes = e.Value?.ToString()"></textarea>
                     </div>
                 </div>
                 <div class="action-bar justify-content-end mt-4">
-                    <button type="button" class="app-btn-primary" @onclick="SaveHeaderAsync" disabled="@(!_canEdit || _savingAction)">Bilgileri Kaydet</button>
+                    <button type="button" class="app-btn-primary" @onclick="SaveHeaderAsync" disabled="@(!_canEdit || _savingAction)">
+                        Bilgileri Kaydet
+                    </button>
                 </div>
             </section>
         }
@@ -152,6 +360,16 @@
 @code {
     [Parameter] public Guid Id { get; set; }
 
+    private sealed class InspectionServiceRecommendation
+    {
+        public string SourceItemName { get; init; } = string.Empty;
+        public string SuggestedAction { get; init; } = string.Empty;
+        public MotorcycleInspectionResult SourceResult { get; init; }
+        public string SeverityText { get; init; } = string.Empty;
+        public string Severity { get; init; } = string.Empty;
+        public bool Selected { get; set; } = true;
+    }
+
     private readonly string[] _tabs = ["Mekanik", "Karenaj/Kaporta", "OBD/Elektronik", "Test Sürüşü", "Genel Açıklama"];
     private MotorcycleInspectionDetail? _inspection;
     private string _activeTab = "Mekanik";
@@ -159,19 +377,59 @@
     private bool _savingAction;
     private string? _error;
     private string? _message;
+    private Guid _loadedId;
+    private List<InspectionServiceRecommendation> _serviceRecommendations = [];
 
-    private bool _canEdit => _inspection is not null && _inspection.Status != MotorcycleInspectionStatus.Completed && _inspection.Status != MotorcycleInspectionStatus.Cancelled;
+    private bool _canEdit => _inspection is not null &&
+                             _inspection.Status != MotorcycleInspectionStatus.Completed &&
+                             _inspection.Status != MotorcycleInspectionStatus.Cancelled;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private string VehicleDisplayText => string.Join(" ", new[] { _inspection?.Brand, _inspection?.Model }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim() switch
     {
-        if (!firstRender)
+        "" => _inspection?.Plate ?? "-",
+        var text => $"{text} · {_inspection?.Plate}"
+    };
+
+    private List<MotorcycleInspectionItem> BodyAndFairingItems => _inspection?.Items?
+        .Where(x => x.Category == MotorcycleInspectionCategory.BodyAndFairing)
+        .OrderBy(x => x.SortOrder)
+        .ToList() ?? [];
+
+    private List<MotorcycleInspectionItem> CriticalItems => _inspection?.Items?
+        .Where(x => x.Result is MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Changed)
+        .OrderByDescending(x => x.Result == MotorcycleInspectionResult.Damaged)
+        .ThenBy(x => x.Category)
+        .ThenBy(x => x.SortOrder)
+        .ToList() ?? [];
+
+    private List<MotorcycleInspectionItem> BodySummaryItems => BodyAndFairingItems
+        .Where(x => x.Result is MotorcycleInspectionResult.Original or MotorcycleInspectionResult.Painted or MotorcycleInspectionResult.Changed or MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Scratched)
+        .ToList();
+
+    private List<InspectionServiceRecommendation> ServiceRecommendations => _serviceRecommendations;
+    private IEnumerable<InspectionServiceRecommendation> SelectedRecommendations => _serviceRecommendations.Where(x => x.Selected);
+
+    private bool HasCriticalFindings => CriticalItems.Count > 0;
+    private bool CanCreateServiceOrder => _inspection?.CustomerId.HasValue == true && !string.IsNullOrWhiteSpace(_inspection.Plate);
+
+    private int OriginalCount => CountByResult(MotorcycleInspectionResult.Original);
+    private int PaintedCount => CountByResult(MotorcycleInspectionResult.Painted);
+    private int ChangedCount => CountByResult(MotorcycleInspectionResult.Changed);
+    private int DamagedCount => CountByResult(MotorcycleInspectionResult.Damaged);
+    private int ScratchedCount => CountByResult(MotorcycleInspectionResult.Scratched);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == Guid.Empty)
         {
+            _inspection = null;
+            _loading = false;
+            _error = "Ekspertiz kaydı bulunamadı.";
             return;
         }
 
-        if (!await AuthService.IsAuthenticatedAsync())
+        if (_loadedId == Id && _inspection is not null)
         {
-            NavigationManager.NavigateTo("/login");
             return;
         }
 
@@ -187,23 +445,142 @@
 
         try
         {
-            _inspection = await InspectionsService.GetByIdAsync(Id);
-            if (_inspection is null)
+            var result = await InspectionsService.GetByIdAsync(Id);
+            if (result is null)
             {
+                _inspection = null;
                 _error = "Ekspertiz kaydı bulunamadı.";
+                return;
             }
+
+            result.Items ??= [];
+            _inspection = result;
+            _loadedId = Id;
+            BuildServiceRecommendations();
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _inspection = null;
+            _error = "Ekspertiz kaydı bulunamadı.";
+        }
+        catch (ApiException ex)
+        {
+            _inspection = null;
+            _error = BuildApiErrorMessage(ex);
         }
         catch (Exception ex)
         {
+            _inspection = null;
             _error = ex.Message;
         }
         finally
         {
             _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void BuildServiceRecommendations()
+    {
+        if (_inspection is null)
+        {
+            _serviceRecommendations = [];
+            return;
         }
 
-        await InvokeAsync(StateHasChanged);
+        var previousSelections = _serviceRecommendations.ToDictionary(x => x.SourceItemName, x => x.Selected, StringComparer.OrdinalIgnoreCase);
+
+        _serviceRecommendations = _inspection.Items
+            .Where(x => x.Result is MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Changed or MotorcycleInspectionResult.Scratched)
+            .Select(x => new InspectionServiceRecommendation
+            {
+                SourceItemName = x.Name,
+                SuggestedAction = GetSuggestedAction(x),
+                SourceResult = x.Result,
+                Severity = GetSeverityKey(x.Result),
+                SeverityText = GetSeverityText(x.Result),
+                Selected = previousSelections.TryGetValue(x.Name, out var selected) ? selected : x.Result != MotorcycleInspectionResult.Scratched
+            })
+            .ToList();
     }
+
+    private void NavigateToServiceOrderSuggestion()
+        => NavigateToServiceOrder(SelectedRecommendations.Any() ? SelectedRecommendations : ServiceRecommendations);
+
+    private void CreateServiceOrderWithSelectedRecommendations()
+        => NavigateToServiceOrder(SelectedRecommendations);
+
+    private void CreateServiceOrderWithAllRecommendations()
+        => NavigateToServiceOrder(ServiceRecommendations);
+
+    private void NavigateToServiceOrder(IEnumerable<InspectionServiceRecommendation> recommendations)
+    {
+        if (_inspection is null)
+        {
+            return;
+        }
+
+        var selected = recommendations.ToList();
+        if (selected.Count == 0)
+        {
+            _message = "Önce en az bir servis önerisi seçin.";
+            return;
+        }
+
+        var complaint = BuildComplaintSummary(selected);
+        var serializedRecommendations = string.Join("||", selected.Select(x => $"{x.SourceItemName}##{x.SeverityText}##{x.SuggestedAction}"));
+
+        var query = new List<string>();
+        if (_inspection.CustomerId.HasValue)
+        {
+            query.Add($"customerId={_inspection.CustomerId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_inspection.Plate))
+        {
+            query.Add($"plate={Uri.EscapeDataString(_inspection.Plate)}");
+        }
+
+        query.Add($"complaint={Uri.EscapeDataString(complaint)}");
+        query.Add($"recommendations={Uri.EscapeDataString(serializedRecommendations)}");
+        NavigationManager.NavigateTo($"/service-orders/create?{string.Join("&", query)}");
+    }
+
+    private string BuildComplaintSummary(IReadOnlyList<InspectionServiceRecommendation> recommendations)
+        => $"Ekspertiz {_inspection!.InspectionNo}:{Environment.NewLine}" +
+           string.Join(Environment.NewLine, recommendations.Select(x => $"- {x.SourceItemName} [{x.SeverityText}] · {x.SuggestedAction}"));
+
+    private static string GetSuggestedAction(MotorcycleInspectionItem item) => item.Result switch
+    {
+        MotorcycleInspectionResult.Damaged => $"{item.Name} için onarım veya parça değişimi değerlendirin",
+        MotorcycleInspectionResult.Changed => $"{item.Name} için değişen parça kontrolü ve uyum incelemesi yapın",
+        MotorcycleInspectionResult.Scratched => $"{item.Name} için kozmetik düzeltme / boya işlemi değerlendirin",
+        _ => $"{item.Name} için servis değerlendirmesi yapın"
+    };
+
+    private static string GetSeverityText(MotorcycleInspectionResult result) => result switch
+    {
+        MotorcycleInspectionResult.Damaged => "Yüksek",
+        MotorcycleInspectionResult.Changed => "Orta",
+        MotorcycleInspectionResult.Scratched => "Düşük",
+        _ => "Bilgi"
+    };
+
+    private static string GetSeverityKey(MotorcycleInspectionResult result) => result switch
+    {
+        MotorcycleInspectionResult.Damaged => "high",
+        MotorcycleInspectionResult.Changed => "medium",
+        MotorcycleInspectionResult.Scratched => "low",
+        _ => "info"
+    };
+
+    private int CountByResult(MotorcycleInspectionResult result)
+        => _inspection?.Items?.Count(x => x.Result == result) ?? 0;
 
     private RenderFragment RenderItems(MotorcycleInspectionCategory category) => builder =>
     {
@@ -251,29 +628,34 @@
                 builder.CloseElement();
                 builder.CloseElement();
 
-                builder.OpenComponent<InputSelect<MotorcycleInspectionResult>>(seq++);
+                builder.OpenElement(seq++, "select");
                 builder.AddAttribute(seq++, "class", "form-select");
-                builder.AddAttribute(seq++, "Value", item.Result);
-                builder.AddAttribute(seq++, "ValueChanged", EventCallback.Factory.Create<MotorcycleInspectionResult>(this, value => item.Result = value));
-                builder.AddAttribute(seq++, "ChildContent", (RenderFragment)((builder2) =>
+                if (!_canEdit || _savingAction)
+                    builder.AddAttribute(seq++, "disabled", true);
+                builder.AddAttribute(seq++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, e =>
                 {
-                    var seq2 = 0;
-                    foreach (var result in Enum.GetValues<MotorcycleInspectionResult>())
-                    {
-                        builder2.OpenElement(seq2++, "option");
-                        builder2.AddAttribute(seq2++, "value", result);
-                        builder2.AddContent(seq2++, GetResultText(result));
-                        builder2.CloseElement();
-                    }
+                    if (int.TryParse(e.Value?.ToString(), out var intVal))
+                        item.Result = (MotorcycleInspectionResult)intVal;
                 }));
-                builder.CloseComponent();
+                foreach (var result in Enum.GetValues<MotorcycleInspectionResult>())
+                {
+                    builder.OpenElement(seq++, "option");
+                    builder.AddAttribute(seq++, "value", (int)result);
+                    if (result == item.Result)
+                        builder.AddAttribute(seq++, "selected", true);
+                    builder.AddContent(seq++, GetResultText(result));
+                    builder.CloseElement();
+                }
+                builder.CloseElement();
 
-                builder.OpenComponent<InputTextArea>(seq++);
+                builder.OpenElement(seq++, "textarea");
                 builder.AddAttribute(seq++, "class", "form-control mt-3");
                 builder.AddAttribute(seq++, "rows", "3");
-                builder.AddAttribute(seq++, "Value", item.Notes);
-                builder.AddAttribute(seq++, "ValueChanged", EventCallback.Factory.Create<string?>(this, value => item.Notes = value));
-                builder.CloseComponent();
+                if (!_canEdit || _savingAction)
+                    builder.AddAttribute(seq++, "disabled", true);
+                builder.AddAttribute(seq++, "value", item.Notes ?? string.Empty);
+                builder.AddAttribute(seq++, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, e => item.Notes = e.Value?.ToString()));
+                builder.CloseElement();
 
                 builder.OpenElement(seq++, "div");
                 builder.AddAttribute(seq++, "class", "action-bar justify-content-end mt-3");
@@ -333,6 +715,10 @@
             _message = "Ekspertiz bilgileri güncellendi.";
             await LoadAsync();
         }
+        catch (ApiException ex)
+        {
+            _error = BuildApiErrorMessage(ex);
+        }
         catch (Exception ex)
         {
             _error = ex.Message;
@@ -350,6 +736,7 @@
             _savingAction = true;
             _error = null;
             _message = null;
+
             await InspectionsService.UpdateItemAsync(Id, item.Id, new UpdateMotorcycleInspectionItemRequest
             {
                 Result = item.Result,
@@ -358,6 +745,10 @@
 
             _message = $"\"{item.Name}\" kalemi güncellendi.";
             await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = BuildApiErrorMessage(ex);
         }
         catch (Exception ex)
         {
@@ -376,10 +767,20 @@
             _savingAction = true;
             _error = null;
             _message = null;
+
             await SaveHeaderAsync();
+            if (!string.IsNullOrWhiteSpace(_error))
+            {
+                return;
+            }
+
             await InspectionsService.CompleteAsync(Id);
             _message = "Ekspertiz tamamlandı.";
             await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = BuildApiErrorMessage(ex);
         }
         catch (Exception ex)
         {
@@ -398,9 +799,14 @@
             _savingAction = true;
             _error = null;
             _message = null;
+
             await InspectionsService.CancelAsync(Id);
             _message = "Ekspertiz iptal edildi.";
             await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = BuildApiErrorMessage(ex);
         }
         catch (Exception ex)
         {
@@ -411,6 +817,9 @@
             _savingAction = false;
         }
     }
+
+    private static string BuildApiErrorMessage(ApiException ex)
+        => $"İstek başarısız oldu ({(int)ex.StatusCode}) · {ex.Endpoint} · {ex.Message}";
 
     private static string GetResultText(MotorcycleInspectionResult result) => result switch
     {
@@ -423,7 +832,29 @@
         MotorcycleInspectionResult.NotExists => "Yok",
         MotorcycleInspectionResult.Damaged => "Hasarlı",
         MotorcycleInspectionResult.Painted => "Boyalı",
+        MotorcycleInspectionResult.Original => "Orijinal",
+        MotorcycleInspectionResult.Changed => "Değişen",
+        MotorcycleInspectionResult.Scratched => "Çizik",
+        MotorcycleInspectionResult.Missing => "Yok",
         _ => result.ToString()
+    };
+
+    private static string GetResultBadgeClass(MotorcycleInspectionResult result) => result switch
+    {
+        MotorcycleInspectionResult.Original => "badge-completed",
+        MotorcycleInspectionResult.Painted => "badge-open",
+        MotorcycleInspectionResult.Changed => "badge-progress",
+        MotorcycleInspectionResult.Damaged => "badge-cancelled",
+        MotorcycleInspectionResult.Scratched => "badge-waiting",
+        _ => "badge-muted"
+    };
+
+    private static string GetRecommendationSeverityBadgeClass(string severity) => severity switch
+    {
+        "high" => "badge-cancelled",
+        "medium" => "badge-progress",
+        "low" => "badge-waiting",
+        _ => "badge-muted"
     };
 
     private static string GetStatusBadgeClass(MotorcycleInspectionStatus status) => status switch

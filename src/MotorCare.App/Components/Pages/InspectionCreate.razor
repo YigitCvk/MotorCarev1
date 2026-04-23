@@ -457,8 +457,19 @@
                 return;
             }
 
-            var id = await InspectionsService.CreateAsync(_form);
+            var response = await InspectionsService.CreateAsync(_form);
+            var id = response?.Id ?? Guid.Empty;
+            if (id == Guid.Empty)
+            {
+                _error = "Ekspertiz oluşturuldu ancak detay sayfasına yönlendirilemedi.";
+                return;
+            }
+
             NavigationManager.NavigateTo($"/inspections/{id}");
+        }
+        catch (ApiException ex)
+        {
+            _error = $"İstek başarısız oldu ({(int)ex.StatusCode}) · {ex.Endpoint} · {ex.Message}";
         }
         catch (Exception ex)
         {

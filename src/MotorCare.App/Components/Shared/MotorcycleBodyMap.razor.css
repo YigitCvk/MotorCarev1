@@ -1,0 +1,359 @@
+.motorcycle-map {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: 1.4rem;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98)),
+        radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 28%);
+    border: 1px solid var(--mc-border);
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.motorcycle-map__header,
+.motorcycle-map__editor-header,
+.motorcycle-map__summary-header,
+.motorcycle-map__view-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.motorcycle-map__title {
+    margin: 0;
+    color: var(--mc-text);
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.motorcycle-map__description,
+.motorcycle-map__view-header p,
+.motorcycle-map__editor-header p,
+.motorcycle-map__summary-header span,
+.motorcycle-map__summary-copy small,
+.motorcycle-map__summary-meta small,
+.motorcycle-map__empty p,
+.part-label__content small {
+    margin: 0.35rem 0 0;
+    color: var(--mc-text-muted);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.motorcycle-map__toolbar,
+.motorcycle-map__inline-statuses,
+.status-legend,
+.motorcycle-map__view-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.motorcycle-map__chip,
+.motorcycle-map__mini-chip,
+.motorcycle-map__view-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 2.5rem;
+    padding: 0.58rem 0.92rem;
+    border-radius: 999px;
+    border: 1px solid var(--mc-border);
+    background: #fff;
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 700;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.motorcycle-map__mini-chip {
+    min-height: 2.3rem;
+    padding: 0.48rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.motorcycle-map__chip:hover,
+.motorcycle-map__mini-chip:hover,
+.motorcycle-map__view-toggle:hover,
+.part-label:hover,
+.motorcycle-map__summary-item:hover,
+.motorcycle-map__hotspot:hover {
+    transform: translateY(-1px);
+}
+
+.motorcycle-map__chip.is-active,
+.motorcycle-map__mini-chip.is-active,
+.motorcycle-map__view-toggle.is-active {
+    border-color: rgba(37,99,235,.34);
+    background: linear-gradient(180deg, #eff6ff, #dbeafe);
+    color: var(--mc-primary);
+}
+
+.motorcycle-map__chip--ghost {
+    background: #f8fafc;
+}
+
+.motorcycle-map__chip-dot,
+.status-legend__dot,
+.motorcycle-map__summary-swatch {
+    width: .8rem;
+    height: .8rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.status-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--mc-text-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.motorcycle-map__view-shell,
+.motorcycle-map__editor,
+.motorcycle-map__summary {
+    border: 1px solid var(--mc-border);
+    border-radius: 1.25rem;
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.motorcycle-map__view-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.motorcycle-map__view-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.motorcycle-map__view-header h4,
+.motorcycle-map__editor-header h4,
+.motorcycle-map__summary-header h4 {
+    margin: 0;
+    color: var(--mc-text);
+    font-size: 0.96rem;
+    font-weight: 800;
+}
+
+.motorcycle-map__canvas {
+    margin-top: .25rem;
+    overflow: hidden;
+}
+
+.motorcycle-map__image-stage {
+    position: relative;
+    aspect-ratio: 1448 / 1086;
+    min-height: 24rem;
+    border: 1px solid rgba(226,232,240,.9);
+    border-radius: 1.2rem;
+    overflow: hidden;
+    background-color: #f8fafc;
+}
+
+.motorcycle-map__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.motorcycle-map__hotspot {
+    position: absolute;
+    width: 2.45rem;
+    height: 2.45rem;
+    margin-left: -1.225rem;
+    margin-top: -1.225rem;
+    border-radius: 999px;
+    border: 3px solid rgba(255,255,255,.96);
+    background: color-mix(in srgb, var(--part-color) 16%, #ffffff 84%);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--part-color) 60%, #cbd5e1 40%), 0 10px 20px rgba(15,23,42,.12);
+    color: #0f172a;
+    font-weight: 900;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.motorcycle-map__hotspot.is-unmarked {
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 0 0 2px #cbd5e1, 0 10px 20px rgba(15,23,42,.08);
+}
+
+.motorcycle-map__hotspot.is-selected {
+    box-shadow: 0 0 0 3px #0f172a, 0 0 0 7px rgba(37,99,235,.2), 0 10px 22px rgba(15,23,42,.14);
+}
+
+.motorcycle-map__hotspot-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.motorcycle-map__part-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem;
+}
+
+.part-label {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    width: 100%;
+    padding: .72rem .8rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 1rem;
+    background: #fff;
+    text-align: left;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.part-label.is-selected {
+    border-color: rgba(37,99,235,.24);
+    box-shadow: 0 10px 22px rgba(15,23,42,.08);
+}
+
+.part-label__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: .2rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.part-label__content {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+}
+
+.part-label__content strong,
+.motorcycle-map__summary-meta strong,
+.motorcycle-map__summary-copy strong,
+.motorcycle-map__empty strong {
+    color: var(--mc-text);
+    font-size: .88rem;
+}
+
+.motorcycle-map__bottom {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+}
+
+.motorcycle-map__status-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.motorcycle-map__summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    margin-top: .85rem;
+}
+
+.motorcycle-map__summary-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .7rem;
+    width: 100%;
+    padding: .78rem .85rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 1rem;
+    background: #fff;
+    text-align: left;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.motorcycle-map__summary-item.is-active,
+.motorcycle-map__summary-item:hover,
+.part-label:hover {
+    border-color: rgba(37,99,235,.22);
+    box-shadow: 0 10px 22px rgba(15,23,42,.08);
+}
+
+.motorcycle-map__summary-meta,
+.motorcycle-map__summary-copy {
+    display: flex;
+    flex-direction: column;
+    gap: .12rem;
+}
+
+@media (max-width: 1024px) {
+    .motorcycle-map__bottom {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .motorcycle-map {
+        padding: 1rem;
+    }
+
+    .motorcycle-map__header,
+    .motorcycle-map__editor-header,
+    .motorcycle-map__summary-header,
+    .motorcycle-map__view-header {
+        flex-direction: column;
+    }
+
+    .motorcycle-map__chip,
+    .motorcycle-map__mini-chip,
+    .motorcycle-map__view-toggle {
+        flex: 1 1 calc(50% - .55rem);
+    }
+
+    .motorcycle-map__part-list {
+        grid-template-columns: 1fr;
+    }
+
+    .motorcycle-map__image-stage {
+        min-height: 18rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .motorcycle-map__chip,
+    .motorcycle-map__mini-chip,
+    .motorcycle-map__view-toggle,
+    .part-label,
+    .motorcycle-map__summary-item {
+        width: 100%;
+    }
+
+    .motorcycle-map__image-stage {
+        min-height: 15rem;
+    }
+
+    .motorcycle-map__hotspot {
+        width: 2.1rem;
+        height: 2.1rem;
+        margin-left: -1.05rem;
+        margin-top: -1.05rem;
+    }
+}

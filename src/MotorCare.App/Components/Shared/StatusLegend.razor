@@ -1,0 +1,16 @@
+@using MotorCare.App.Models.Inspections
+
+<div class="status-legend">
+    @foreach (var option in MotorcycleBodyMapDefinitions.StatusOptions)
+    {
+        <div class="status-legend__item">
+            <span class="status-legend__dot" style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(option.Status)}")"></span>
+            <span>@option.Label</span>
+        </div>
+    }
+
+    <div class="status-legend__item">
+        <span class="status-legend__dot" style="background:#cbd5e1"></span>
+        <span>İşaretsiz</span>
+    </div>
+</div>

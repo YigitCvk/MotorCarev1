@@ -11,6 +11,8 @@ using MotorCare.Application.Inspections.Commands.UpdateMotorcycleInspectionItem;
 using MotorCare.Application.Inspections.Queries.GetMotorcycleInspectionById;
 using MotorCare.Application.Inspections.Queries.GetMotorcycleInspections;
 using MotorCare.Domain.Enums;
+using MotorCare.Domain.Repositories;
+using MotorCare.Application.Common.Interfaces;
 
 namespace MotorCare.Api.Modules;
 
@@ -65,7 +67,12 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
-        group.MapPost("/", async (CreateMotorcycleInspectionRequest request, IMediator mediator, CancellationToken ct) =>
+        group.MapPost("/", async (
+            CreateMotorcycleInspectionRequest request,
+            IMediator mediator,
+            IMotorcycleInspectionRepository repository,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
         {
             var id = await mediator.Send(
                 new CreateMotorcycleInspectionCommand(
@@ -88,9 +95,16 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
                     request.CosmeticNotes),
                 ct);
 
-            return Results.Created($"/api/inspections/{id}", id);
+            var tenantId = tenantProvider.GetTenantId();
+            var inspection = string.IsNullOrWhiteSpace(tenantId)
+                ? null
+                : await repository.GetByIdAsync(id, tenantId, ct);
+
+            return Results.Created($"/api/inspections/{id}", new CreateMotorcycleInspectionResponse(
+                id,
+                inspection?.InspectionNo ?? string.Empty));
         })
-        .Produces<Guid>(StatusCodes.Status201Created)
+        .Produces<CreateMotorcycleInspectionResponse>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
@@ -189,4 +203,8 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
     public sealed record UpdateMotorcycleInspectionItemRequest(
         MotorcycleInspectionResult Result,
         string? Notes);
+
+    public sealed record CreateMotorcycleInspectionResponse(
+        Guid Id,
+        string InspectionNo);
 }

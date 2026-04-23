@@ -56,6 +56,7 @@
             </div>
 
             <div class="page-header-actions action-bar">
+                <a class="app-btn-secondary" href="@($"/service-orders/{Id}/print")">Yazdır / PDF Al</a>
                 <a class="app-btn-secondary" href="/service-orders">Listeye Dön</a>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("operations-section"))">İşçilik</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("parts-section"))">Parça</button>

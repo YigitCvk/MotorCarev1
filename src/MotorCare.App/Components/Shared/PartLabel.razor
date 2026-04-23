@@ -1,0 +1,23 @@
+@using MotorCare.App.Models.Inspections
+
+<button type="button"
+        class="part-label @(Selected ? "is-selected" : string.Empty)"
+        @onclick="HandleClick">
+    <span class="part-label__badge" style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(Status)}")">
+        @Number.ToString("00")
+    </span>
+    <span class="part-label__content">
+        <strong>@Label</strong>
+        <small>@MotorcycleBodyMapDefinitions.GetStatusText(Status)</small>
+    </span>
+</button>
+
+@code {
+    [Parameter] public int Number { get; set; }
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public MotorcyclePartStatus Status { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private Task HandleClick() => OnClick.InvokeAsync();
+}

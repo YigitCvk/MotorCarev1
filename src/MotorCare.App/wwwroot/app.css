@@ -2153,6 +2153,117 @@ h1:focus { outline: none; }
     gap: 1rem;
 }
 
+.motorcycle-body-map-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.motorcycle-body-map-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.8fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.motorcycle-body-map-stage {
+    padding: 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--mc-border);
+    background:
+        radial-gradient(circle at top, rgba(37, 99, 235, 0.06), transparent 40%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    overflow-x: auto;
+}
+
+.motorcycle-body-map-svg {
+    width: 100%;
+    min-width: 40rem;
+    height: auto;
+    display: block;
+}
+
+.motorcycle-body-map-wheel {
+    fill: #0f172a;
+    opacity: 0.92;
+}
+
+.motorcycle-body-map-wheel-inner {
+    fill: #94a3b8;
+    opacity: 0.95;
+}
+
+.motorcycle-body-map-frame {
+    stroke: #475569;
+    stroke-width: 16;
+    stroke-linecap: round;
+    opacity: 0.82;
+}
+
+.motorcycle-body-map-part {
+    cursor: pointer;
+    transition: transform 0.16s ease, filter 0.16s ease, stroke 0.16s ease;
+}
+
+.motorcycle-body-map-part > * {
+    stroke: rgba(15, 23, 42, 0.82);
+    stroke-width: 4;
+}
+
+.motorcycle-body-map-part:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+}
+
+.motorcycle-body-map-part.is-selected > * {
+    stroke: #0f172a;
+    stroke-width: 7;
+    filter: drop-shadow(0 0 0.8rem rgba(37, 99, 235, 0.28));
+}
+
+.motorcycle-body-map-part.is-empty > * {
+    fill: #cbd5e1;
+}
+
+.motorcycle-body-map-editor {
+    min-width: 0;
+}
+
+.motorcycle-body-map-editor-card,
+.motorcycle-body-map-empty {
+    min-height: 100%;
+}
+
+.motorcycle-body-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.motorcycle-body-map-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid var(--mc-border);
+    color: var(--mc-text-2);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.motorcycle-body-map-legend-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.motorcycle-body-map-current {
+    border: 1px solid transparent;
+}
+
 .service-order-detail-page {
     gap: 1.25rem;
 }
@@ -2222,6 +2333,27 @@ h1:focus { outline: none; }
 }
 
 @media (max-width: 640px) {
+    .motorcycle-body-map-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .motorcycle-body-map-stage {
+        padding: 0.75rem;
+    }
+
+    .motorcycle-body-map-svg {
+        min-width: 32rem;
+    }
+
+    .motorcycle-body-map-legend {
+        width: 100%;
+    }
+
+    .motorcycle-body-map-legend-item {
+        flex: 1 1 calc(50% - 0.5rem);
+        justify-content: center;
+    }
+
     .tab-bar {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -2266,5 +2398,223 @@ h1:focus { outline: none; }
 
     .service-order-line-actions {
         width: 100%;
+    }
+}
+
+.print-layout {
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.print-page-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.print-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.print-report {
+    background: #fff;
+    border: 1px solid var(--mc-border);
+    border-radius: 1.25rem;
+    box-shadow: var(--mc-shadow-sm);
+    padding: 1.5rem;
+}
+
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--mc-border);
+}
+
+.print-brand {
+    color: var(--mc-primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.print-header h1 {
+    margin: 0.35rem 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.print-header p {
+    margin: 0;
+    color: var(--mc-text-muted);
+}
+
+.print-header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    color: var(--mc-text-2);
+}
+
+.print-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.print-grid--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.print-card {
+    border: 1px solid var(--mc-border);
+    border-radius: 1rem;
+    padding: 1rem;
+    background: #fff;
+    break-inside: avoid;
+}
+
+.print-card h2 {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.print-card p {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.print-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.print-stat-grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    border-radius: 0.85rem;
+    background: #f8fafc;
+    border: 1px solid var(--mc-border);
+}
+
+.print-stat-grid strong {
+    font-size: 1.1rem;
+}
+
+.print-stat-grid span {
+    color: var(--mc-text-muted);
+    font-size: 0.85rem;
+}
+
+.print-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.print-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 0.85rem;
+    background: #fff;
+}
+
+.print-list-item span,
+.print-list-item small {
+    color: var(--mc-text-muted);
+}
+
+.print-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.print-table-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--mc-border);
+}
+
+.print-table-head {
+    color: var(--mc-text-muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+@media (max-width: 640px) {
+    .print-page-shell {
+        padding: 1rem;
+    }
+
+    .print-toolbar,
+    .print-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .print-grid--two,
+    .print-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .print-header-meta {
+        align-items: flex-start;
+    }
+}
+
+@media print {
+    body {
+        background: #fff !important;
+    }
+
+    .no-print,
+    .app-shell,
+    .app-topbar,
+    .app-sidebar,
+    .mobile-bottom-nav,
+    #blazor-error-ui {
+        display: none !important;
+    }
+
+    .print-layout,
+    .print-page-shell,
+    .print-report,
+    .print-card {
+        background: #fff !important;
+        box-shadow: none !important;
+        border-color: #d1d5db !important;
+    }
+
+    .print-page-shell {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .print-report {
+        border: none;
+        border-radius: 0;
+        padding: 0;
     }
 }

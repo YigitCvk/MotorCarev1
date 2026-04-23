@@ -1,0 +1,447 @@
+@using MotorCare.App.Models.Inspections
+
+@if (!HasMappedParts)
+{
+    <section class="empty-state">
+        <strong>Bu ekspertiz paketinde işaretlenebilir gövde alanı bulunmuyor.</strong>
+        <p>Kaporta haritası yalnızca ekspertiz maddeleri mevcut olduğunda gösterilir.</p>
+    </section>
+}
+else
+{
+    <section class="motorcycle-map">
+        <header class="motorcycle-map__header">
+            <div>
+                <h3 class="motorcycle-map__title">Motosiklet Kaporta Haritası</h3>
+                <p class="motorcycle-map__description">Parçaları seçerek boyalı, değişen, hasarlı veya orijinal durumlarını işaretleyin.</p>
+            </div>
+
+            <div class="motorcycle-map__toolbar">
+                @foreach (var option in MotorcycleBodyMapDefinitions.StatusOptions)
+                {
+                    <button type="button"
+                            class="motorcycle-map__chip @(_activeStatus == option.Status ? "is-active" : string.Empty)"
+                            @onclick="() => SelectStatus(option.Status)">
+                        <span class="motorcycle-map__chip-dot" style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(option.Status)}")"></span>
+                        @option.Label
+                    </button>
+                }
+
+                <button type="button"
+                        class="motorcycle-map__chip motorcycle-map__chip--ghost @(_activeStatus == MotorcyclePartStatus.Unmarked ? "is-active" : string.Empty)"
+                        @onclick="ClearActiveStatus">
+                    İşaretlemeyi Kaldır
+                </button>
+            </div>
+        </header>
+
+        <StatusLegend />
+
+        <section class="motorcycle-map__view-shell app-card">
+            <div class="motorcycle-map__view-switcher">
+                <button type="button"
+                        class="motorcycle-map__view-toggle @(_activeView == MotorcycleViewType.Left ? "is-active" : string.Empty)"
+                        @onclick="() => SelectView(MotorcycleViewType.Left)">
+                    Sol Görünüm
+                </button>
+                <button type="button"
+                        class="motorcycle-map__view-toggle @(_activeView == MotorcycleViewType.Right ? "is-active" : string.Empty)"
+                        @onclick="() => SelectView(MotorcycleViewType.Right)">
+                    Sağ Görünüm
+                </button>
+            </div>
+
+            @RenderView(_activeView)
+        </section>
+
+        <div class="motorcycle-map__bottom">
+            <section class="motorcycle-map__editor app-card">
+                @if (SelectedDefinition is null || SelectedState is null)
+                {
+                    <div class="motorcycle-map__empty">
+                        <strong>Bir parça seçin</strong>
+                        <p>Haritadaki numaraya veya aşağıdaki parça etiketlerinden birine tıklayarak düzenlemeye başlayın.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="motorcycle-map__editor-header">
+                        <div>
+                            <h4>@SelectedDefinition.Label</h4>
+                            <p>@GetViewText(SelectedDefinition.ViewType) · Parça No @SelectedDefinition.Number</p>
+                        </div>
+                        <span class="motorcycle-map__status-pill"
+                              style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusSoftColor(SelectedState.Status)};color:{MotorcycleBodyMapDefinitions.GetStatusColor(SelectedState.Status)}")">
+                            @MotorcycleBodyMapDefinitions.GetStatusText(SelectedState.Status)
+                        </span>
+                    </div>
+
+                    <div class="motorcycle-map__inline-statuses">
+                        @foreach (var option in MotorcycleBodyMapDefinitions.StatusOptions)
+                        {
+                            <button type="button"
+                                    class="motorcycle-map__mini-chip @(SelectedState.Status == option.Status ? "is-active" : string.Empty)"
+                                    @onclick="() => SetSelectedStatus(option.Status)">
+                                <span class="motorcycle-map__chip-dot" style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(option.Status)}")"></span>
+                                @option.Label
+                            </button>
+                        }
+                    </div>
+
+                    <label class="form-label mt-3">Not</label>
+                    <InputTextArea class="form-control"
+                                   rows="4"
+                                   @bind-Value="SelectedState.Notes"
+                                   @bind-Value:after="SyncSelectedNoteToInspection"
+                                   disabled="@(!CanEdit || Saving)" />
+
+                    <div class="action-bar mt-3">
+                        <button type="button"
+                                class="app-btn-primary"
+                                @onclick="SaveSelectedAsync"
+                                disabled="@(!CanEdit || Saving || SelectedInspectionItem is null)">
+                            @(Saving ? "Kaydediliyor..." : "Kaydet")
+                        </button>
+                        <button type="button"
+                                class="app-btn-secondary"
+                                @onclick="ClearSelectedAsync"
+                                disabled="@(!CanEdit || Saving)">
+                            Temizle
+                        </button>
+                    </div>
+                }
+            </section>
+
+            <section class="motorcycle-map__summary app-card">
+                <div class="motorcycle-map__summary-header">
+                    <h4>İşaretleme Özeti</h4>
+                    <span>@MarkedStates.Count işaretli parça</span>
+                </div>
+
+                @if (MarkedStates.Count == 0)
+                {
+                    <div class="motorcycle-map__empty">
+                        <strong>Henüz işaretlenmiş parça yok</strong>
+                        <p>Aktif durumu seçip aktif görünümdeki markerlara tıklayarak işaretleme yapabilirsiniz.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="motorcycle-map__summary-list">
+                        @foreach (var summary in MarkedStates)
+                        {
+                            var definition = GetDefinition(summary.PartId);
+                            if (definition is null)
+                            {
+                                continue;
+                            }
+
+                            <button type="button"
+                                    class="motorcycle-map__summary-item @(summary.PartId == _selectedPartId ? "is-active" : string.Empty)"
+                                    @onclick="() => SelectPart(summary.PartId)">
+                                <span class="motorcycle-map__summary-meta">
+                                    <strong>@GetViewText(summary.ViewType)</strong>
+                                    <small>No @definition.Number</small>
+                                </span>
+                                <span class="motorcycle-map__summary-copy">
+                                    <strong>@summary.Label</strong>
+                                    <small>@MotorcycleBodyMapDefinitions.GetStatusText(summary.Status)</small>
+                                </span>
+                                <span class="motorcycle-map__summary-swatch" style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(summary.Status)}")"></span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<MotorcycleInspectionItem> Items { get; set; } = [];
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool Saving { get; set; }
+    [Parameter] public EventCallback<MotorcycleInspectionItem> OnSave { get; set; }
+
+    private readonly Dictionary<string, MotorcyclePartState> _states = [];
+    private MotorcycleViewType _activeView = MotorcycleViewType.Left;
+    private MotorcyclePartStatus _activeStatus = MotorcyclePartStatus.Painted;
+    private string? _selectedPartId;
+
+    private IReadOnlyList<MotorcyclePartDefinition> AllDefinitions => MotorcycleBodyMapDefinitions.LeftParts
+        .Concat(MotorcycleBodyMapDefinitions.RightParts)
+        .ToList();
+
+    private bool HasMappedParts => Items.Count > 0;
+
+    private MotorcyclePartDefinition? SelectedDefinition => _selectedPartId is null ? null : GetDefinition(_selectedPartId);
+
+    private MotorcyclePartState? SelectedState => _selectedPartId is not null && _states.TryGetValue(_selectedPartId, out var state)
+        ? state
+        : null;
+
+    private MotorcycleInspectionItem? SelectedInspectionItem => SelectedDefinition is null ? null : ResolveInspectionItem(SelectedDefinition);
+
+    private IReadOnlyList<MotorcyclePartState> MarkedStates => _states.Values
+        .Where(state => state.Status != MotorcyclePartStatus.Unmarked)
+        .OrderBy(state => state.ViewType)
+        .ThenBy(state => GetDefinition(state.PartId)?.Number)
+        .ToList();
+
+    protected override void OnParametersSet()
+    {
+        SyncStatesFromInspectionItems();
+
+        if (_selectedPartId is null || !_states.ContainsKey(_selectedPartId))
+        {
+            _selectedPartId = _states.Values.FirstOrDefault(state => state.Status != MotorcyclePartStatus.Unmarked)?.PartId
+                ?? MotorcycleBodyMapDefinitions.GetParts(_activeView).FirstOrDefault()?.PartId;
+        }
+
+        if (_selectedPartId is not null)
+        {
+            var selectedDefinition = GetDefinition(_selectedPartId);
+            if (selectedDefinition is not null)
+            {
+                _activeView = selectedDefinition.ViewType;
+            }
+        }
+    }
+
+    private RenderFragment RenderView(MotorcycleViewType viewType) => @<section class="motorcycle-map__view-card">
+        <div class="motorcycle-map__view-header">
+            <div>
+                <h4>@GetViewTitle(viewType)</h4>
+                <p>@GetViewDescription(viewType)</p>
+            </div>
+        </div>
+
+        <div class="motorcycle-map__canvas">
+            <div class="motorcycle-map__image-stage">
+                <img class="motorcycle-map__image"
+                     src="@MotorcycleBodyMapDefinitions.GetImagePath(viewType)"
+                     alt="@GetViewTitle(viewType)" />
+
+                @foreach (var definition in MotorcycleBodyMapDefinitions.GetParts(viewType))
+                {
+                    var status = GetStatus(definition);
+
+                    <button type="button"
+                            class="motorcycle-map__hotspot @(status == MotorcyclePartStatus.Unmarked ? "is-unmarked" : string.Empty) @(_selectedPartId == definition.PartId ? "is-selected" : string.Empty)"
+                            style="@GetHotspotStyle(definition, status)"
+                            @onclick="() => ApplyStateToPart(definition, _activeStatus)">
+                        <span class="motorcycle-map__hotspot-number">@definition.Number</span>
+                        <span class="visually-hidden">@definition.Label</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <div class="motorcycle-map__part-list">
+            @foreach (var definition in MotorcycleBodyMapDefinitions.GetParts(viewType))
+            {
+                <PartLabel Number="@definition.Number"
+                           Label="@definition.Label"
+                           Status="@GetStatus(definition)"
+                           Selected="@(_selectedPartId == definition.PartId)"
+                           OnClick="@(() => SelectPart(definition.PartId))" />
+            }
+        </div>
+    </section>;
+
+    private void SyncStatesFromInspectionItems()
+    {
+        foreach (var definition in AllDefinitions)
+        {
+            var item = ResolveInspectionItem(definition);
+            _states[definition.PartId] = new MotorcyclePartState
+            {
+                PartId = definition.PartId,
+                Label = definition.Label,
+                ViewType = definition.ViewType,
+                Status = item is null ? MotorcyclePartStatus.Unmarked : MapToPartStatus(item.Result),
+                Notes = item?.Notes
+            };
+        }
+    }
+
+    private MotorcycleInspectionItem? ResolveInspectionItem(MotorcyclePartDefinition definition)
+        => Items.FirstOrDefault(item => definition.MatchKeys.Any(key => string.Equals(key, item.Name, StringComparison.OrdinalIgnoreCase)));
+
+    private MotorcyclePartDefinition? GetDefinition(string partId)
+        => AllDefinitions.FirstOrDefault(definition => definition.PartId == partId);
+
+    private MotorcyclePartStatus GetStatus(MotorcyclePartDefinition definition)
+        => _states.TryGetValue(definition.PartId, out var state)
+            ? state.Status
+            : MotorcyclePartStatus.Unmarked;
+
+    private void SelectStatus(MotorcyclePartStatus status) => _activeStatus = status;
+
+    private void ClearActiveStatus() => _activeStatus = MotorcyclePartStatus.Unmarked;
+
+    private void SelectView(MotorcycleViewType viewType)
+    {
+        _activeView = viewType;
+
+        if (_selectedPartId is null)
+        {
+            _selectedPartId = MotorcycleBodyMapDefinitions.GetParts(_activeView).FirstOrDefault()?.PartId;
+            return;
+        }
+
+        var definition = GetDefinition(_selectedPartId);
+        if (definition is null || definition.ViewType == _activeView)
+        {
+            return;
+        }
+
+        _selectedPartId = MotorcycleBodyMapDefinitions.GetParts(_activeView)
+            .FirstOrDefault(candidate => GetStatus(candidate) != MotorcyclePartStatus.Unmarked)?.PartId
+            ?? MotorcycleBodyMapDefinitions.GetParts(_activeView).FirstOrDefault()?.PartId;
+    }
+
+    private void SelectPart(string partId)
+    {
+        _selectedPartId = partId;
+
+        var definition = GetDefinition(partId);
+        if (definition is not null)
+        {
+            _activeView = definition.ViewType;
+        }
+    }
+
+    private void SetSelectedStatus(MotorcyclePartStatus status)
+    {
+        if (SelectedDefinition is null || !CanEdit || Saving)
+        {
+            return;
+        }
+
+        ApplyStateToPart(SelectedDefinition, status);
+    }
+
+    private async Task SaveSelectedAsync()
+    {
+        if (SelectedInspectionItem is null || !OnSave.HasDelegate)
+        {
+            return;
+        }
+
+        await OnSave.InvokeAsync(SelectedInspectionItem);
+    }
+
+    private Task ClearSelectedAsync()
+    {
+        if (SelectedDefinition is null || !CanEdit || Saving)
+        {
+            return Task.CompletedTask;
+        }
+
+        ApplyStateToPart(SelectedDefinition, MotorcyclePartStatus.Unmarked);
+        return Task.CompletedTask;
+    }
+
+    private void SyncSelectedNoteToInspection()
+    {
+        if (SelectedDefinition is null || SelectedState is null)
+        {
+            return;
+        }
+
+        var inspectionItem = ResolveInspectionItem(SelectedDefinition);
+        if (inspectionItem is not null)
+        {
+            inspectionItem.Notes = SelectedState.Notes;
+        }
+    }
+
+    private void ApplyStateToPart(MotorcyclePartDefinition definition, MotorcyclePartStatus requestedStatus)
+    {
+        if (!_states.TryGetValue(definition.PartId, out var currentState))
+        {
+            return;
+        }
+
+        _selectedPartId = definition.PartId;
+        _activeView = definition.ViewType;
+
+        var nextStatus = currentState.Status == requestedStatus && requestedStatus != MotorcyclePartStatus.Unmarked
+            ? MotorcyclePartStatus.Unmarked
+            : requestedStatus;
+
+        foreach (var sibling in GetSiblingDefinitions(definition))
+        {
+            if (_states.TryGetValue(sibling.PartId, out var siblingState))
+            {
+                siblingState.Status = nextStatus;
+                if (nextStatus == MotorcyclePartStatus.Unmarked)
+                {
+                    siblingState.Notes = null;
+                }
+            }
+        }
+
+        var inspectionItem = ResolveInspectionItem(definition);
+        if (inspectionItem is not null)
+        {
+            inspectionItem.Result = MapToInspectionResult(nextStatus);
+            if (nextStatus == MotorcyclePartStatus.Unmarked)
+            {
+                inspectionItem.Notes = null;
+            }
+        }
+    }
+
+    private IReadOnlyList<MotorcyclePartDefinition> GetSiblingDefinitions(MotorcyclePartDefinition definition)
+    {
+        var inspectionItem = ResolveInspectionItem(definition);
+        if (inspectionItem is null)
+        {
+            return [definition];
+        }
+
+        return AllDefinitions
+            .Where(candidate =>
+            {
+                var candidateItem = ResolveInspectionItem(candidate);
+                return candidateItem?.Id == inspectionItem.Id;
+            })
+            .ToList();
+    }
+
+    private string GetHotspotStyle(MotorcyclePartDefinition definition, MotorcyclePartStatus status)
+        => $"left:{definition.HotspotLeftPercent:F2}%;top:{definition.HotspotTopPercent:F2}%;--part-color:{MotorcycleBodyMapDefinitions.GetStatusColor(status)};";
+
+    private static string GetViewTitle(MotorcycleViewType viewType)
+        => viewType == MotorcycleViewType.Left ? "Sol Görünüm" : "Sağ Görünüm";
+
+    private static string GetViewDescription(MotorcycleViewType viewType)
+        => viewType == MotorcycleViewType.Left
+            ? "Sol görünümde yalnızca sol görünüm marker ve parça listesi gösterilir."
+            : "Sağ görünümde yalnızca sağ görünüm marker ve parça listesi gösterilir.";
+
+    private static MotorcyclePartStatus MapToPartStatus(MotorcycleInspectionResult result) => result switch
+    {
+        MotorcycleInspectionResult.Original => MotorcyclePartStatus.Original,
+        MotorcycleInspectionResult.Painted => MotorcyclePartStatus.Painted,
+        MotorcycleInspectionResult.Changed => MotorcyclePartStatus.Replaced,
+        MotorcycleInspectionResult.Damaged => MotorcyclePartStatus.Damaged,
+        MotorcycleInspectionResult.Scratched => MotorcyclePartStatus.Scratched,
+        _ => MotorcyclePartStatus.Unmarked
+    };
+
+    private static MotorcycleInspectionResult MapToInspectionResult(MotorcyclePartStatus status) => status switch
+    {
+        MotorcyclePartStatus.Original => MotorcycleInspectionResult.Original,
+        MotorcyclePartStatus.Painted => MotorcycleInspectionResult.Painted,
+        MotorcyclePartStatus.Replaced => MotorcycleInspectionResult.Changed,
+        MotorcyclePartStatus.Damaged => MotorcycleInspectionResult.Damaged,
+        MotorcyclePartStatus.Scratched => MotorcycleInspectionResult.Scratched,
+        _ => MotorcycleInspectionResult.NotChecked
+    };
+
+    private static string GetViewText(MotorcycleViewType viewType)
+        => viewType == MotorcycleViewType.Left ? "Sol" : "Sağ";
+}

@@ -50,6 +50,7 @@ public sealed class CreateMotorcycleInspectionCommandValidator : AbstractValidat
 
 public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<CreateMotorcycleInspectionCommand, Guid>
 {
+    private static readonly string[] TurkeyTimeZoneIds = ["Turkey Standard Time", "Europe/Istanbul"];
     private readonly IMotorcycleInspectionRepository _repository;
     private readonly ITenantProvider _tenantProvider;
 
@@ -66,15 +67,20 @@ public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<C
         var tenantId = _tenantProvider.GetTenantId()
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
-        var dayStart = DateTimeOffset.UtcNow.Date;
-        var dayEnd = dayStart.AddDays(1);
-        var count = await _repository.GetTodayCountAsync(tenantId, dayStart, dayEnd, cancellationToken);
+        var turkeyTimeZone = ResolveTurkeyTimeZone();
+        var localNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, turkeyTimeZone);
+        var localDayStart = new DateTimeOffset(localNow.Year, localNow.Month, localNow.Day, 0, 0, 0, localNow.Offset);
+        var localDayEnd = localDayStart.AddDays(1);
+        var dayStartUtc = localDayStart.ToUniversalTime();
+        var dayEndUtc = localDayEnd.ToUniversalTime();
+
+        var count = await _repository.GetTodayCountAsync(tenantId, dayStartUtc, dayEndUtc, cancellationToken);
 
         string inspectionNo;
         do
         {
             count++;
-            inspectionNo = $"EXP-{DateTime.UtcNow:yyyyMMdd}-{count:000}";
+            inspectionNo = $"EXP-{localNow:yyyyMMdd}-{count:000}";
         }
         while (await _repository.GetByInspectionNoAsync(tenantId, inspectionNo, cancellationToken) is not null);
 
@@ -106,5 +112,24 @@ public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<C
         await _repository.SaveChangesAsync(cancellationToken);
 
         return inspection.Id;
+    }
+
+    private static TimeZoneInfo ResolveTurkeyTimeZone()
+    {
+        foreach (var timeZoneId in TurkeyTimeZoneIds)
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+            }
+            catch (InvalidTimeZoneException)
+            {
+            }
+        }
+
+        return TimeZoneInfo.Utc;
     }
 }
