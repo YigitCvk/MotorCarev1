@@ -11,6 +11,85 @@ services:
       - "5432:5432"
     volumes:
       - motorcare-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U motorcare -d motorcare"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - motorcare
+
+  api:
+    build:
+      context: ./src
+      dockerfile: MotorCare.Api/Dockerfile
+    container_name: motorcare-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=motorcare;Username=motorcare;Password=motorcare_dev_password"
+      Jwt__Issuer: MotorCare
+      Jwt__Audience: MotorCare.Client
+      Jwt__Key: "dev-secret-key-change-in-production-must-be-at-least-32-chars"
+      Jwt__AccessTokenMinutes: 60
+      Jwt__RefreshTokenDays: 7
+      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+    volumes:
+      - api-dataprotection:/var/lib/motorcare/dataprotection
+    ports:
+      - "5000:8080"
+    networks:
+      - motorcare
+
+  app:
+    build:
+      context: ./src
+      dockerfile: MotorCare.App/Dockerfile
+    container_name: motorcare-app
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ApiBaseUrl: http://api:8080
+      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+    volumes:
+      - app-dataprotection:/var/lib/motorcare/dataprotection
+    ports:
+      - "5001:8080"
+    networks:
+      - motorcare
+
+  migrator:
+    profiles: ["tools"]
+    build:
+      context: ./src
+      dockerfile: MotorCare.Api/Dockerfile.migrator
+    container_name: motorcare-migrator
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=motorcare;Username=motorcare;Password=motorcare_dev_password"
+      Jwt__Issuer: MotorCare
+      Jwt__Audience: MotorCare.Client
+      Jwt__Key: "dev-secret-key-change-in-production-must-be-at-least-32-chars"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - motorcare
+    restart: "no"
+
+networks:
+  motorcare:
+    driver: bridge
 
 volumes:
   motorcare-postgres-data:
+  api-dataprotection:
+  app-dataprotection:
