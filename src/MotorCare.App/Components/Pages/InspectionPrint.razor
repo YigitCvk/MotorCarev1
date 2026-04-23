@@ -1,7 +1,6 @@
 @page "/inspections/{Id:guid}/print"
 @layout MotorCare.App.Components.Layout.PrintLayout
 @using System.Net
-@using MotorCare.App.Models.Auth
 @using MotorCare.App.Models.Inspections
 @inject AuthService AuthService
 @inject InspectionsService InspectionsService
@@ -27,108 +26,216 @@
     else if (_inspection is not null)
     {
         <div class="print-toolbar no-print">
-            <a class="app-btn-secondary" href="@($"/inspections/{Id}")">Detaya Dön</a>
+            <a class="app-btn-secondary" href="@($"/inspections/{Id}")">← Detaya Dön</a>
             <button type="button" class="app-btn-primary" onclick="window.print()">Yazdır / PDF Al</button>
         </div>
 
         <article class="print-report">
+
             <header class="print-header">
                 <div>
                     <div class="print-brand">BakımSuite</div>
                     <h1>Motosiklet Ekspertiz Raporu</h1>
-                    <p>@(_currentUser?.TenantIdentifier ?? "İşletme") · @DateTime.Now.ToString("dd.MM.yyyy HH:mm")</p>
+                    <p>@(_currentUser?.TenantIdentifier ?? "İşletme") · @_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</p>
                 </div>
                 <div class="print-header-meta">
-                    <strong>@_inspection.InspectionNo</strong>
-                    <span>@_inspection.StatusText</span>
+                    <strong class="print-doc-no">@_inspection.InspectionNo</strong>
+                    <span>@_inspection.PackageTypeText</span>
+                    <span class="status-badge @GetStatusBadgeClass(_inspection.Status)">@_inspection.StatusText</span>
                 </div>
             </header>
 
-            <section class="print-grid print-grid--two">
+            <div class="print-grid print-grid--two">
                 <section class="print-card">
-                    <h2>Genel Bilgiler</h2>
+                    <h2>Müşteri ve Araç Bilgileri</h2>
                     <dl class="detail-list">
                         <dt>Müşteri</dt>
                         <dd>@_inspection.CustomerName</dd>
                         <dt>Telefon</dt>
                         <dd>@_inspection.Phone</dd>
-                        <dt>Araç</dt>
-                        <dd>@VehicleText</dd>
-                        <dt>Paket</dt>
-                        <dd>@_inspection.PackageTypeText</dd>
-                        <dt>Oluşturma</dt>
-                        <dd>@_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dt>Plaka</dt>
+                        <dd>@_inspection.Plate</dd>
+                        @if (!string.IsNullOrWhiteSpace(_inspection.Brand) || !string.IsNullOrWhiteSpace(_inspection.Model))
+                        {
+                            <dt>Marka / Model</dt>
+                            <dd>@BrandModelText</dd>
+                        }
+                        @if (_inspection.Year.HasValue)
+                        {
+                            <dt>Model Yılı</dt>
+                            <dd>@_inspection.Year</dd>
+                        }
+                        @if (_inspection.Mileage.HasValue)
+                        {
+                            <dt>Kilometre</dt>
+                            <dd>@_inspection.Mileage.Value.ToString("N0") km</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_inspection.ChassisNumber))
+                        {
+                            <dt>Şasi No</dt>
+                            <dd>@_inspection.ChassisNumber</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_inspection.EngineNumber))
+                        {
+                            <dt>Motor No</dt>
+                            <dd>@_inspection.EngineNumber</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_inspection.Query5664))
+                        {
+                            <dt>5664 Sorgu</dt>
+                            <dd>@_inspection.Query5664</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_inspection.MileageQuery))
+                        {
+                            <dt>KM Sorgu</dt>
+                            <dd>@_inspection.MileageQuery</dd>
+                        }
+                        <dt>Paket Fiyatı</dt>
+                        <dd>@_inspection.PackagePrice.ToString("N2") ₺</dd>
                     </dl>
                 </section>
 
                 <section class="print-card">
-                    <h2>Durum Özeti</h2>
+                    <h2>Kaporta Durumu Özeti</h2>
                     <div class="print-stat-grid">
-                        <div><strong>@Count(MotorcycleInspectionResult.Original)</strong><span>Orijinal</span></div>
-                        <div><strong>@Count(MotorcycleInspectionResult.Painted)</strong><span>Boyalı</span></div>
-                        <div><strong>@Count(MotorcycleInspectionResult.Changed)</strong><span>Değişen</span></div>
-                        <div><strong>@Count(MotorcycleInspectionResult.Damaged)</strong><span>Hasarlı</span></div>
-                        <div><strong>@Count(MotorcycleInspectionResult.Scratched)</strong><span>Çizik</span></div>
+                        <div>
+                            <strong>@Count(MotorcycleInspectionResult.Original)</strong>
+                            <span>Orijinal</span>
+                        </div>
+                        <div>
+                            <strong>@Count(MotorcycleInspectionResult.Painted)</strong>
+                            <span>Boyalı</span>
+                        </div>
+                        <div>
+                            <strong>@Count(MotorcycleInspectionResult.Changed)</strong>
+                            <span>Değişen</span>
+                        </div>
+                        <div>
+                            <strong>@Count(MotorcycleInspectionResult.Damaged)</strong>
+                            <span>Hasarlı</span>
+                        </div>
+                        <div>
+                            <strong>@Count(MotorcycleInspectionResult.Scratched)</strong>
+                            <span>Çizik</span>
+                        </div>
                     </div>
                 </section>
-            </section>
+            </div>
 
             <section class="print-card">
-                <h2>Kritik Bulgular</h2>
+                <h2>Kritik Bulgular <span class="print-count-badge">@CriticalItems.Count adet</span></h2>
                 @if (CriticalItems.Count == 0)
                 {
-                    <p>Kritik bulgu yok.</p>
+                    <p class="print-empty-note">Kritik bulgu (hasar / değişen parça) tespit edilmemiştir.</p>
                 }
                 else
                 {
-                    <div class="print-list">
+                    <div class="print-items-table">
+                        <div class="print-items-row print-items-head">
+                            <span>Kalem</span>
+                            <span>Kategori</span>
+                            <span>Durum</span>
+                            <span>Not</span>
+                        </div>
                         @foreach (var item in CriticalItems)
                         {
-                            <div class="print-list-item">
-                                <strong>@item.Name</strong>
+                            <div class="print-items-row @(item.Result == MotorcycleInspectionResult.Damaged ? "row-damaged" : "row-changed")">
+                                <span><strong>@item.Name</strong></span>
+                                <span>@item.CategoryText</span>
                                 <span>@item.ResultText</span>
-                                @if (!string.IsNullOrWhiteSpace(item.Notes))
-                                {
-                                    <small>@item.Notes</small>
-                                }
+                                <span>@(string.IsNullOrWhiteSpace(item.Notes) ? "—" : item.Notes)</span>
                             </div>
                         }
                     </div>
                 }
             </section>
 
-            <section class="print-grid print-grid--two">
+            @{
+                var bodyItems = BodyAndFairingItems;
+                var otherItems = OtherCheckedItems;
+            }
+
+            @if (bodyItems.Count > 0)
+            {
                 <section class="print-card">
-                    <h2>Kaporta Özeti</h2>
-                    @if (BodyItems.Count == 0)
-                    {
-                        <p>Kaporta tarafında işaretlenmiş bulgu yok.</p>
-                    }
-                    else
-                    {
-                        <div class="print-list">
-                            @foreach (var item in BodyItems)
-                            {
-                                <div class="print-list-item">
-                                    <strong>@item.Name</strong>
-                                    <span>@item.ResultText</span>
-                                    @if (!string.IsNullOrWhiteSpace(item.Notes))
-                                    {
-                                        <small>@item.Notes</small>
-                                    }
-                                </div>
-                            }
+                    <h2>Kaporta / Fairing Detayı</h2>
+                    <div class="print-items-table">
+                        <div class="print-items-row print-items-head">
+                            <span>Kalem</span>
+                            <span>Durum</span>
+                            <span>Not</span>
                         </div>
+                        @foreach (var item in bodyItems)
+                        {
+                            <div class="print-items-row">
+                                <span>@item.Name</span>
+                                <span>@item.ResultText</span>
+                                <span>@(string.IsNullOrWhiteSpace(item.Notes) ? "—" : item.Notes)</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (otherItems.Count > 0)
+            {
+                <section class="print-card">
+                    <h2>Diğer Değerlendirilen Kalemler</h2>
+                    <div class="print-items-table">
+                        <div class="print-items-row print-items-head">
+                            <span>Kalem</span>
+                            <span>Kategori</span>
+                            <span>Durum</span>
+                            <span>Not</span>
+                        </div>
+                        @foreach (var item in otherItems)
+                        {
+                            <div class="print-items-row">
+                                <span>@item.Name</span>
+                                <span>@item.CategoryText</span>
+                                <span>@item.ResultText</span>
+                                <span>@(string.IsNullOrWhiteSpace(item.Notes) ? "—" : item.Notes)</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            <div class="print-grid print-grid--two">
+                <section class="print-card">
+                    <h2>Genel Açıklama</h2>
+                    <p>@(string.IsNullOrWhiteSpace(_inspection.GeneralNotes) ? "Açıklama girilmemiş." : _inspection.GeneralNotes)</p>
+                    @if (!string.IsNullOrWhiteSpace(_inspection.CosmeticNotes))
+                    {
+                        <h2 class="print-sub-title">Kaporta / Kozmetik Notlar</h2>
+                        <p>@_inspection.CosmeticNotes</p>
                     }
                 </section>
 
                 <section class="print-card">
                     <h2>Test Sürüşü Notları</h2>
-                    <p>@(string.IsNullOrWhiteSpace(_inspection.TestRideNotes) ? "Not girilmemiş." : _inspection.TestRideNotes)</p>
-                    <h2 class="mt-4">Genel Açıklama</h2>
-                    <p>@(string.IsNullOrWhiteSpace(_inspection.GeneralNotes) ? "Açıklama girilmemiş." : _inspection.GeneralNotes)</p>
+                    <p>@(string.IsNullOrWhiteSpace(_inspection.TestRideNotes) ? "Test sürüşü notu girilmemiş." : _inspection.TestRideNotes)</p>
                 </section>
-            </section>
+            </div>
+
+            <div class="print-signature-row">
+                <div class="print-signature-box">
+                    <div class="print-signature-label">Eksperin Adı Soyadı ve İmzası</div>
+                    <div class="print-signature-line"></div>
+                    <div class="print-signature-date">Tarih: _______ / _______ / ___________</div>
+                </div>
+                <div class="print-signature-box">
+                    <div class="print-signature-label">Müşteri Adı Soyadı, İmzası ve Onayı</div>
+                    <div class="print-signature-line"></div>
+                    <div class="print-signature-date">Tarih: _______ / _______ / ___________</div>
+                </div>
+            </div>
+
+            <footer class="print-footer">
+                <span>BakımSuite · Motosiklet Ekspertiz Yönetim Sistemi</span>
+                <span>@_inspection.InspectionNo · @_inspection.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy")</span>
+            </footer>
+
         </article>
     }
 </div>
@@ -141,11 +248,16 @@
     private bool _loading = true;
     private string? _error;
 
-    private string VehicleText => string.Join(" ", new[] { _inspection?.Brand, _inspection?.Model }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim() switch
+    private string BrandModelText
     {
-        "" => _inspection?.Plate ?? "-",
-        var text => $"{text} · {_inspection?.Plate}"
-    };
+        get
+        {
+            var parts = new[] { _inspection?.Brand, _inspection?.Model }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var text = string.Join(" ", parts);
+            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+        }
+    }
 
     private List<MotorcycleInspectionItem> CriticalItems => _inspection?.Items?
         .Where(x => x.Result is MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Changed)
@@ -153,18 +265,22 @@
         .ThenBy(x => x.SortOrder)
         .ToList() ?? [];
 
-    private List<MotorcycleInspectionItem> BodyItems => _inspection?.Items?
-        .Where(x => x.Category == MotorcycleInspectionCategory.BodyAndFairing &&
-                    x.Result is MotorcycleInspectionResult.Original or MotorcycleInspectionResult.Painted or MotorcycleInspectionResult.Changed or MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Scratched)
+    private List<MotorcycleInspectionItem> BodyAndFairingItems => _inspection?.Items?
+        .Where(x => x.Category == MotorcycleInspectionCategory.BodyAndFairing
+                    && x.Result is not MotorcycleInspectionResult.NotChecked)
         .OrderBy(x => x.SortOrder)
+        .ToList() ?? [];
+
+    private List<MotorcycleInspectionItem> OtherCheckedItems => _inspection?.Items?
+        .Where(x => x.Category != MotorcycleInspectionCategory.BodyAndFairing
+                    && x.Result is not MotorcycleInspectionResult.NotChecked)
+        .OrderBy(x => x.Category)
+        .ThenBy(x => x.SortOrder)
         .ToList() ?? [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
-        {
-            return;
-        }
+        if (!firstRender) return;
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -183,21 +299,14 @@
             _loading = true;
             _error = null;
             await InvokeAsync(StateHasChanged);
-
             _inspection = await InspectionsService.GetByIdAsync(Id);
             if (_inspection is null)
-            {
                 _error = "Ekspertiz raporu bulunamadı.";
-            }
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
             NavigationManager.NavigateTo("/login");
             return;
-        }
-        catch (ApiException ex)
-        {
-            _error = ex.Message;
         }
         catch (Exception ex)
         {
@@ -212,4 +321,13 @@
 
     private int Count(MotorcycleInspectionResult result)
         => _inspection?.Items?.Count(x => x.Result == result) ?? 0;
+
+    private static string GetStatusBadgeClass(MotorcycleInspectionStatus status) => status switch
+    {
+        MotorcycleInspectionStatus.Draft => "badge-muted",
+        MotorcycleInspectionStatus.InProgress => "badge-progress",
+        MotorcycleInspectionStatus.Completed => "badge-completed",
+        MotorcycleInspectionStatus.Cancelled => "badge-cancelled",
+        _ => "badge-muted"
+    };
 }

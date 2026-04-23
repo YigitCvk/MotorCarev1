@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Yazdırma - BakımSuite</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/print.css" />
+</head>
+<body>
+    <div class="print-container">
+        @Body
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+body {
+    background-color: #fff;
+    color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+    font-size: 11pt;
+}
+
+.print-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 15mm;
+    box-sizing: border-box;
+}
+
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #000;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.print-header .logo-placeholder {
+    border: 1px dashed #ccc;
+    padding: 1rem 2rem;
+    text-align: center;
+    color: #999;
+    font-size: 14pt;
+}
+
+.print-header .document-title {
+    text-align: right;
+}
+
+.print-header h1 {
+    font-size: 22pt;
+    margin: 0;
+    font-weight: bold;
+}
+
+.print-header p {
+    font-size: 11pt;
+    margin: 0.25rem 0 0;
+}
+
+.section {
+    margin-bottom: 1.75rem;
+    page-break-inside: avoid;
+}
+
+.section-title {
+    font-size: 14pt;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 2rem;
+}
+
+.info-block dt {
+    font-weight: bold;
+    color: #555;
+    font-size: 9pt;
+    text-transform: uppercase;
+}
+
+.info-block dd {
+    margin-left: 0;
+    margin-bottom: 0.75rem;
+}
+
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 10pt;
+}
+
+.print-table th, .print-table td {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.print-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.print-table .text-right {
+    text-align: right;
+}
+
+.print-table .text-center {
+    text-align: center;
+}
+
+.totals-section {
+    margin-top: 2rem;
+    width: 50%;
+    margin-left: auto;
+    page-break-inside: avoid;
+}
+
+.totals-table {
+    width: 100%;
+    font-size: 11pt;
+}
+
+.totals-table td {
+    padding: 0.4rem 0.5rem;
+}
+
+.totals-table .label {
+    text-align: right;
+    font-weight: bold;
+}
+
+.totals-table .value {
+    text-align: right;
+}
+
+.totals-table .grand-total .label,
+.totals-table .grand-total .value {
+    font-weight: bold;
+    font-size: 14pt;
+    border-top: 2px solid #000;
+    padding-top: 0.75rem;
+}
+
+.signature-section {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 4rem;
+    page-break-inside: avoid;
+}
+
+.signature-box {
+    border-top: 1px solid #000;
+    padding-top: 0.5rem;
+    width: 200px;
+}
+
+.print-only-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+@media print {
+    .print-only-button {
+        display: none;
+    }
+}
