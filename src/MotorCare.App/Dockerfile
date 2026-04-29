@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+COPY MotorCare.Domain/MotorCare.Domain.csproj MotorCare.Domain/
+COPY MotorCare.Application/MotorCare.Application.csproj MotorCare.Application/
 COPY MotorCare.App/MotorCare.App.csproj MotorCare.App/
 RUN dotnet restore MotorCare.App/MotorCare.App.csproj
 
