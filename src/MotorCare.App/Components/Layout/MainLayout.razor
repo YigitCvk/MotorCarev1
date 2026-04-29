@@ -1,8 +1,10 @@
 @inherits LayoutComponentBase
 @implements IDisposable
+@using MotorCare.Application.Common
 @using Microsoft.AspNetCore.Components.Web
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
+@inject ILogger<MainLayout> Logger
 
 <div class="app-shell">
     <AppSidebar />
@@ -129,6 +131,7 @@
     private string? _searchError;
     private bool _isSearchOpen;
     private bool _isCreateMenuOpen;
+    private bool _isDisposed;
 
     private IReadOnlyList<SearchShortcut> SearchShortcuts =>
         string.IsNullOrWhiteSpace(_searchQuery) || _searchQuery.Trim().Length < 2
@@ -165,27 +168,28 @@
             return;
         }
 
-        AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
-        await RefreshCurrentUserAsync();
-    }
-
-    private async void HandleAuthenticationStateChanged()
-    {
         try
         {
+            AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
             await RefreshCurrentUserAsync();
-            await InvokeAsync(StateHasChanged);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning(ex, "Main layout authentication state refresh failed during first render.");
             _currentUser = null;
-            await InvokeAsync(StateHasChanged);
+            await SafeStateHasChangedAsync();
         }
+    }
+
+    private void HandleAuthenticationStateChanged()
+    {
+        _ = HandleAuthenticationStateChangedAsync();
     }
 
     private async Task RefreshCurrentUserAsync()
     {
-        if (!await AuthService.IsAuthenticatedAsync())
+        var isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!isAuthenticated)
         {
             _currentUser = null;
             return;
@@ -239,8 +243,13 @@
     private async Task HandleSearchFocusOutAsync(FocusEventArgs _)
     {
         await Task.Delay(120);
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _isSearchOpen = false;
-        await InvokeAsync(StateHasChanged);
+        await SafeStateHasChangedAsync();
     }
 
     private void ToggleCreateMenu()
@@ -257,8 +266,13 @@
         }
 
         await Task.Delay(120);
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _isCreateMenuOpen = false;
-        await InvokeAsync(StateHasChanged);
+        await SafeStateHasChangedAsync();
     }
 
     private void NavigateTo(string href)
@@ -277,12 +291,85 @@
     private async Task LogoutAsync()
     {
         await AuthService.LogoutAsync();
-        NavigationManager.NavigateTo("/login");
+        TryNavigateTo("/login");
     }
 
     public void Dispose()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
         AuthService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+
+    private async Task HandleAuthenticationStateChangedAsync()
+    {
+        try
+        {
+            if (_isDisposed)
+            {
+                Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit,
+                    "Main layout auth recovery skipped because component is disposed.");
+                return;
+            }
+
+            await RefreshCurrentUserAsync();
+            await SafeStateHasChangedAsync();
+        }
+        catch (Exception ex) when (_isDisposed || ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        {
+            _currentUser = null;
+            Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit, ex,
+                "Main layout auth recovery skipped because circuit is disposed or disconnected.");
+        }
+    }
+
+    private async Task SafeStateHasChangedAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (!_isDisposed)
+                {
+                    StateHasChanged();
+                }
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch (InvalidOperationException) when (_isDisposed)
+        {
+        }
+    }
+
+    private void TryNavigateTo(string uri)
+    {
+        if (_isDisposed)
+        {
+            Logger.LogInformation(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit,
+                "Navigation skipped because main layout is disposed. Target={Target}", uri);
+            return;
+        }
+
+        try
+        {
+            NavigationManager.NavigateTo(uri);
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        {
+            Logger.LogWarning(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit, ex,
+                "Navigation skipped because main layout circuit is disconnected. Target={Target}", uri);
+        }
     }
 
     private sealed record SearchShortcut(string Title, string Description, string Href);

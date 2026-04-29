@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
-using MotorCare.Domain.Common;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.ValueObjects;
 
@@ -45,9 +44,8 @@ public class GetVehicleByPlateQueryHandler : IRequestHandler<GetVehicleByPlateQu
             tenantId);
 
         var normalizedPlate = PlateNumber.Create(request.Plate).NormalizedValue;
-
         var vehicle = await _repository.GetByPlateAsync(tenantId, normalizedPlate, cancellationToken);
-        if (vehicle == null)
+        if (vehicle is null)
         {
             _logger.LogInformation(
                 EventIdStore.Vehicle.VehicleLookupByPlate,
@@ -81,6 +79,8 @@ public class GetVehicleByPlateQueryHandler : IRequestHandler<GetVehicleByPlateQu
             vehicle.Brand,
             vehicle.Model,
             vehicle.Year,
-            $"{vehicle.Plate.OriginalValue} · {vehicle.Brand} {vehicle.Model}");
+            $"{vehicle.Plate.OriginalValue} - {vehicle.Brand} {vehicle.Model}",
+            vehicle.ChassisNumber,
+            vehicle.CurrentKm);
     }
 }

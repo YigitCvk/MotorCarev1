@@ -8,29 +8,64 @@ public sealed class TokenStorageService
     private const string RefreshTokenKey = "motorcare.refreshToken";
 
     private readonly IJSRuntime _jsRuntime;
+    private readonly ILogger<TokenStorageService> _logger;
 
-    public TokenStorageService(IJSRuntime jsRuntime)
+    public TokenStorageService(IJSRuntime jsRuntime, ILogger<TokenStorageService> logger)
     {
         _jsRuntime = jsRuntime;
+        _logger = logger;
     }
 
-    public ValueTask SetTokensAsync(string accessToken, string refreshToken)
+    public async ValueTask SetTokensAsync(string accessToken, string refreshToken)
     {
-        return _jsRuntime.InvokeVoidAsync("motorCareStorage.setTokens", AccessTokenKey, accessToken, RefreshTokenKey, refreshToken);
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("motorCareStorage.setTokens", AccessTokenKey, accessToken, RefreshTokenKey, refreshToken);
+        }
+        catch (Exception ex) when (IsRecoverableStorageException(ex))
+        {
+            _logger.LogWarning(ex, "Token storage set failed.");
+        }
     }
 
-    public ValueTask<string?> GetAccessTokenAsync()
+    public async ValueTask<string?> GetAccessTokenAsync()
     {
-        return _jsRuntime.InvokeAsync<string?>("motorCareStorage.get", AccessTokenKey);
+        try
+        {
+            return await _jsRuntime.InvokeAsync<string?>("motorCareStorage.get", AccessTokenKey);
+        }
+        catch (Exception ex) when (IsRecoverableStorageException(ex))
+        {
+            _logger.LogWarning(ex, "Token storage access token read failed.");
+            return null;
+        }
     }
 
-    public ValueTask<string?> GetRefreshTokenAsync()
+    public async ValueTask<string?> GetRefreshTokenAsync()
     {
-        return _jsRuntime.InvokeAsync<string?>("motorCareStorage.get", RefreshTokenKey);
+        try
+        {
+            return await _jsRuntime.InvokeAsync<string?>("motorCareStorage.get", RefreshTokenKey);
+        }
+        catch (Exception ex) when (IsRecoverableStorageException(ex))
+        {
+            _logger.LogWarning(ex, "Token storage refresh token read failed.");
+            return null;
+        }
     }
 
-    public ValueTask ClearAsync()
+    public async ValueTask ClearAsync()
     {
-        return _jsRuntime.InvokeVoidAsync("motorCareStorage.clearTokens", AccessTokenKey, RefreshTokenKey);
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("motorCareStorage.clearTokens", AccessTokenKey, RefreshTokenKey);
+        }
+        catch (Exception ex) when (IsRecoverableStorageException(ex))
+        {
+            _logger.LogWarning(ex, "Token storage clear failed.");
+        }
     }
+
+    private static bool IsRecoverableStorageException(Exception exception)
+        => exception is JSException && exception is not JSDisconnectedException;
 }

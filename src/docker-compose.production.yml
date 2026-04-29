@@ -1,37 +1,37 @@
 services:
   postgres:
     image: postgres:16
-    container_name: motorcare-staging-postgres
+    container_name: motorcare-production-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-motorcare_staging}
+      POSTGRES_DB: ${POSTGRES_DB:-motorcare}
       POSTGRES_USER: ${POSTGRES_USER:-motorcare_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-motorcare_user} -d ${POSTGRES_DB:-motorcare_staging}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-motorcare_user} -d ${POSTGRES_DB:-motorcare}"]
       interval: 10s
       timeout: 5s
       retries: 10
     networks:
-      - motorcare-staging
+      - motorcare-production
 
   api:
-    image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:staging}
+    image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:production}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile
     pull_policy: always
-    container_name: motorcare-staging-api
+    container_name: motorcare-production-api
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://0.0.0.0:8080
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare_staging};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
       Jwt__Issuer: ${JWT_ISSUER:-BakimSuite}
       Jwt__Audience: ${JWT_AUDIENCE:-BakimSuite}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
@@ -40,7 +40,7 @@ services:
       Elastic__Uri: ${ELASTIC_URI:-}
       Elastic__Username: ${ELASTIC_USERNAME:-}
       Elastic__Password: ${ELASTIC_PASSWORD:-}
-      Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-staging-{0:yyyy.MM}}
+      Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-prod-{0:yyyy.MM}}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection
@@ -52,21 +52,21 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - motorcare-staging
+      - motorcare-production
 
   app:
-    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-app:staging}
+    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-app:production}
     build:
       context: .
       dockerfile: MotorCare.App/Dockerfile
     pull_policy: always
-    container_name: motorcare-staging-app
+    container_name: motorcare-production-app
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://0.0.0.0:8080
       ApiBaseUrl: ${APP_INTERNAL_API_BASE_URL:-http://api:8080}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
@@ -80,18 +80,18 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - motorcare-staging
+      - motorcare-production
 
   migrator:
     profiles: ["tools"]
-    image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/motorcare-migrator:staging}
+    image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/motorcare-migrator:production}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile.migrator
     pull_policy: always
     environment:
-      ASPNETCORE_ENVIRONMENT: Staging
-      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare_staging};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
       Jwt__Issuer: ${JWT_ISSUER:-BakimSuite}
       Jwt__Audience: ${JWT_AUDIENCE:-BakimSuite}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
@@ -100,16 +100,17 @@ services:
       Elastic__Uri: ${ELASTIC_URI:-}
       Elastic__Username: ${ELASTIC_USERNAME:-}
       Elastic__Password: ${ELASTIC_PASSWORD:-}
+      Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-prod-{0:yyyy.MM}}
       DataProtection__KeysPath: /tmp/dataprotection
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - motorcare-staging
+      - motorcare-production
     restart: "no"
 
 networks:
-  motorcare-staging:
+  motorcare-production:
     driver: bridge
 
 volumes:

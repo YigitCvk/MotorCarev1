@@ -1,7 +1,10 @@
 @page "/service-orders"
+@implements IDisposable
+@using MotorCare.Application.Common
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
+@inject ILogger<ServiceOrders> Logger
 
 <PageTitle>Servis İşlemleri</PageTitle>
 
@@ -16,7 +19,7 @@
         </div>
 
         <div class="quick-actions action-bar">
-            <a class="app-btn-primary" href="/service-orders/create">Yeni Servis Kaydı</a>
+            <button type="button" class="app-btn-primary" @onclick="OpenCreate">Yeni Servis Kaydı</button>
         </div>
     </section>
 
@@ -184,6 +187,8 @@
     private int _totalPages;
     private bool _hasPreviousPage;
     private bool _hasNextPage;
+    private bool _isDisposed;
+    private readonly CancellationTokenSource _lifetimeCts = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -194,23 +199,31 @@
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
-            NavigationManager.NavigateTo("/login");
+            TryNavigateTo("/login");
             return;
         }
 
-        await LoadOrdersAsync();
+        await LoadOrdersAsync(_lifetimeCts.Token);
     }
 
     private async Task LoadOrdersAsync()
+        => await LoadOrdersAsync(_lifetimeCts.Token);
+
+    private async Task LoadOrdersAsync(CancellationToken cancellationToken)
     {
         try
         {
             _isLoading = true;
             _error = null;
             _orders.Clear();
-            await InvokeAsync(StateHasChanged);
+            await SafeStateHasChangedAsync();
 
-            var response = await ServiceOrdersService.GetServiceOrdersAsync(_searchText, _status, _openedFrom, _openedTo, pageNumber: _pageNumber, pageSize: _pageSize);
+            var response = await ServiceOrdersService.GetServiceOrdersAsync(_searchText, _status, _openedFrom, _openedTo, pageNumber: _pageNumber, pageSize: _pageSize, cancellationToken: cancellationToken);
+            if (IsInactive(cancellationToken))
+            {
+                return;
+            }
+
             if (response is not null)
             {
                 _orders.AddRange(response.Items);
@@ -220,16 +233,28 @@
                 _hasNextPage = response.HasNextPage;
             }
         }
+        catch (OperationCanceledException) when (IsInactive(cancellationToken))
+        {
+        }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            if (!IsInactive(cancellationToken))
+            {
+                _error = ex.Message;
+            }
         }
         finally
         {
-            _isLoading = false;
+            if (!IsInactive(cancellationToken))
+            {
+                _isLoading = false;
+            }
         }
 
-        await InvokeAsync(StateHasChanged);
+        if (!IsInactive(cancellationToken))
+        {
+            await SafeStateHasChangedAsync();
+        }
     }
 
     private async Task FilterAsync()
@@ -250,17 +275,90 @@
 
     private async Task PrevPageAsync()
     {
-        if (_pageNumber > 1) { _pageNumber--; await LoadOrdersAsync(); }
+        if (_pageNumber > 1)
+        {
+            _pageNumber--;
+            await LoadOrdersAsync();
+        }
     }
 
     private async Task NextPageAsync()
     {
-        if (_hasNextPage) { _pageNumber++; await LoadOrdersAsync(); }
+        if (_hasNextPage)
+        {
+            _pageNumber++;
+            await LoadOrdersAsync();
+        }
     }
 
     private void OpenDetail(Guid id)
     {
-        NavigationManager.NavigateTo($"/service-orders/{id}");
+        TryNavigateTo($"/service-orders/{id}");
+    }
+
+    private void OpenCreate()
+    {
+        TryNavigateTo("/service-orders/create");
+    }
+
+    private bool IsInactive(CancellationToken cancellationToken)
+        => _isDisposed || cancellationToken.IsCancellationRequested;
+
+    private async Task SafeStateHasChangedAsync()
+    {
+        if (_isDisposed || _lifetimeCts.IsCancellationRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (!_isDisposed && !_lifetimeCts.IsCancellationRequested)
+                {
+                    StateHasChanged();
+                }
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch (InvalidOperationException) when (_isDisposed || _lifetimeCts.IsCancellationRequested)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        _lifetimeCts.Cancel();
+        _lifetimeCts.Dispose();
+    }
+
+    private void TryNavigateTo(string uri)
+    {
+        if (_isDisposed || _lifetimeCts.IsCancellationRequested)
+        {
+            Logger.LogInformation(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit,
+                "Navigation skipped because service orders component is disposed. Target={Target}", uri);
+            return;
+        }
+
+        try
+        {
+            NavigationManager.NavigateTo(uri);
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        {
+            Logger.LogWarning(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit, ex,
+                "Navigation skipped because service orders circuit is disconnected. Target={Target}", uri);
+        }
     }
 
     private static string GetStatusBadgeClass(string status) =>

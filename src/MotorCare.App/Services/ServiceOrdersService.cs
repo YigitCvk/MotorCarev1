@@ -77,6 +77,37 @@ public sealed class ServiceOrdersService
         return _apiClient.PostAsync<CreateServiceOrderRequest, Guid>("/api/service-orders", request, authorized: true, cancellationToken)!;
     }
 
+    public Task<IReadOnlyList<ConsumableCatalogItemDto>?> SearchConsumableCatalogAsync(
+        string? query = null,
+        string? category = null,
+        int? maxResults = null,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = "/api/service-orders/consumable-catalog/search";
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(query))
+            parts.Add($"query={Uri.EscapeDataString(query)}");
+        
+        if (!string.IsNullOrWhiteSpace(category))
+            parts.Add($"category={Uri.EscapeDataString(category)}");
+            
+        if (maxResults.HasValue)
+            parts.Add($"maxResults={maxResults.Value}");
+
+        if (parts.Count > 0)
+            uri += "?" + string.Join("&", parts);
+
+        return _apiClient.GetAsync<IReadOnlyList<ConsumableCatalogItemDto>>(uri, authorized: true, cancellationToken);
+    }
+
+    public Task TrackConsumableCatalogUsageAsync(
+        TrackConsumableCatalogUsageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync("/api/service-orders/consumable-catalog/track", request, authorized: true, cancellationToken);
+    }
+
     public Task<ServiceOrderDetail?> GetServiceOrderByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return _apiClient.GetAsync<ServiceOrderDetail>($"/api/service-orders/{id}", authorized: true, cancellationToken);

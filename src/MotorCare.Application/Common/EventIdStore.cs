@@ -15,6 +15,8 @@ public static class EventIdStore
         public static readonly EventId RequestCompleted    = new(1001, nameof(RequestCompleted));
         public static readonly EventId UnhandledException  = new(1002, nameof(UnhandledException));
         public static readonly EventId ValidationFailed    = new(1003, nameof(ValidationFailed));
+        public static readonly EventId AuthRecoverySkippedDueToDisposedCircuit = new(1004, nameof(AuthRecoverySkippedDueToDisposedCircuit));
+        public static readonly EventId NavigationSkippedDueToDisconnectedCircuit = new(1005, nameof(NavigationSkippedDueToDisconnectedCircuit));
     }
 
     // ── Auth  1100-1199 ─────────────────────────────────────────────────────
@@ -68,6 +70,19 @@ public static class EventIdStore
         public static readonly EventId PaymentAdded              = new(1507, nameof(PaymentAdded));
         public static readonly EventId DiscountUpdated           = new(1508, nameof(DiscountUpdated));
         public static readonly EventId BusinessRuleBlocked       = new(1509, nameof(BusinessRuleBlocked));
+        public static readonly EventId ServiceOrderCreatePageOpened = new(1510, nameof(ServiceOrderCreatePageOpened));
+        public static readonly EventId ServiceOrderCreateInitializationStarted = new(1511, nameof(ServiceOrderCreateInitializationStarted));
+        public static readonly EventId ServiceOrderCreateInitializationCompleted = new(1512, nameof(ServiceOrderCreateInitializationCompleted));
+        public static readonly EventId ServiceOrderCreateInitializationFailed = new(1513, nameof(ServiceOrderCreateInitializationFailed));
+        public static readonly EventId ServiceOrderCreateDisposedBeforeLoadCompleted = new(1514, nameof(ServiceOrderCreateDisposedBeforeLoadCompleted));
+        public static readonly EventId ServiceOrderCreateRenderSkippedAfterDispose = new(1515, nameof(ServiceOrderCreateRenderSkippedAfterDispose));
+        public static readonly EventId ServiceOrderCreateRenderStarted = new(1516, nameof(ServiceOrderCreateRenderStarted));
+        public static readonly EventId ServiceOrderCreateRenderCompleted = new(1517, nameof(ServiceOrderCreateRenderCompleted));
+        public static readonly EventId ServiceOrderCreateRenderFailed = new(1518, nameof(ServiceOrderCreateRenderFailed));
+        public static readonly EventId ServiceOrderCreateCustomerSelected = new(1519, nameof(ServiceOrderCreateCustomerSelected));
+        public static readonly EventId ServiceOrderCreateVehicleAutoFilled = new(1520, nameof(ServiceOrderCreateVehicleAutoFilled));
+        public static readonly EventId ConsumableSuggestionsFetched = new(1521, nameof(ConsumableSuggestionsFetched));
+        public static readonly EventId ConsumableSuggestionStored = new(1522, nameof(ConsumableSuggestionStored));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────

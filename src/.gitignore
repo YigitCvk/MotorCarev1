@@ -1,0 +1,54 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# IDE and user-local files
+.vs/
+.vscode/
+.idea/
+.claude/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+MotorCare.slnLaunch.user
+
+# Local config and secrets
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.*.secrets.json
+.env
+.env.*
+!.env.example
+deploy/portainer/*.env
+!deploy/portainer/*.env.example
+docker-compose.override.yml
+docker-compose.*.override.yml
+
+# Logs and diagnostics
+logs/
+*.log
+*.tmp
+*.cache
+
+# Package managers
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local tooling and generated artifacts
+.codex-temp/
+.tmpapi/
+.tmpobj/
+**/App_Data/
+publish/
+publish-fix/
+publish-ssl/
+
+# Repository-local temp copies
+src/**/obj/

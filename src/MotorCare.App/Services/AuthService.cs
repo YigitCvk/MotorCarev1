@@ -1,5 +1,7 @@
+using MotorCare.Application.Common;
 using MotorCare.App.Models.Auth;
 using MotorCare.App.Models.Dashboard;
+using Microsoft.JSInterop;
 
 namespace MotorCare.App.Services;
 
@@ -7,11 +9,13 @@ public sealed class AuthService
 {
     private readonly ApiClient _apiClient;
     private readonly TokenStorageService _tokenStorageService;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(ApiClient apiClient, TokenStorageService tokenStorageService)
+    public AuthService(ApiClient apiClient, TokenStorageService tokenStorageService, ILogger<AuthService> logger)
     {
         _apiClient = apiClient;
         _tokenStorageService = tokenStorageService;
+        _logger = logger;
     }
 
     public event Action? AuthenticationStateChanged;
@@ -35,7 +39,17 @@ public sealed class AuthService
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
-        var refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
+        string? refreshToken = null;
+
+        try
+        {
+            refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        {
+            _logger.LogWarning(ex, "Logout token read skipped because circuit is disconnected.");
+        }
+
         if (!string.IsNullOrWhiteSpace(refreshToken))
         {
             try
@@ -54,8 +68,16 @@ public sealed class AuthService
 
     public async Task<bool> IsAuthenticatedAsync()
     {
-        var token = await _tokenStorageService.GetAccessTokenAsync();
-        return !string.IsNullOrWhiteSpace(token);
+        try
+        {
+            var token = await _tokenStorageService.GetAccessTokenAsync();
+            return !string.IsNullOrWhiteSpace(token);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        {
+            _logger.LogWarning(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit, ex, "Authentication check skipped because circuit is disconnected.");
+            throw;
+        }
     }
 
     public async Task<CurrentUserResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
@@ -68,6 +90,11 @@ public sealed class AuthService
         {
             await _tokenStorageService.ClearAsync();
             AuthenticationStateChanged?.Invoke();
+            return null;
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        {
+            _logger.LogDebug(ex, "Current user lookup skipped because circuit is disconnected.");
             return null;
         }
         catch

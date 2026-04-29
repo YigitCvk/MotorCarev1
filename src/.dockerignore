@@ -3,10 +3,12 @@
 **/.vs/
 **/.idea/
 **/.vscode/
+.codex-temp/
+.tmpapi/
+.tmpobj/
 publish-fix/
 publish-ssl/
 .git/
-.github/
 *.log
 *.user
 *.suo
@@ -14,3 +16,4 @@ publish-ssl/
 *.sqlite
 *.nupkg
 node_modules/
+tests/

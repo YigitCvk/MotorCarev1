@@ -1,6 +1,8 @@
 @implements IDisposable
+@using MotorCare.Application.Common
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
+@inject ILogger<NavMenu> Logger
 
 <div class="brand-block">
     <div class="brand-mark">BS</div>
@@ -87,6 +89,7 @@
 
 @code {
     private bool _isAuthenticated;
+    private bool _isDisposed;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -97,13 +100,12 @@
 
         AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
         _isAuthenticated = await AuthService.IsAuthenticatedAsync();
-        await InvokeAsync(StateHasChanged);
+        await SafeStateHasChangedAsync();
     }
 
-    private async void HandleAuthenticationStateChanged()
+    private void HandleAuthenticationStateChanged()
     {
-        _isAuthenticated = await AuthService.IsAuthenticatedAsync();
-        await InvokeAsync(StateHasChanged);
+        _ = HandleAuthenticationStateChangedAsync();
     }
 
     private async Task LogoutAsync()
@@ -114,6 +116,58 @@
 
     public void Dispose()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
         AuthService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
+    }
+
+    private async Task HandleAuthenticationStateChangedAsync()
+    {
+        try
+        {
+            if (_isDisposed)
+            {
+                Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit,
+                    "Nav menu auth recovery skipped because component is disposed.");
+                return;
+            }
+
+            _isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            await SafeStateHasChangedAsync();
+        }
+        catch (Exception ex) when (_isDisposed || ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        {
+            Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit, ex,
+                "Nav menu auth recovery skipped because circuit is disposed or disconnected.");
+        }
+    }
+
+    private async Task SafeStateHasChangedAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (!_isDisposed)
+                {
+                    StateHasChanged();
+                }
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        catch (InvalidOperationException) when (_isDisposed)
+        {
+        }
     }
 }

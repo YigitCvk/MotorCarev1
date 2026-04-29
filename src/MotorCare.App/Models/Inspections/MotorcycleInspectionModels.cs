@@ -139,3 +139,40 @@ public sealed class CreateMotorcycleInspectionResponse
     public Guid Id { get; set; }
     public string InspectionNo { get; set; } = string.Empty;
 }
+
+public enum InspectionWizardStepType
+{
+    VehicleInfo = 1,
+    MechanicalChecklist = 2,
+    BodyChecklist = 3,
+    ObdChecklist = 4,
+    Summary = 5
+}
+
+public sealed class InspectionWizardStep
+{
+    public InspectionWizardStepType StepType { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Subtitle { get; set; } = string.Empty;
+}
+
+public sealed class InspectionChecklistItemRow
+{
+    public string ItemCode { get; set; } = string.Empty;
+    public string ItemLabel { get; set; } = string.Empty;
+    public MotorcycleInspectionItem Item { get; set; } = new();
+}
+
+public sealed class InspectionChecklistSection
+{
+    public MotorcycleInspectionCategory Category { get; set; }
+    public string SectionTitle { get; set; } = string.Empty;
+    public string SectionDescription { get; set; } = string.Empty;
+    public List<InspectionChecklistItemRow> Items { get; set; } = [];
+}
+
+public sealed class InspectionChecklistResponse
+{
+    public string Section { get; set; } = string.Empty;
+    public List<InspectionChecklistSection> Sections { get; set; } = [];
+}

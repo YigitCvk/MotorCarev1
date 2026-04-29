@@ -9,4 +9,6 @@ public sealed record VehicleDto(
     string Brand,
     string Model,
     int Year,
-    string VehicleDisplay);
+    string VehicleDisplay,
+    string? ChassisNumber,
+    int? CurrentKm);

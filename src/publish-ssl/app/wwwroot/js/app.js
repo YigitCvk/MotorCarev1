@@ -1,3 +1,0 @@
-function triggerBrowserPrint() {
-    window.print();
-}
