@@ -84,6 +84,14 @@ public static class EventIdStore
         public static readonly EventId ConsumableSuggestionsFetched = new(1521, nameof(ConsumableSuggestionsFetched));
         public static readonly EventId ConsumableSuggestionStored = new(1522, nameof(ConsumableSuggestionStored));
         public static readonly EventId ConsumableCustomItemAdded = new(1523, nameof(ConsumableCustomItemAdded));
+        public static readonly EventId ConsumableSuggestionSelected = new(1524, nameof(ConsumableSuggestionSelected));
+        public static readonly EventId ConsumableDraftInitialized = new(1525, nameof(ConsumableDraftInitialized));
+        public static readonly EventId ConsumableSearchStarted = new(1526, nameof(ConsumableSearchStarted));
+        public static readonly EventId ConsumableSearchCompleted = new(1527, nameof(ConsumableSearchCompleted));
+        public static readonly EventId ConsumableSelected = new(1528, nameof(ConsumableSelected));
+        public static readonly EventId ConsumableAddedToDraftList = new(1529, nameof(ConsumableAddedToDraftList));
+        public static readonly EventId ConsumableAddValidationFailed = new(1530, nameof(ConsumableAddValidationFailed));
+        public static readonly EventId ConsumableAddFailed = new(1531, nameof(ConsumableAddFailed));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────

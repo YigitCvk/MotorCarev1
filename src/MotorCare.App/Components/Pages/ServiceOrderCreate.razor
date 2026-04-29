@@ -354,15 +354,15 @@
 
                 <div class="consumables-grid">
                     <div class="consumables-list d-flex flex-column gap-3 mb-4">
-                        @if (_consumableEntries.Count == 0)
+                        @if (_addedConsumables.Count == 0)
                         {
                             <div class="text-muted small">Henüz sarf malzeme eklenmedi.</div>
                         }
                         else
                         {
-                            @foreach (var entry in _consumableEntries)
+                            @foreach (var entry in _addedConsumables)
                             {
-                                <div class="surface-card compact">
+                                <div class="surface-card compact" @key="entry">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
                                             <div class="fw-semibold">@entry.Brand - @entry.ProductName</div>
@@ -387,7 +387,7 @@
                         <div class="form-grid">
                             <div>
                                 <label class="form-label">Kategori</label>
-                                <InputSelect class="form-select" @bind-Value="_currentConsumable.Category" @bind-Value:after="OnCategoryChangedAsync">
+                                <InputSelect class="form-select" @bind-Value="_currentConsumableDraft.Category" @bind-Value:after="OnCategoryChangedAsync">
                                     <option value="">Seçiniz...</option>
                                     @foreach (var cat in GetAvailableConsumableCategories())
                                     {
@@ -399,16 +399,16 @@
                                 <label class="form-label">Ürün Ara / Yaz</label>
                                 <div class="position-relative">
                                     <input class="form-control" 
-                                             @bind="_currentConsumable.ProductName"
+                                             @bind="_consumableSearchText"
                                              @bind:event="oninput"
                                              @bind:after="OnConsumableProductChangedAsync"
                                              placeholder="Motul 7100, NGK CR9EIX vb. yazın..." 
-                                             disabled="@string.IsNullOrWhiteSpace(_currentConsumable.Category)" />
+                                             disabled="@string.IsNullOrWhiteSpace(_currentConsumableDraft.Category)" />
                                     
-                                    @if (_catalogSearchResults.Count > 0 && _isCatalogSearchOpen)
+                                    @if (_consumableSuggestions.Count > 0 && _isConsumableSuggestionOpen)
                                     {
                                         <div class="dropdown-menu show w-100 position-absolute" style="max-height: 200px; overflow-y: auto; z-index: 1000;">
-                                            @foreach (var item in _catalogSearchResults)
+                                            @foreach (var item in _consumableSuggestions)
                                             {
                                                 <button type="button" class="dropdown-item" @onclick="() => SelectCatalogItem(item)">
                                                     <div class="fw-semibold">@item.Brand - @item.ProductName</div>
@@ -422,22 +422,34 @@
                             
                             <div>
                                 <label class="form-label">Marka</label>
-                                <InputText class="form-control" @bind-Value="_currentConsumable.Brand" />
+                                <InputText class="form-control" @bind-Value="_currentConsumableDraft.Brand" />
                             </div>
                             <div>
                                 <label class="form-label">Alt Kategori</label>
-                                <InputText class="form-control" @bind-Value="_currentConsumable.SubCategory" />
+                                <InputText class="form-control" @bind-Value="_currentConsumableDraft.SubCategory" />
                             </div>
                             <div>
                                 <label class="form-label">Özellik / Spec</label>
-                                <InputText class="form-control" @bind-Value="_currentConsumable.Specification" />
+                                <InputText class="form-control" @bind-Value="_currentConsumableDraft.Specification" />
                             </div>
                             <div class="full-span">
                                 <label class="form-label">Notlar</label>
-                                <InputText class="form-control" @bind-Value="_currentConsumable.Notes" />
+                                <InputText class="form-control" @bind-Value="_currentConsumableDraft.Notes" />
                             </div>
+                            @if (!string.IsNullOrWhiteSpace(_consumableValidationMessage))
+                            {
+                                <div class="full-span">
+                                    <div class="alert alert-warning py-2 mb-0">@_consumableValidationMessage</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_consumableSearchMessage))
+                            {
+                                <div class="full-span">
+                                    <div class="small text-muted">@_consumableSearchMessage</div>
+                                </div>
+                            }
                             <div class="full-span d-flex justify-content-end mt-2">
-                                <button type="button" class="app-btn-secondary" @onclick="AddConsumableEntry" disabled="@(string.IsNullOrWhiteSpace(_currentConsumable.Category) || string.IsNullOrWhiteSpace(_currentConsumable.Brand) || string.IsNullOrWhiteSpace(_currentConsumable.ProductName))">Listeye Ekle</button>
+                                <button type="button" class="app-btn-secondary" @onclick="AddConsumableEntry">Listeye Ekle</button>
                             </div>
                         </div>
                     </div>
@@ -470,15 +482,18 @@
     private readonly CancellationTokenSource _lifetimeCts = new();
     private readonly ServiceOrderCreateFormState _formState = new();
 
-    private readonly List<ConsumableCatalogItemDto> _consumableEntries = [];
-    private ConsumableCatalogItemDto _currentConsumable = new();
+    private readonly List<ConsumableCatalogItemDto> _addedConsumables = [];
+    private ConsumableCatalogItemDto _currentConsumableDraft = default!;
     private readonly List<string> _availableCategories = [
         "Motor Yağı", "Yağ Filtresi", "Hava Filtresi", "Buji", "Zincir", 
         "Ön/Arka Dişli", "Zincir + Dişli Seti", "Fren Balatası", "Fren Diski", 
         "Fren Hidroliği", "Soğutma Sıvısı", "Fork Yağı", "Akü", "Diğer"
     ];
-    private List<ConsumableCatalogItemDto> _catalogSearchResults = [];
-    private bool _isCatalogSearchOpen;
+    private string? _consumableSearchText;
+    private string? _consumableValidationMessage;
+    private string? _consumableSearchMessage;
+    private List<ConsumableCatalogItemDto> _consumableSuggestions = [];
+    private bool _isConsumableSuggestionOpen;
     private CancellationTokenSource? _searchCts;
 
     private CustomerLookupResponse? _selectedCustomer;
@@ -517,7 +532,7 @@
             PlateQuery);
 
         _formEditContext = new EditContext(_formState);
-        EnsureBoundStateInitialized();
+        EnsureConsumableDraftInitialized();
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -1239,89 +1254,247 @@
 
     private async Task OnCategoryChangedAsync()
     {
-        EnsureBoundStateInitialized();
-        _currentConsumable.ProductName = string.Empty;
-        _currentConsumable.Brand = string.Empty;
-        _currentConsumable.SubCategory = string.Empty;
-        _currentConsumable.Specification = string.Empty;
-        _currentConsumable.Notes = string.Empty;
-        _catalogSearchResults.Clear();
-        _isCatalogSearchOpen = false;
-        
-        await PerformCatalogSearchAsync(string.Empty);
+        EnsureConsumableDraftInitialized();
+
+        var selectedCategory = _currentConsumableDraft.Category;
+        _currentConsumableDraft = CreateEmptyConsumableDraft(selectedCategory);
+        _consumableSearchText = string.Empty;
+        _consumableValidationMessage = null;
+        _consumableSearchMessage = null;
+        _consumableSuggestions.Clear();
+        _isConsumableSuggestionOpen = false;
+
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            await PerformCatalogSearchAsync(string.Empty);
+        }
     }
 
     private Task OnConsumableProductChangedAsync()
-        => PerformCatalogSearchAsync(_currentConsumable.ProductName);
-
-    private async Task PerformCatalogSearchAsync(string query)
     {
-        EnsureBoundStateInitialized();
+        EnsureConsumableDraftInitialized();
+        _currentConsumableDraft.ProductName = (_consumableSearchText ?? string.Empty).Trim();
+        _consumableValidationMessage = null;
+        return PerformCatalogSearchAsync(_consumableSearchText);
+    }
 
-        if (string.IsNullOrWhiteSpace(_currentConsumable.Category)) return;
+    private async Task PerformCatalogSearchAsync(string? query)
+    {
+        EnsureConsumableDraftInitialized();
+
+        if (string.IsNullOrWhiteSpace(_currentConsumableDraft.Category))
+        {
+            _consumableSuggestions.Clear();
+            _isConsumableSuggestionOpen = false;
+            return;
+        }
 
         _searchCts?.Cancel();
+        _searchCts?.Dispose();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
 
         try
         {
-            await Task.Delay(300, token); // debounce
-            var results = await ServiceOrdersService.SearchConsumableCatalogAsync(query, _currentConsumable.Category, 10, token);
-            
-            if (!token.IsCancellationRequested && results is not null)
+            Logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumableSearchStarted,
+                "Consumable search started. Category={Category} Query={Query}",
+                _currentConsumableDraft.Category,
+                query);
+
+            _consumableSearchMessage = "Oneriler getiriliyor...";
+
+            await Task.Delay(300, token);
+
+            var results = await ServiceOrdersService.SearchConsumableCatalogAsync(
+                query,
+                _currentConsumableDraft.Category,
+                10,
+                token);
+
+            if (token.IsCancellationRequested || _isDisposed)
             {
-                _catalogSearchResults = results.ToList();
-                _isCatalogSearchOpen = _catalogSearchResults.Count > 0;
-                await SafeStateHasChangedAsync();
+                return;
             }
+
+            _consumableSuggestions = results?.ToList() ?? [];
+            _isConsumableSuggestionOpen = _consumableSuggestions.Count > 0;
+            _consumableSearchMessage = _consumableSuggestions.Count == 0 && !string.IsNullOrWhiteSpace(query)
+                ? "Eslesen katalog onerisi bulunamadi. Yeni urun olarak ekleyebilirsiniz."
+                : null;
+
+            Logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumableSearchCompleted,
+                "Consumable search completed. Category={Category} Query={Query} ResultCount={ResultCount}",
+                _currentConsumableDraft.Category,
+                query,
+                _consumableSuggestions.Count);
+
+            await SafeStateHasChangedAsync();
         }
         catch (OperationCanceledException)
         {
+        }
+        catch (ApiException ex)
+        {
+            if (token.IsCancellationRequested || _isDisposed)
+            {
+                return;
+            }
+
+            _consumableSuggestions.Clear();
+            _isConsumableSuggestionOpen = false;
+            _consumableSearchMessage = "Katalog onerileri alinamadi.";
+
+            Logger.LogWarning(
+                EventIdStore.ServiceOrder.ConsumableAddFailed,
+                ex,
+                "Consumable search failed. Category={Category} Query={Query}",
+                _currentConsumableDraft.Category,
+                query);
+
+            await SafeStateHasChangedAsync();
+        }
+        catch (Exception ex)
+        {
+            if (token.IsCancellationRequested || _isDisposed)
+            {
+                return;
+            }
+
+            _consumableSuggestions.Clear();
+            _isConsumableSuggestionOpen = false;
+            _consumableSearchMessage = "Katalog onerileri alinamadi.";
+
+            Logger.LogWarning(
+                EventIdStore.ServiceOrder.ConsumableAddFailed,
+                ex,
+                "Consumable search failed. Category={Category} Query={Query}",
+                _currentConsumableDraft.Category,
+                query);
+
+            await SafeStateHasChangedAsync();
         }
     }
 
     private void SelectCatalogItem(ConsumableCatalogItemDto item)
     {
-        EnsureBoundStateInitialized();
-        _currentConsumable.Brand = item.Brand;
-        _currentConsumable.ProductName = item.ProductName;
-        _currentConsumable.SubCategory = item.SubCategory;
-        _currentConsumable.Specification = item.Specification;
-        _currentConsumable.Notes = item.Notes;
-        _isCatalogSearchOpen = false;
+        EnsureConsumableDraftInitialized();
+
+        _currentConsumableDraft.Category = string.IsNullOrWhiteSpace(_currentConsumableDraft.Category)
+            ? item.Category
+            : _currentConsumableDraft.Category;
+        _currentConsumableDraft.Brand = item.Brand;
+        _currentConsumableDraft.ProductName = item.ProductName;
+        _currentConsumableDraft.SubCategory = item.SubCategory;
+        _currentConsumableDraft.Specification = item.Specification;
+        _currentConsumableDraft.Notes = item.Notes;
+        _consumableSearchText = item.ProductName;
+        _consumableValidationMessage = null;
+        _consumableSearchMessage = null;
+        _isConsumableSuggestionOpen = false;
+
+        Logger.LogInformation(
+            EventIdStore.ServiceOrder.ConsumableSelected,
+            "Consumable selected on service order create. Category={Category} Brand={Brand} ProductName={ProductName}",
+            item.Category,
+            item.Brand,
+            item.ProductName);
     }
 
     private void AddConsumableEntry()
     {
-        EnsureBoundStateInitialized();
-
-        if (string.IsNullOrWhiteSpace(_currentConsumable.Category) || 
-            string.IsNullOrWhiteSpace(_currentConsumable.Brand) || 
-            string.IsNullOrWhiteSpace(_currentConsumable.ProductName))
+        try
         {
-            return;
+            EnsureConsumableDraftInitialized();
+
+            _currentConsumableDraft.ProductName = string.IsNullOrWhiteSpace(_currentConsumableDraft.ProductName)
+                ? (_consumableSearchText ?? string.Empty).Trim()
+                : _currentConsumableDraft.ProductName.Trim();
+            _currentConsumableDraft.Brand = _currentConsumableDraft.Brand?.Trim() ?? string.Empty;
+            _currentConsumableDraft.SubCategory = string.IsNullOrWhiteSpace(_currentConsumableDraft.SubCategory) ? null : _currentConsumableDraft.SubCategory.Trim();
+            _currentConsumableDraft.Specification = string.IsNullOrWhiteSpace(_currentConsumableDraft.Specification) ? null : _currentConsumableDraft.Specification.Trim();
+            _currentConsumableDraft.Notes = string.IsNullOrWhiteSpace(_currentConsumableDraft.Notes) ? null : _currentConsumableDraft.Notes.Trim();
+
+            if (string.IsNullOrWhiteSpace(_currentConsumableDraft.Category))
+            {
+                _consumableValidationMessage = "Kategori secmelisiniz.";
+
+                Logger.LogInformation(
+                    EventIdStore.ServiceOrder.ConsumableAddValidationFailed,
+                    "Consumable add validation failed because category is empty.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_currentConsumableDraft.ProductName))
+            {
+                _consumableValidationMessage = "Urun adi girmelisiniz.";
+
+                Logger.LogInformation(
+                    EventIdStore.ServiceOrder.ConsumableAddValidationFailed,
+                    "Consumable add validation failed because product name is empty. Category={Category}",
+                    _currentConsumableDraft.Category);
+                return;
+            }
+
+            var addedItem = new ConsumableCatalogItemDto
+            {
+                Category = _currentConsumableDraft.Category,
+                Brand = _currentConsumableDraft.Brand,
+                ProductName = _currentConsumableDraft.ProductName,
+                SubCategory = _currentConsumableDraft.SubCategory,
+                Specification = _currentConsumableDraft.Specification,
+                Notes = _currentConsumableDraft.Notes
+            };
+
+            _addedConsumables.Add(addedItem);
+            _consumableValidationMessage = null;
+            _consumableSearchMessage = null;
+
+            Logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumableAddedToDraftList,
+                "Consumable added to draft list. Category={Category} Brand={Brand} ProductName={ProductName} ItemCount={ItemCount}",
+                addedItem.Category,
+                addedItem.Brand,
+                addedItem.ProductName,
+                _addedConsumables.Count);
+
+            var selectedCategory = _currentConsumableDraft.Category;
+            _currentConsumableDraft = CreateEmptyConsumableDraft(selectedCategory);
+            _consumableSearchText = string.Empty;
+            _consumableSuggestions.Clear();
+            _isConsumableSuggestionOpen = false;
         }
-
-        _consumableEntries.Add(new ConsumableCatalogItemDto
+        catch (Exception ex)
         {
-            Category = _currentConsumable.Category,
-            Brand = _currentConsumable.Brand,
-            ProductName = _currentConsumable.ProductName,
-            SubCategory = _currentConsumable.SubCategory,
-            Specification = _currentConsumable.Specification,
-            Notes = _currentConsumable.Notes
-        });
+            _consumableValidationMessage = "Urun listeye eklenemedi. Alanlari kontrol edip tekrar deneyin.";
 
-        _currentConsumable = new ConsumableCatalogItemDto { Category = _currentConsumable.Category };
-        _catalogSearchResults.Clear();
-        _isCatalogSearchOpen = false;
+            Logger.LogWarning(
+                EventIdStore.ServiceOrder.ConsumableAddFailed,
+                ex,
+                "Consumable add failed. Category={Category} ProductName={ProductName}",
+                _currentConsumableDraft.Category,
+                _currentConsumableDraft.ProductName);
+        }
     }
 
-    private void EnsureBoundStateInitialized()
+    private void EnsureConsumableDraftInitialized()
     {
-        _currentConsumable ??= new ConsumableCatalogItemDto();
+        if (_currentConsumableDraft is null)
+        {
+            _currentConsumableDraft = CreateEmptyConsumableDraft();
+
+            Logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumableDraftInitialized,
+                "Consumable draft initialized on service order create.");
+        }
     }
+
+    private static ConsumableCatalogItemDto CreateEmptyConsumableDraft(string? category = null)
+        => new()
+        {
+            Category = category ?? string.Empty
+        };
 
     private static IReadOnlyList<string> GetAvailableConsumableCategories()
         => [
@@ -1344,14 +1517,14 @@
 
     private void RemoveConsumableEntry(ConsumableCatalogItemDto entry)
     {
-        _consumableEntries.Remove(entry);
+        _addedConsumables.Remove(entry);
     }
 
     private async Task TrackConsumableSuggestionsAsync(CancellationToken cancellationToken)
     {
-        if (_consumableEntries.Count == 0) return;
+        if (_addedConsumables.Count == 0) return;
 
-        var requestItems = _consumableEntries.Select(e => new TrackConsumableCatalogItemRequest
+        var requestItems = _addedConsumables.Select(e => new TrackConsumableCatalogItemRequest
         {
             Category = e.Category,
             Brand = e.Brand,

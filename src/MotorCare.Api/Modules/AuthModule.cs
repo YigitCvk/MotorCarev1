@@ -71,3 +71,4 @@ public sealed class AuthModule : ICarterModule
         .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
 }
+
