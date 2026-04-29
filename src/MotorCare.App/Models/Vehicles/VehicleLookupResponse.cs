@@ -12,5 +12,6 @@ public sealed class VehicleLookupResponse
     public int Year { get; set; }
     public string VehicleDisplay { get; set; } = string.Empty;
     public string? ChassisNumber { get; set; }
+    public string? EngineNumber { get; set; }
     public int? CurrentKm { get; set; }
 }

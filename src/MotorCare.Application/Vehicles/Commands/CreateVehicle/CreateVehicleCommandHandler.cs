@@ -55,7 +55,7 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
 
         var vehicle = new Vehicle(tenantId, plate, request.Brand, request.Model, request.Year);
 
-        vehicle.SetChassisAndColor(request.ChassisNumber, request.Color);
+        vehicle.SetTechnicalDetails(request.ChassisNumber, request.EngineNumber, request.Color);
 
         if (request.CurrentKm.HasValue)
         {

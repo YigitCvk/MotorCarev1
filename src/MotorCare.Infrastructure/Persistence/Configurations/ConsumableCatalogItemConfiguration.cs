@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MotorCare.Domain.ServiceOrders;
@@ -6,6 +8,8 @@ namespace MotorCare.Infrastructure.Persistence.Configurations;
 
 public sealed class ConsumableCatalogItemConfiguration : IEntityTypeConfiguration<ConsumableCatalogItem>
 {
+    private static readonly DateTimeOffset SeedCreatedAt = new(2026, 4, 29, 0, 0, 0, TimeSpan.Zero);
+
     public void Configure(EntityTypeBuilder<ConsumableCatalogItem> builder)
     {
         builder.HasKey(c => c.Id);
@@ -15,90 +19,103 @@ public sealed class ConsumableCatalogItemConfiguration : IEntityTypeConfiguratio
 
         builder.Property(c => c.Category)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(64);
 
         builder.Property(c => c.SubCategory)
-            .HasMaxLength(50);
+            .HasMaxLength(100);
 
         builder.Property(c => c.Brand)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(80);
 
         builder.Property(c => c.ProductName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(160);
 
         builder.Property(c => c.Specification)
-            .HasMaxLength(100);
+            .HasMaxLength(160);
 
         builder.Property(c => c.Notes)
             .HasMaxLength(250);
 
         builder.HasIndex(c => new { c.TenantId, c.Category, c.Brand, c.ProductName }).IsUnique();
 
-        // Database seeding
-        SeedDefaults(builder);
+        builder.HasData(GetSystemDefaults());
     }
 
-    private static void SeedDefaults(EntityTypeBuilder<ConsumableCatalogItem> builder)
+    private static object[] GetSystemDefaults()
     {
-        // 1. Motor Yağı
-        builder.HasData(CreateDefault("Motor Yağı", "4T Tam Sentetik", "Motul", "7100 10W-40 4T", "API SP, JASO MA2", "Günlük kullanım / performans / street"));
-        builder.HasData(CreateDefault("Motor Yağı", "4T Yarı Sentetik", "Motul", "5100 10W-40 4T", "API SM, JASO MA2", "Standart kullanım"));
-        builder.HasData(CreateDefault("Motor Yağı", "4T Tam Sentetik", "Castrol", "Power1 Racing 10W-40", "API SN, JASO MA2", "Performans serisi"));
+        return
+        [
+            Seed("Motor Yağı", "4T Tam Sentetik", "Motul", "7100 10W-40 4T", "API SP, JASO MA2", "Günlük kullanım / performans / street"),
+            Seed("Motor Yağı", "4T Tam Sentetik", "Motul", "7100 10W-30 4T", "API SP, JASO MA2", "Düşük viskozite isteyen modeller"),
+            Seed("Motor Yağı", "4T Sentetik", "Castrol", "POWER1 4T 10W-40", "POWER1 serisi", "Street / commuter / scooter"),
+            Seed("Motor Yağı", "4T Tam Sentetik", "Shell", "Advance Ultra 4T", "Shell Advance Ultra", "Modern 4T motosikletler"),
+            Seed("Motor Yağı", "4T Sentetik Teknoloji", "Liqui Moly", "Motorbike 4T 10W-40 Street", "10W-40 Street", "Street / commuter"),
+            Seed("Motor Yağı", "4T Mineral / Ekonomik", "Liqui Moly", "10W40 4T Basic Street", "Basic Street", "Ekonomik bakım paketi"),
+            Seed("Motor Yağı", "4T Tam Sentetik", "IPONE", "Full Power Katana 10W-40", "PAO + ester / 10W-40", "Roadster / enduro / sportif GT"),
 
-        // 2. Yağ Filtresi
-        builder.HasData(CreateDefault("Yağ Filtresi", "Standart", "Hiflofiltro", "HF138", null, "Sık kullanılan model"));
-        builder.HasData(CreateDefault("Yağ Filtresi", "Standart", "Hiflofiltro", "HF204", null, "Sık kullanılan model"));
-        builder.HasData(CreateDefault("Yağ Filtresi", "Orijinal", "Yamaha", "OEM Yağ Filtresi", null, "OEM"));
+            Seed("Yağ Filtresi", "Spin-on / kartuş", "Hiflofiltro", "HF132", "Örnek referans", "Model bazlı değişir"),
+            Seed("Yağ Filtresi", "Spin-on / kartuş", "Hiflofiltro", "HF204", "Örnek referans", "Model bazlı değişir"),
+            Seed("Yağ Filtresi", "Spin-on / kartuş", "Hiflofiltro", "HF303", "Örnek referans", "Model bazlı değişir"),
+            Seed("Yağ Filtresi", "Performance", "K&N", "KN-204", "Örnek referans", "Model bazlı değişir"),
+            Seed("Yağ Filtresi", "Performance", "K&N", "KN-171B", "Örnek referans", "Harley vb. bazı modeller"),
+            Seed("Yağ Filtresi", "Performance", "K&N", "KN-164", "Örnek referans", "Model bazlı değişir"),
 
-        // 3. Hava Filtresi
-        builder.HasData(CreateDefault("Hava Filtresi", "Standart", "Hiflofiltro", "HFA4922", null, "MT-09 / Tracer 900"));
-        builder.HasData(CreateDefault("Hava Filtresi", "Performans", "K&N", "YA-9015", null, "Yıkanabilir"));
+            Seed("Hava Filtresi", "OEM replacement", "Hiflofiltro", "HFA1134", "Örnek referans", "Model bazlı değişir"),
+            Seed("Hava Filtresi", "OEM replacement", "Hiflofiltro", "HFA1304", "Örnek referans", "Örn. Forza 250 sınıfı uygulamalar"),
+            Seed("Hava Filtresi", "OEM replacement", "Hiflofiltro", "HFA4301", "Örnek referans", "Örn. XMAX 250/300 sınıfı uygulamalar"),
+            Seed("Hava Filtresi", "OEM replacement", "Hiflofiltro", "HFA6303", "Örnek referans", "Örn. KTM 390 Duke sınıfı uygulamalar"),
+            Seed("Hava Filtresi", "Yıkanabilir / performance", "K&N", "KT-1113", "Örnek referans", "KTM uygulamaları dahil performans tipi"),
+            Seed("Hava Filtresi", "Yıkanabilir / performance", "K&N", "BM-1204", "Örnek referans", "BMW uygulamaları dahil performance tipi"),
 
-        // 4. Buji
-        builder.HasData(CreateDefault("Buji", "İridyum", "NGK", "CR9EIX", null, "Uzun ömürlü performans"));
-        builder.HasData(CreateDefault("Buji", "Standart", "NGK", "CR9E", null, "Standart OEM muadili"));
-        builder.HasData(CreateDefault("Buji", "Lazer İridyum", "NGK", "LMAR8A-9", null, "Honda / Yamaha yeni nesil"));
+            Seed("Buji", "Standart nikel", "NGK", "CR7HSA", "Örnek referans", "Cub / commuter / scooter sınıfında yaygın"),
+            Seed("Buji", "Standart nikel", "NGK", "CPR8EA-9", "Örnek referans", "Scooter / street uygulamaları"),
+            Seed("Buji", "İridyum", "NGK", "CR9EIX", "Örnek referans", "Daha uzun ömür / performans"),
+            Seed("Buji", "Standart nikel", "Denso", "U24ESR-N", "Örnek referans", "Model bazlı değişir"),
+            Seed("Buji", "Standart nikel", "Denso", "X24ESR-U", "Örnek referans", "Model bazlı değişir"),
 
-        // 5. Zincir
-        builder.HasData(CreateDefault("Zincir", "O-Ring / X-Ring", "DID", "520VX3", "118 Bakla", "Street / Enduro"));
-        builder.HasData(CreateDefault("Zincir", "X-Ring", "DID", "525VX3", "120 Bakla", "Touring / Sport"));
+            Seed("Zincir", "X-Ring", "DID", "520VX3", "520 pitch / VX3", "Street + off-road upgrade"),
+            Seed("Zincir", "X-Ring", "DID", "525VX3", "525 pitch / VX3", "Orta-üst segment street / touring"),
+            Seed("Zincir", "XW-Ring", "RK", "530 ZXW / GXW serisi", "XW-Ring", "Big-cc / road race / superbike"),
 
-        // 6. Ön/Arka Dişli
-        builder.HasData(CreateDefault("Ön/Arka Dişli", "Ön Dişli", "JT Sprockets", "JTF520.15", "15 Diş", null));
-        builder.HasData(CreateDefault("Ön/Arka Dişli", "Arka Dişli", "JT Sprockets", "JTR856.45", "45 Diş", null));
+            Seed("Ön Dişli", "Çelik", "JT Sprockets", "JTF1586.16RB", "Örnek referans", "Model bazlı değişir"),
+            Seed("Arka Dişli", "Çelik", "JT Sprockets", "JTR300.46", "Örnek referans", "Model bazlı değişir"),
+            Seed("Zincir + Dişli Set", "Komple kit", "DID + JT", "Did 428D + JT set", "Örnek kombinasyon", "125cc commuter / sport commuter"),
 
-        // 7. Zincir + Dişli Set
-        builder.HasData(CreateDefault("Zincir + Dişli Seti", "Performans Set", "DID", "Zincir Dişli Seti (520VX3)", null, "Set halinde değişim"));
+            Seed("Fren Balatası", "Sinter / ön-arka varyantlı", "EBC", "FA197", "Örnek referans", "Model bazlı değişir"),
+            Seed("Fren Balatası", "Organik", "EBC", "SFA197", "Örnek referans", "Scooter / street arka uygulamalar"),
+            Seed("Fren Balatası", "Sinter", "Brembo", "SA Pads", "SA bileşimi", "All-road / ön balata tarafında yaygın"),
+            Seed("Fren Balatası", "Seramik / street", "SBS", "230HM", "Örnek referans", "Scooter / street arka uygulamalar"),
+            Seed("Fren Balatası", "Seramik / street", "SBS", "155HM", "Örnek referans", "Scooter / street arka uygulamalar"),
 
-        // 8. Fren Balatası
-        builder.HasData(CreateDefault("Fren Balatası", "Sinterli (Ön)", "EBC", "FA252HH", null, "Yüksek performanslı frenleme"));
-        builder.HasData(CreateDefault("Fren Balatası", "Organik (Arka)", "EBC", "FA174", null, "Standart kullanım"));
-        builder.HasData(CreateDefault("Fren Balatası", "Sinterli (Ön)", "Brembo", "07YA23SA", null, "OEM Kalitesinde Sinterli"));
+            Seed("Fren Diski", "Round / fixed / floating", "NG Brakes", "Genel seri", "Modele göre referans değişir", "Ön / arka disk"),
+            Seed("Fren Diski", "Serie Oro", "Brembo", "Serie Oro", "Fixed / floating seçenekleri", "Premium replacement"),
 
-        // 9. Fren Diski
-        builder.HasData(CreateDefault("Fren Diski", "Ön Disk", "EBC", "MD Serisi", null, "OEM Muadili"));
-        builder.HasData(CreateDefault("Fren Diski", "Arka Disk", "Brembo", "Serie Oro", null, "Performans diski"));
+            Seed("Fren Hidroliği", "DOT 3/4", "Motul", "DOT 3&4 Brake Fluid", "0.5L", "Standart bakım / fren & debriyaj hidrolik sistemleri"),
+            Seed("Fren Hidroliği", "DOT 4 LV", "Motul", "DOT 4 LV", "Class 6 / düşük viskozite", "ABS/ESP uyumlu sistemler dahil"),
+            Seed("Fren Hidroliği", "Racing", "Motul", "RBF 660 Factory Line", "0.5L", "Yüksek sıcaklık / performans"),
+            Seed("Fren Hidroliği", "DOT 4", "Liqui Moly", "Brake Fluid DOT 4 (3093)", "500 ml", "Standart bakım"),
+            Seed("Fren Hidroliği", "DOT 4 düşük viskozite", "Liqui Moly", "Brake Fluid SL6 DOT 4 (21167)", "500 ml", "ABS'li sistemlerde tercih edilebilir"),
 
-        // 10. Fren Hidroliği
-        builder.HasData(CreateDefault("Fren Hidroliği", "DOT 4", "Motul", "DOT 4 LV", "DOT 4", "ABS uyumlu, düşük viskoziteli"));
-        builder.HasData(CreateDefault("Fren Hidroliği", "DOT 5.1", "Motul", "DOT 5.1", "DOT 5.1", "Yüksek performans / Track"));
+            Seed("Soğutma Sıvısı", "Hazır kullanım", "Motul", "Motocool Factory Line -35C", "1L / Organic+", "Sıvı soğutmalı motosikletler"),
+            Seed("Soğutma Sıvısı", "Hazır kullanım", "Motorex", "Coolant M3.0", "1L / OAT ready to use", "Alüminyum motorlarda yaygın premium seçenek"),
 
-        // 11. Soğutma Sıvısı
-        builder.HasData(CreateDefault("Soğutma Sıvısı", "Hazır Karışım", "Motul", "Motocool Factory Line", "Organik", "Alüminyum radyatör dostu"));
-        builder.HasData(CreateDefault("Soğutma Sıvısı", "Hazır Karışım", "Castrol", "Radicool SF", "Organik", "Uzun ömürlü antifriz"));
+            Seed("Fork Yağı", "Suspension oil", "Motul", "Fork Oil Expert 5W", "5W / 1L", "Ön maşa bakımında"),
+            Seed("Fork Yağı", "Suspension oil", "Motul", "Fork Oil Expert 10W", "10W / 1L", "Ön maşa bakımında"),
+            Seed("Fork Yağı", "Suspension oil", "Motul", "Fork Oil Expert 20W", "20W / 1L", "Ağır sönümleme isteyen uygulamalar"),
+            Seed("Fork Yağı", "Suspension oil", "Motorex", "Racing Fork Oil 5W", "5W / 1L", "Ön maşa bakımında premium seçenek"),
 
-        // 12. Fork Yağı
-        builder.HasData(CreateDefault("Fork Yağı", "10W (Medium)", "Motul", "Fork Oil Expert 10W", "Technosynthese", "Standart süspansiyon tepkisi"));
-        builder.HasData(CreateDefault("Fork Yağı", "15W (Medium-Heavy)", "Motul", "Fork Oil Expert 15W", "Technosynthese", "Daha sert süspansiyon tepkisi"));
-
-        // 13. Akü
-        builder.HasData(CreateDefault("Akü", "AGM/MF", "Yuasa", "YTZ10S", "12V 8.6Ah", "Bakımsız AGM Akü"));
-        builder.HasData(CreateDefault("Akü", "Lityum İyon", "BS Battery", "BSLI-04", "12V", "Hafif ve yüksek marş gücü"));
+            Seed("Akü", "AGM / MF", "Yuasa", "YTX7L-BS", "12V 6Ah 100 CCA", "Scooter / 125-300cc sınıfında sık görülür"),
+            Seed("Akü", "AGM / MF", "Yuasa", "YTX12-BS", "12V 10Ah 180 CCA", "Orta segment street / touring"),
+            Seed("Akü", "AGM / MF", "Yuasa", "YTX14-BS", "12V 12.6Ah", "Orta-üst segment"),
+            Seed("Akü", "AGM / MF", "Yuasa", "YTZ10S", "12V 9.1Ah 190 CCA", "Sport / naked / scooter uygulamaları"),
+            Seed("Akü", "SLA / MF", "BS Battery", "BTX7L-BS", "12V 6.3Ah 100A EN", "125-300cc sınıfında yaygın alternatif"),
+            Seed("Akü", "SLA / MF", "BS Battery", "BTZ10S", "12V 9Ah 190A EN", "Orta segment street / touring")
+        ];
     }
 
-    private static ConsumableCatalogItem CreateDefault(
+    private static object Seed(
         string category,
         string? subCategory,
         string brand,
@@ -106,37 +123,27 @@ public sealed class ConsumableCatalogItemConfiguration : IEntityTypeConfiguratio
         string? specification,
         string? notes)
     {
-        var item = new ConsumableCatalogItem(
-            null, // tenantId
-            category,
-            brand,
-            productName,
-            subCategory,
-            specification,
-            notes,
-            true // isSystemDefault
-        );
-
-        // Reset tracking fields required for EF HasData (Id must be stable across migrations)
-        // We will generate deterministic Guids for seeds based on their unique attributes
-        var uniqueString = $"{category}-{brand}-{productName}".ToLowerInvariant();
-        var seedGuid = CreateDeterministicGuid(uniqueString);
-        
-        // EF Core requires setting private properties in HasData using reflection or anonymous types if public setters aren't available.
-        // We will use an anonymous object instead inside HasData, but since ConsumableCatalogItem only has private setters, 
-        // we can use a workaround or make internal setters. Wait, let's use reflection to set ID or just change setters to 'internal' for EF core.
-        // Actually, `HasData` with entities that don't have public setters is tricky. Let's return anonymous types.
-        // Wait, EF Core 8 `HasData` allows using the Entity itself, and it maps by convention. But the constructor generates random Guid. 
-        // I need to override the Guid.
-        item.GetType().GetProperty("Id")!.SetValue(item, seedGuid);
-        
-        return item;
+        return new
+        {
+            Id = CreateDeterministicGuid($"{category}|{brand}|{productName}"),
+            TenantId = (string?)null,
+            Category = category,
+            SubCategory = subCategory,
+            Brand = brand,
+            ProductName = productName,
+            Specification = specification,
+            Notes = notes,
+            IsSystemDefault = true,
+            IsActive = true,
+            UsageCount = 0,
+            CreatedAt = SeedCreatedAt,
+            UpdatedAt = (DateTimeOffset?)null
+        };
     }
 
     private static Guid CreateDeterministicGuid(string input)
     {
-        using var md5 = System.Security.Cryptography.MD5.Create();
-        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+        var hash = MD5.HashData(Encoding.UTF8.GetBytes(input.ToLowerInvariant()));
         return new Guid(hash);
     }
 }

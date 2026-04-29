@@ -7,6 +7,7 @@ public sealed class CreateVehicleRequest
     public string Model { get; set; } = string.Empty;
     public int Year { get; set; } = DateTime.Now.Year;
     public string? ChassisNumber { get; set; }
+    public string? EngineNumber { get; set; }
     public string? Color { get; set; }
     public int? CurrentKm { get; set; }
     public Guid? CurrentCustomerId { get; set; }

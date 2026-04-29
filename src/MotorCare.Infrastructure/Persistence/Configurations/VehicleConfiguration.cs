@@ -19,6 +19,7 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(v => v.Brand).IsRequired().HasMaxLength(100);
         builder.Property(v => v.Model).IsRequired().HasMaxLength(100);
         builder.Property(v => v.ChassisNumber).HasMaxLength(100);
+        builder.Property(v => v.EngineNumber).HasMaxLength(100);
         builder.Property(v => v.Color).HasMaxLength(50);
 
         // PlateNumber value object stored in the same Vehicles row

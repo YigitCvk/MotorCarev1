@@ -235,6 +235,10 @@
                             <InputText class="form-control" @bind-Value="_newVehicle.ChassisNumber" />
                         </div>
                         <div>
+                            <label class="form-label">Motor No</label>
+                            <InputText class="form-control" @bind-Value="_newVehicle.EngineNumber" />
+                        </div>
+                        <div>
                             <label class="form-label">Kayitli KM</label>
                             <InputNumber class="form-control" @bind-Value="_newVehicle.CurrentKm" />
                         </div>
@@ -317,7 +321,7 @@
                     </div>
                     <div>
                         <label class="form-label">Motor No</label>
-                        <input class="form-control" value="Arac kaydinda yok" disabled />
+                        <input class="form-control" value="@GetSelectedVehicleEngineText()" disabled />
                     </div>
                     <div>
                         <label class="form-label">Arac KM *</label>
@@ -385,7 +389,7 @@
                                 <label class="form-label">Kategori</label>
                                 <InputSelect class="form-select" @bind-Value="_currentConsumable.Category" @bind-Value:after="OnCategoryChangedAsync">
                                     <option value="">Seçiniz...</option>
-                                    @foreach (var cat in _availableCategories)
+                                    @foreach (var cat in GetAvailableConsumableCategories())
                                     {
                                         <option value="@cat">@cat</option>
                                     }
@@ -886,6 +890,7 @@
         _newVehicle.Model = vehicle.Model;
         _newVehicle.Year = vehicle.Year;
         _newVehicle.ChassisNumber = vehicle.ChassisNumber;
+        _newVehicle.EngineNumber = vehicle.EngineNumber;
         _newVehicle.CurrentKm = vehicle.CurrentKm;
 
         if (vehicle.CurrentKm.HasValue && vehicle.CurrentKm.Value >= 0)
@@ -895,11 +900,12 @@
 
         Logger.LogInformation(
             EventIdStore.ServiceOrder.ServiceOrderCreateVehicleAutoFilled,
-            "Vehicle selected and form auto-filled. VehicleId={VehicleId} Plate={Plate} Brand={Brand} Model={Model} CurrentKm={CurrentKm}",
+            "Vehicle selected and form auto-filled. VehicleId={VehicleId} Plate={Plate} Brand={Brand} Model={Model} EngineNumber={EngineNumber} CurrentKm={CurrentKm}",
             vehicle.Id,
             vehicle.PlateOriginal,
             vehicle.Brand,
             vehicle.Model,
+            vehicle.EngineNumber,
             vehicle.CurrentKm);
     }
 
@@ -1061,6 +1067,7 @@
         _newVehicle.Model = string.Empty;
         _newVehicle.Year = DateTime.Today.Year;
         _newVehicle.ChassisNumber = null;
+        _newVehicle.EngineNumber = null;
         _newVehicle.CurrentKm = null;
     }
 
@@ -1316,6 +1323,25 @@
         _currentConsumable ??= new ConsumableCatalogItemDto();
     }
 
+    private static IReadOnlyList<string> GetAvailableConsumableCategories()
+        => [
+            "Motor Ya\u011f\u0131",
+            "Ya\u011f Filtresi",
+            "Hava Filtresi",
+            "Buji",
+            "Zincir",
+            "\u00d6n Di\u015fli",
+            "Arka Di\u015fli",
+            "Zincir + Di\u015fli Set",
+            "Fren Balatas\u0131",
+            "Fren Diski",
+            "Fren Hidroli\u011fi",
+            "So\u011futma S\u0131v\u0131s\u0131",
+            "Fork Ya\u011f\u0131",
+            "Ak\u00fc",
+            "Di\u011fer"
+        ];
+
     private void RemoveConsumableEntry(ConsumableCatalogItemDto entry)
     {
         _consumableEntries.Remove(entry);
@@ -1340,13 +1366,30 @@
             await ServiceOrdersService.TrackConsumableCatalogUsageAsync(
                 new TrackConsumableCatalogUsageRequest { Items = requestItems },
                 cancellationToken);
+
+            Logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumableSuggestionStored,
+                "Consumable usage save requested after service order create. ItemCount={ItemCount}",
+                requestItems.Count);
         }
         catch (OperationCanceledException) when (IsInactive(cancellationToken))
         {
         }
+        catch (ApiException ex)
+        {
+            Logger.LogWarning(
+                EventIdStore.ServiceOrder.ConsumableSuggestionStored,
+                ex,
+                "Consumable usage save failed after service order create. ItemCount={ItemCount}",
+                requestItems.Count);
+        }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Consumable catalog usages could not be stored after service order create.");
+            Logger.LogWarning(
+                EventIdStore.ServiceOrder.ConsumableSuggestionStored,
+                ex,
+                "Consumable usage save failed after service order create. ItemCount={ItemCount}",
+                requestItems.Count);
         }
     }
 
@@ -1366,6 +1409,10 @@
     private string GetSelectedVehicleChassisText()
         => !string.IsNullOrWhiteSpace(_selectedVehicle?.ChassisNumber) ? _selectedVehicle.ChassisNumber! :
            !string.IsNullOrWhiteSpace(_newVehicle.ChassisNumber) ? _newVehicle.ChassisNumber! : "-";
+
+    private string GetSelectedVehicleEngineText()
+        => !string.IsNullOrWhiteSpace(_selectedVehicle?.EngineNumber) ? _selectedVehicle.EngineNumber! :
+           !string.IsNullOrWhiteSpace(_newVehicle.EngineNumber) ? _newVehicle.EngineNumber! : "Arac kaydinda yok";
 
     private string GetSelectedServicePriceText()
         => _selectedService is null ? "-" : $"{_selectedService.DefaultPrice:N2} ₺";

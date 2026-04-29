@@ -83,6 +83,7 @@ public static class EventIdStore
         public static readonly EventId ServiceOrderCreateVehicleAutoFilled = new(1520, nameof(ServiceOrderCreateVehicleAutoFilled));
         public static readonly EventId ConsumableSuggestionsFetched = new(1521, nameof(ConsumableSuggestionsFetched));
         public static readonly EventId ConsumableSuggestionStored = new(1522, nameof(ConsumableSuggestionStored));
+        public static readonly EventId ConsumableCustomItemAdded = new(1523, nameof(ConsumableCustomItemAdded));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────

@@ -44,6 +44,7 @@ public sealed class GetVehiclesByCustomerIdQueryHandler : IRequestHandler<GetVeh
                 vehicle.Year,
                 $"{vehicle.Plate.OriginalValue} - {vehicle.Brand} {vehicle.Model}",
                 vehicle.ChassisNumber,
+                vehicle.EngineNumber,
                 vehicle.CurrentKm))
             .ToList();
     }

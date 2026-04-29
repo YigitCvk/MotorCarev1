@@ -9,6 +9,7 @@ public class Vehicle : AggregateRoot, ITenantEntity
     public string TenantId { get; private set; } = string.Empty;
     public PlateNumber Plate { get; private set; } = null!;
     public string? ChassisNumber { get; private set; }
+    public string? EngineNumber { get; private set; }
     public string Brand { get; private set; } = string.Empty;
     public string Model { get; private set; } = string.Empty;
     public int Year { get; private set; }
@@ -40,7 +41,7 @@ public class Vehicle : AggregateRoot, ITenantEntity
         Year = year;
     }
     
-    public void UpdateDetails(string brand, string model, int year, string? chassisNumber, string? color)
+    public void UpdateDetails(string brand, string model, int year, string? chassisNumber, string? engineNumber, string? color)
     {
         if (string.IsNullOrWhiteSpace(brand)) throw new DomainException("Brand is required.");
         if (string.IsNullOrWhiteSpace(model)) throw new DomainException("Model is required.");
@@ -49,14 +50,14 @@ public class Vehicle : AggregateRoot, ITenantEntity
         Brand = brand;
         Model = model;
         Year = year;
-        ChassisNumber = chassisNumber;
-        Color = color;
+        SetTechnicalDetails(chassisNumber, engineNumber, color);
     }
 
-    public void SetChassisAndColor(string? chassisNumber, string? color)
+    public void SetTechnicalDetails(string? chassisNumber, string? engineNumber, string? color)
     {
-        ChassisNumber = chassisNumber;
-        Color = color;
+        ChassisNumber = NormalizeOptional(chassisNumber);
+        EngineNumber = NormalizeOptional(engineNumber);
+        Color = NormalizeOptional(color);
     }
 
     public void UpdateMileage(int km)
@@ -85,5 +86,10 @@ public class Vehicle : AggregateRoot, ITenantEntity
     {
         if (string.IsNullOrWhiteSpace(url)) throw new DomainException("Photo URL is required.");
         _photos.Add(new VehiclePhoto(url, description));
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

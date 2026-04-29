@@ -81,6 +81,7 @@ public class GetVehicleByPlateQueryHandler : IRequestHandler<GetVehicleByPlateQu
             vehicle.Year,
             $"{vehicle.Plate.OriginalValue} - {vehicle.Brand} {vehicle.Model}",
             vehicle.ChassisNumber,
+            vehicle.EngineNumber,
             vehicle.CurrentKm);
     }
 }

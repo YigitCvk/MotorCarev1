@@ -19,4 +19,6 @@ public interface IConsumableCatalogRepository
     Task AddAsync(ConsumableCatalogItem item, CancellationToken cancellationToken = default);
 
     void Update(ConsumableCatalogItem item);
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

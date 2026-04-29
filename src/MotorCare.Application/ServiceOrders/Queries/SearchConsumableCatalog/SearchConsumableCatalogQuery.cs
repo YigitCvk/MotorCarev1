@@ -28,7 +28,7 @@ public sealed class SearchConsumableCatalogQueryHandler : IRequestHandler<Search
         var items = await _repository.SearchAsync(request.Query, request.Category, request.MaxResults, cancellationToken);
 
         _logger.LogInformation(
-            EventIdStore.ServiceOrder.ConsumableSuggestionsFetched, // Reusing event id or create new one
+            EventIdStore.ServiceOrder.ConsumableSuggestionsFetched,
             "Consumable catalog searched. Query={Query}, Category={Category}, ResultsCount={Count}",
             request.Query,
             request.Category,

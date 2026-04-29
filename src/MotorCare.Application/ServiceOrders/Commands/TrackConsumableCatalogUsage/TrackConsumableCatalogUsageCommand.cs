@@ -66,6 +66,13 @@ public sealed class TrackConsumableCatalogUsageCommandHandler : IRequestHandler<
                 {
                     existing.IncrementUsage();
                     _repository.Update(existing);
+
+                    _logger.LogInformation(
+                        EventIdStore.ServiceOrder.ConsumableSuggestionStored,
+                        "Consumable usage saved for existing catalog item. Category={Category} Brand={Brand} ProductName={ProductName}",
+                        input.Category,
+                        input.Brand,
+                        input.ProductName);
                 }
                 else
                 {
@@ -81,6 +88,14 @@ public sealed class TrackConsumableCatalogUsageCommandHandler : IRequestHandler<
 
                     newItem.IncrementUsage();
                     await _repository.AddAsync(newItem, cancellationToken);
+
+                    _logger.LogInformation(
+                        EventIdStore.ServiceOrder.ConsumableCustomItemAdded,
+                        "New custom consumable added to suggestion catalog. TenantId={TenantId} Category={Category} Brand={Brand} ProductName={ProductName}",
+                        tenantId,
+                        input.Category,
+                        input.Brand,
+                        input.ProductName);
                 }
             }
             catch (Exception ex)
@@ -88,5 +103,7 @@ public sealed class TrackConsumableCatalogUsageCommandHandler : IRequestHandler<
                 _logger.LogWarning(ex, "Failed to track consumable catalog usage for item {Category} - {ProductName}", input.Category, input.ProductName);
             }
         }
+
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

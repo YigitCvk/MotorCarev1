@@ -8,6 +8,7 @@ public sealed record CreateVehicleCommand(
     string Model,
     int Year,
     string? ChassisNumber = null,
+    string? EngineNumber = null,
     string? Color = null,
     int? CurrentKm = null,
     Guid? CurrentCustomerId = null) : IRequest<Guid>;

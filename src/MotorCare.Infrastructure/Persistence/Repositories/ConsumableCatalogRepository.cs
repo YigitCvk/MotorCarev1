@@ -69,4 +69,9 @@ public sealed class ConsumableCatalogRepository : IConsumableCatalogRepository
     {
         _dbContext.Set<ConsumableCatalogItem>().Update(item);
     }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
