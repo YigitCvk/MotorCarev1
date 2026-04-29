@@ -92,6 +92,8 @@ public static class EventIdStore
         public static readonly EventId ConsumableAddedToDraftList = new(1529, nameof(ConsumableAddedToDraftList));
         public static readonly EventId ConsumableAddValidationFailed = new(1530, nameof(ConsumableAddValidationFailed));
         public static readonly EventId ConsumableAddFailed = new(1531, nameof(ConsumableAddFailed));
+        public static readonly EventId ConsumablesAttachedToServiceOrder = new(1532, nameof(ConsumablesAttachedToServiceOrder));
+        public static readonly EventId ServiceOrderDetailFetched = new(1533, nameof(ServiceOrderDetailFetched));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────

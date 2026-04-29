@@ -301,6 +301,61 @@
             </section>
         </section>
 
+        <section class="app-card" id="consumables-section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Kullanilan Sarf Urunleri</div>
+                    <div class="section-subtitle">Servis emriyle birlikte kaydedilen sarf ve tuketim kalemleri</div>
+                </div>
+            </div>
+
+            <div class="summary-list">
+                @if (_order.Consumables.Count == 0)
+                {
+                    <div class="summary-list-item text-muted">
+                        <span>Bu servis emrinde kayitli sarf urunu yok.</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var consumable in _order.Consumables)
+                    {
+                        <div class="summary-list-item service-order-line-item">
+                            <div class="service-order-line-row">
+                                <div class="service-order-line-copy">
+                                    <strong>@consumable.ProductName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(consumable.Brand))
+                                    {
+                                        <span class="text-muted ms-1 small">@consumable.Brand</span>
+                                    }
+                                    <div class="text-muted small">
+                                        @consumable.Category
+                                        @if (!string.IsNullOrWhiteSpace(consumable.SubCategory))
+                                        {
+                                            <span> / @consumable.SubCategory</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(consumable.Specification) || !string.IsNullOrWhiteSpace(consumable.Notes))
+                                    {
+                                        <div class="text-muted small">
+                                            @if (!string.IsNullOrWhiteSpace(consumable.Specification))
+                                            {
+                                                <span>Ozellik: @consumable.Specification</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(consumable.Notes))
+                                            {
+                                                <span> | Not: @consumable.Notes</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+
         <section class="app-card service-order-payments-card" id="payments-section">
             <div class="section-header">
                 <div>

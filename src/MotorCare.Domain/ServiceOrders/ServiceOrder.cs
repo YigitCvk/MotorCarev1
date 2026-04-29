@@ -33,6 +33,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     private readonly List<ServicePartItem> _parts = new();
     public IReadOnlyCollection<ServicePartItem> Parts => _parts;
 
+    private readonly List<ServiceConsumableItem> _consumables = new();
+    public IReadOnlyCollection<ServiceConsumableItem> Consumables => _consumables;
+
     private readonly List<ServicePayment> _payments = new();
     public IReadOnlyCollection<ServicePayment> Payments => _payments;
 
@@ -102,6 +105,20 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
         _parts.Remove(part);
         RecalculateTotals();
+    }
+
+    // --- Consumables ---
+
+    public void AddConsumable(
+        string category,
+        string productName,
+        string? brand = null,
+        string? subCategory = null,
+        string? specification = null,
+        string? notes = null)
+    {
+        EnsureModifiable();
+        _consumables.Add(new ServiceConsumableItem(category, productName, brand, subCategory, specification, notes));
     }
 
     // --- Payments ---

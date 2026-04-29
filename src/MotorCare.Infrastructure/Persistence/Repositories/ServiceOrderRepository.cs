@@ -20,6 +20,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
             .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
+            .Include(o => o.Consumables)
             .Include(o => o.Payments)
             .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, cancellationToken);
     }
@@ -30,6 +31,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
             .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
+            .Include(o => o.Consumables)
             .Include(o => o.Payments)
             .FirstOrDefaultAsync(o => o.TenantId == tenantId && o.OrderNo == orderNo, cancellationToken);
     }
@@ -178,6 +180,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
             .AsSplitQuery()
             .Include(o => o.Operations)
             .Include(o => o.Parts)
+            .Include(o => o.Consumables)
             .Include(o => o.Payments)
             .OrderByDescending(o => o.OpenedAt)
             .ToListAsync(cancellationToken);

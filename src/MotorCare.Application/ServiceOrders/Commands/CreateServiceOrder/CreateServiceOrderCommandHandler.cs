@@ -60,6 +60,21 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
             request.VehicleKm,
             request.Complaint);
 
+        if (request.Consumables is not null)
+        {
+            foreach (var consumable in request.Consumables
+                         .Where(x => !string.IsNullOrWhiteSpace(x.Category) && !string.IsNullOrWhiteSpace(x.ProductName)))
+            {
+                order.AddConsumable(
+                    consumable.Category,
+                    consumable.ProductName,
+                    consumable.Brand,
+                    consumable.SubCategory,
+                    consumable.Specification,
+                    consumable.Notes);
+            }
+        }
+
         await _serviceOrderRepository.AddAsync(order, cancellationToken);
         await _serviceOrderRepository.SaveChangesAsync(cancellationToken);
 
@@ -70,6 +85,15 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
             orderNo,
             request.CustomerId,
             request.VehicleId);
+
+        if (order.Consumables.Count > 0)
+        {
+            _logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumablesAttachedToServiceOrder,
+                "Consumables attached to service order. ServiceOrderId={ServiceOrderId} ConsumableCount={ConsumableCount}",
+                order.Id,
+                order.Consumables.Count);
+        }
 
         return order.Id;
     }

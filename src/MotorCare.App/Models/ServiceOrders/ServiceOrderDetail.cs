@@ -25,9 +25,21 @@ public sealed class ServiceOrderPayment
     public DateTimeOffset PaymentDate { get; set; }
 }
 
+public sealed class ServiceOrderConsumable
+{
+    public Guid Id { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public string Brand { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public string? SubCategory { get; set; }
+    public string? Specification { get; set; }
+    public string? Notes { get; set; }
+}
+
 public sealed class ServiceOrderDetail : ServiceOrderListItem
 {
     public IReadOnlyList<ServiceOrderOperation> Operations { get; set; } = [];
     public IReadOnlyList<ServiceOrderPart> Parts { get; set; } = [];
+    public IReadOnlyList<ServiceOrderConsumable> Consumables { get; set; } = [];
     public IReadOnlyList<ServiceOrderPayment> Payments { get; set; } = [];
 }

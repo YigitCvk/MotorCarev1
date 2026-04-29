@@ -78,6 +78,7 @@ public class GetServiceOrdersQueryHandler : IRequestHandler<GetServiceOrdersQuer
                 order.RemainingTotal,
                 [],
                 [],
+                [],
                 []);
         }).ToList();
 

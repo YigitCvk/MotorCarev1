@@ -60,6 +60,19 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             pb.WithOwner().HasForeignKey("ServiceOrderId");
         });
 
+        builder.OwnsMany(o => o.Consumables, cb =>
+        {
+            cb.ToTable("ServiceConsumableItems");
+            cb.HasKey(ci => ci.Id);
+            cb.Property(ci => ci.Category).IsRequired().HasMaxLength(64);
+            cb.Property(ci => ci.Brand).HasMaxLength(80);
+            cb.Property(ci => ci.ProductName).IsRequired().HasMaxLength(160);
+            cb.Property(ci => ci.SubCategory).HasMaxLength(100);
+            cb.Property(ci => ci.Specification).HasMaxLength(160);
+            cb.Property(ci => ci.Notes).HasMaxLength(250);
+            cb.WithOwner().HasForeignKey("ServiceOrderId");
+        });
+
         builder.OwnsMany(o => o.Payments, payb =>
         {
             payb.ToTable("ServicePayments");
@@ -71,6 +84,7 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
 
         builder.Navigation(o => o.Operations).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Parts).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(o => o.Consumables).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
 
     }

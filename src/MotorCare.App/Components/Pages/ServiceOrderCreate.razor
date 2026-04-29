@@ -1137,7 +1137,18 @@
                 CustomerId = _selectedCustomer.Id,
                 VehicleId = _selectedVehicle.Id,
                 VehicleKm = _vehicleKm,
-                Complaint = _complaint
+                Complaint = _complaint,
+                Consumables = _addedConsumables
+                    .Select(item => new CreateServiceOrderConsumableRequest
+                    {
+                        Category = item.Category,
+                        ProductName = item.ProductName,
+                        Brand = item.Brand,
+                        SubCategory = item.SubCategory,
+                        Specification = item.Specification,
+                        Notes = item.Notes
+                    })
+                    .ToList()
             }, cancellationToken);
 
             if (IsInactive(cancellationToken))

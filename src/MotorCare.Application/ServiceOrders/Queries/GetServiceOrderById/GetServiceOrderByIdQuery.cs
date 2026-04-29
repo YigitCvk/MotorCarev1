@@ -6,6 +6,15 @@ public sealed record ServiceOperationItemDto(Guid Id, string Description, decima
 
 public sealed record ServicePartItemDto(Guid Id, string PartName, string? PartNumber, decimal UnitPrice, int Quantity, decimal TotalPrice);
 
+public sealed record ServiceConsumableItemDto(
+    Guid Id,
+    string Category,
+    string Brand,
+    string ProductName,
+    string? SubCategory,
+    string? Specification,
+    string? Notes);
+
 public sealed record ServicePaymentDto(Guid Id, decimal Amount, string Method, DateTimeOffset PaymentDate);
 
 public sealed record ServiceOrderDto(
@@ -31,6 +40,7 @@ public sealed record ServiceOrderDto(
     decimal RemainingTotal,
     IReadOnlyList<ServiceOperationItemDto> Operations,
     IReadOnlyList<ServicePartItemDto> Parts,
+    IReadOnlyList<ServiceConsumableItemDto> Consumables,
     IReadOnlyList<ServicePaymentDto> Payments);
 
 public sealed record GetServiceOrderByIdQuery(Guid Id) : IRequest<ServiceOrderDto?>;

@@ -40,14 +40,15 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
         }
 
         _logger.LogInformation(
-            EventIdStore.ServiceOrder.ServiceOrderFetched,
-            "Service order {ServiceOrderId} fetched for tenant {TenantId}. CustomerId={CustomerId} VehicleId={VehicleId} OperationCount={OperationCount} PartCount={PartCount} PaymentCount={PaymentCount}",
+            EventIdStore.ServiceOrder.ServiceOrderDetailFetched,
+            "Service order detail fetched. ServiceOrderId={ServiceOrderId} TenantId={TenantId} CustomerId={CustomerId} VehicleId={VehicleId} OperationCount={OperationCount} PartCount={PartCount} ConsumableCount={ConsumableCount} PaymentCount={PaymentCount}",
             order.Id,
             tenantId,
             order.CustomerId,
             order.VehicleId,
             order.Operations.Count,
             order.Parts.Count,
+            order.Consumables.Count,
             order.Payments.Count);
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId, tenantId, cancellationToken);
@@ -79,6 +80,16 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
                 .ToList(),
             order.Parts
                 .Select(part => new ServicePartItemDto(part.Id, part.PartName, part.PartNumber, part.UnitPrice, part.Quantity, part.TotalPrice))
+                .ToList(),
+            order.Consumables
+                .Select(consumable => new ServiceConsumableItemDto(
+                    consumable.Id,
+                    consumable.Category,
+                    consumable.Brand,
+                    consumable.ProductName,
+                    consumable.SubCategory,
+                    consumable.Specification,
+                    consumable.Notes))
                 .ToList(),
             order.Payments
                 .Select(payment => new ServicePaymentDto(payment.Id, payment.Amount, payment.Method.ToString(), payment.PaymentDate))
