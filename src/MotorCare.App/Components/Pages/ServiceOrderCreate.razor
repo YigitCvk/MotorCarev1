@@ -59,6 +59,16 @@
         </section>
     }
 
+    <ServiceOrderCreateErrorBoundary>
+        <ErrorContent>
+            <section class="error-state">
+                <strong>Servis kaydi sayfasi gosterilemedi</strong>
+                <p>Form render edilirken bir hata olustu. Sayfayi yenileyip tekrar deneyin.</p>
+            </section>
+        </ErrorContent>
+
+        <ChildContent>
+        <EditForm EditContext="_formEditContext">
     <section class="app-card">
         <div class="content-grid">
             <section class="surface-card">
@@ -74,7 +84,7 @@
                     <div>
                         <label class="form-label">Ad veya Telefon ile Ara</label>
                         <div class="d-flex gap-2 flex-wrap">
-                            <InputText class="form-control" @bind-Value="_customerSearchText" @bind:event="oninput" placeholder="Ahmet Yilmaz / 05xx..." />
+                            <input class="form-control" @bind="_customerSearchText" @bind:event="oninput" placeholder="Ahmet Yilmaz / 05xx..." />
                             <button type="button" class="app-btn-secondary" @onclick="SearchCustomersAsync" disabled="@_customerSearchLoading">
                                 @(_customerSearchLoading ? "Araniyor..." : "Ara")
                             </button>
@@ -384,9 +394,10 @@
                             <div class="full-span">
                                 <label class="form-label">Ürün Ara / Yaz</label>
                                 <div class="position-relative">
-                                    <InputText class="form-control" 
-                                             @bind-Value="_currentConsumable.ProductName" 
-                                             @oninput="OnConsumableProductInputAsync"
+                                    <input class="form-control" 
+                                             @bind="_currentConsumable.ProductName"
+                                             @bind:event="oninput"
+                                             @bind:after="OnConsumableProductChangedAsync"
                                              placeholder="Motul 7100, NGK CR9EIX vb. yazın..." 
                                              disabled="@string.IsNullOrWhiteSpace(_currentConsumable.Category)" />
                                     
@@ -436,6 +447,9 @@
             </button>
         </div>
     </section>
+        </EditForm>
+        </ChildContent>
+    </ServiceOrderCreateErrorBoundary>
 </div>
 
 @code {
@@ -450,6 +464,7 @@
     private readonly CreateVehicleRequest _newVehicle = new() { Year = DateTime.Today.Year };
     private readonly List<string> _prefilledRecommendations = [];
     private readonly CancellationTokenSource _lifetimeCts = new();
+    private readonly ServiceOrderCreateFormState _formState = new();
 
     private readonly List<ConsumableCatalogItemDto> _consumableEntries = [];
     private ConsumableCatalogItemDto _currentConsumable = new();
@@ -487,6 +502,7 @@
     private bool _isDisposed;
     private bool _initializationStarted;
     private bool _initializationCompleted;
+    private EditContext _formEditContext = default!;
 
     protected override void OnInitialized()
     {
@@ -496,7 +512,8 @@
             CustomerId,
             PlateQuery);
 
-        _isInitializing = false;
+        _formEditContext = new EditContext(_formState);
+        EnsureBoundStateInitialized();
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -727,7 +744,7 @@
         {
             if (!IsInactive(cancellationToken))
             {
-                NavigationManager.NavigateTo("/login");
+                TryNavigateTo("/login");
             }
         }
         catch (ApiException ex)
@@ -1215,6 +1232,7 @@
 
     private async Task OnCategoryChangedAsync()
     {
+        EnsureBoundStateInitialized();
         _currentConsumable.ProductName = string.Empty;
         _currentConsumable.Brand = string.Empty;
         _currentConsumable.SubCategory = string.Empty;
@@ -1226,14 +1244,13 @@
         await PerformCatalogSearchAsync(string.Empty);
     }
 
-    private async Task OnConsumableProductInputAsync(ChangeEventArgs e)
-    {
-        _currentConsumable.ProductName = e.Value?.ToString() ?? string.Empty;
-        await PerformCatalogSearchAsync(_currentConsumable.ProductName);
-    }
+    private Task OnConsumableProductChangedAsync()
+        => PerformCatalogSearchAsync(_currentConsumable.ProductName);
 
     private async Task PerformCatalogSearchAsync(string query)
     {
+        EnsureBoundStateInitialized();
+
         if (string.IsNullOrWhiteSpace(_currentConsumable.Category)) return;
 
         _searchCts?.Cancel();
@@ -1259,6 +1276,7 @@
 
     private void SelectCatalogItem(ConsumableCatalogItemDto item)
     {
+        EnsureBoundStateInitialized();
         _currentConsumable.Brand = item.Brand;
         _currentConsumable.ProductName = item.ProductName;
         _currentConsumable.SubCategory = item.SubCategory;
@@ -1269,6 +1287,8 @@
 
     private void AddConsumableEntry()
     {
+        EnsureBoundStateInitialized();
+
         if (string.IsNullOrWhiteSpace(_currentConsumable.Category) || 
             string.IsNullOrWhiteSpace(_currentConsumable.Brand) || 
             string.IsNullOrWhiteSpace(_currentConsumable.ProductName))
@@ -1289,6 +1309,11 @@
         _currentConsumable = new ConsumableCatalogItemDto { Category = _currentConsumable.Category };
         _catalogSearchResults.Clear();
         _isCatalogSearchOpen = false;
+    }
+
+    private void EnsureBoundStateInitialized()
+    {
+        _currentConsumable ??= new ConsumableCatalogItemDto();
     }
 
     private void RemoveConsumableEntry(ConsumableCatalogItemDto entry)
@@ -1426,7 +1451,13 @@
                 "Service order create component disposed before initialization completed.");
         }
 
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
+    }
+
+    private sealed class ServiceOrderCreateFormState
+    {
     }
 }
