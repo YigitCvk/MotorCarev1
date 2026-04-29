@@ -1,3 +1,4 @@
+@using System.Linq.Expressions
 @inject VehiclesService VehiclesService
 
 <div class="vehicle-plate-lookup">
@@ -35,6 +36,7 @@
 @code {
     [Parameter] public VehicleLookupResponse? Value { get; set; }
     [Parameter] public EventCallback<VehicleLookupResponse?> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<VehicleLookupResponse?>>? ValueExpression { get; set; }
 
     private string? _plate;
     private VehicleLookupResponse? _selected;
