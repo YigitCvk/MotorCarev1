@@ -1,0 +1,134 @@
+@page "/two-factor"
+@layout Layout.PublicLayout
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Iki Asamali Dogrulama - BakimSuite</PageTitle>
+
+<div class="auth-shell auth-shell-login">
+    <div class="auth-panel auth-panel-brand">
+        <div class="eyebrow" style="color:#fdba74">Iki asamali giris</div>
+        <h1 class="auth-title">E-posta kodunu girin</h1>
+        <p class="auth-copy">
+            @(!string.IsNullOrWhiteSpace(EmailQuery)
+                ? $"{EmailQuery} adresine gonderilen dogrulama kodunu kullanin."
+                : "E-posta adresinize gonderilen dogrulama kodunu kullanin.")
+        </p>
+    </div>
+
+    <div class="auth-panel auth-panel-form auth-panel-narrow">
+        <div class="section-header mb-2">
+            <div>
+                <div class="section-title">Dogrulama Kodu</div>
+                <div class="section-subtitle">Kod genellikle 10 dakika gecerlidir.</div>
+            </div>
+        </div>
+
+        @if (_ticketInvalid)
+        {
+            <div class="alert alert-danger">Gecersiz iki asamali dogrulama oturumu.</div>
+            <div class="auth-actions">
+                <a class="auth-link" href="/login">Giris ekranina don</a>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="_model" OnValidSubmit="VerifyAsync">
+                <DataAnnotationsValidator />
+
+                <div class="form-grid auth-form-grid">
+                    <div class="full-span">
+                        <label class="form-label">Kod</label>
+                        <InputText class="form-control" @bind-Value="_model.Code" autocomplete="one-time-code" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_message))
+                {
+                    <div class="alert alert-success mt-3">@_message</div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger mt-3">@_error</div>
+                }
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Dogrulaniyor..." : "Kodu Dogrula")
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="ResendAsync" disabled="@_isSubmitting">Kodu tekrar gonder</button>
+                    <a class="auth-link" href="@LoginHref">Baska hesapla giris yap</a>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly VerifyTwoFactorRequest _model = new();
+    private bool _isSubmitting;
+    private bool _ticketInvalid;
+    private string? _message;
+    private string? _error;
+
+    [SupplyParameterFromQuery(Name = "ticket")] public string? TicketQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "email")] public string? EmailQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "tenant")] public string? TenantQuery { get; set; }
+
+    private string LoginHref => string.IsNullOrWhiteSpace(TenantQuery) && string.IsNullOrWhiteSpace(EmailQuery)
+        ? "/login"
+        : $"/login?tenant={Uri.EscapeDataString(TenantQuery ?? string.Empty)}&email={Uri.EscapeDataString(EmailQuery ?? string.Empty)}";
+
+    protected override void OnParametersSet()
+    {
+        _model.Ticket = TicketQuery ?? string.Empty;
+        _ticketInvalid = string.IsNullOrWhiteSpace(_model.Ticket);
+    }
+
+    private async Task VerifyAsync()
+    {
+        _isSubmitting = true;
+        _error = null;
+        _message = null;
+
+        try
+        {
+            await AuthService.VerifyTwoFactorAsync(_model);
+            NavigationManager.NavigateTo("/dashboard");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ResendAsync()
+    {
+        _isSubmitting = true;
+        _error = null;
+        _message = null;
+
+        try
+        {
+            var response = await AuthService.ResendTwoFactorAsync(new ResendTwoFactorRequest
+            {
+                Ticket = _model.Ticket
+            });
+
+            _message = response?.Message ?? "Dogrulama kodu gonderildi.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

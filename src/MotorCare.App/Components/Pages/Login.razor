@@ -1,44 +1,50 @@
 @page "/login"
 @layout Layout.PublicLayout
+@using Microsoft.AspNetCore.WebUtilities
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Giriş Yap - BakımSuite</PageTitle>
+<PageTitle>Giris Yap - BakimSuite</PageTitle>
 
 <div class="auth-shell auth-shell-login">
     <div class="auth-panel auth-panel-brand">
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
             <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:linear-gradient(135deg,#f97316,#fb923c);display:grid;place-items:center;color:#fff;font-weight:800;font-size:0.95rem;letter-spacing:-0.02em">BS</div>
-            <div style="color:#f1f5f9;font-weight:700;font-size:1rem">BakımSuite</div>
+            <div style="color:#f1f5f9;font-weight:700;font-size:1rem">BakimSuite</div>
         </div>
-        <div class="eyebrow" style="color:#fdba74">Servis yönetimi</div>
-        <h1 class="auth-title">Günün operasyonunu tek panelden başlatın</h1>
+        <div class="eyebrow" style="color:#fdba74">Servis yonetimi</div>
+        <h1 class="auth-title">Gunun operasyonunu tek panelden baslatin</h1>
         <p class="auth-copy">
-            Servis kabul, randevu, tahsilat ve günlük özet ekranlarına hızlı erişim için giriş yapın.
-            BakımSuite, eski masaüstü servis yazılımlarının dağınık menü yapısını modern web deneyimine taşır.
+            Servis kabul, randevu, tahsilat ve gunluk ozet ekranlarina hizli erisim icin giris yapin.
+            BakimSuite daginik masaustu menulerini modern web deneyimine tasir.
         </p>
 
         <div class="auth-feature-list">
-            <div class="auth-feature-item">Hızlı servis kabul ve iş emri akışı</div>
-            <div class="auth-feature-item">Müşteri, araç ve randevu takibi</div>
-            <div class="auth-feature-item">Tahsilat ve günlük operasyon özeti</div>
+            <div class="auth-feature-item">Hizli servis kabul ve is emri akisi</div>
+            <div class="auth-feature-item">Musteri, arac ve randevu takibi</div>
+            <div class="auth-feature-item">Tahsilat ve gunluk operasyon ozeti</div>
         </div>
     </div>
 
     <div class="auth-panel auth-panel-form auth-panel-narrow">
         <div class="section-header mb-2">
             <div>
-                <div class="section-title">Giriş Yap</div>
-                <div class="section-subtitle">Tenant, kullanıcı ve şifre ile devam edin.</div>
+                <div class="section-title">Giris Yap</div>
+                <div class="section-subtitle">Tenant, kullanici ve sifre ile devam edin.</div>
             </div>
         </div>
+
+        @if (!string.IsNullOrWhiteSpace(_info))
+        {
+            <div class="alert alert-success mt-3">@_info</div>
+        }
 
         <EditForm Model="_model" OnValidSubmit="LoginAsync">
             <DataAnnotationsValidator />
 
             <div class="form-grid auth-form-grid">
                 <div class="full-span">
-                    <label class="form-label">İşletme Kodu</label>
+                    <label class="form-label">Isletme Kodu</label>
                     <InputText class="form-control" @bind-Value="_model.TenantIdentifier" placeholder="asya-motor" autocomplete="organization" />
                 </div>
 
@@ -48,8 +54,8 @@
                 </div>
 
                 <div class="full-span">
-                    <label class="form-label">Şifre</label>
-                    <InputText class="form-control" type="password" @bind-Value="_model.Password" placeholder="••••••••" autocomplete="current-password" />
+                    <label class="form-label">Sifre</label>
+                    <InputText class="form-control" type="password" @bind-Value="_model.Password" placeholder="********" autocomplete="current-password" />
                 </div>
             </div>
 
@@ -58,11 +64,22 @@
                 <div class="alert alert-danger mt-3">@_error</div>
             }
 
+            @if (_canResendVerification)
+            {
+                <div class="alert alert-warning mt-3">
+                    <div>Dogrulama e-postasini yeniden gonderebilirsiniz.</div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" @onclick="ResendVerificationAsync" disabled="@_isSubmitting">
+                        Dogrulama e-postasini tekrar gonder
+                    </button>
+                </div>
+            }
+
             <div class="auth-actions">
                 <button type="submit" class="btn btn-primary btn-lg" disabled="@_isSubmitting">
-                    @(_isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap")
+                    @(_isSubmitting ? "Giris yapiliyor..." : "Giris Yap")
                 </button>
-                <a class="auth-link" href="/register">İlk servisini oluşturmak için kayıt ol →</a>
+                <a class="auth-link" href="/forgot-password">Sifremi unuttum</a>
+                <a class="auth-link" href="/register">Ilk servisini olusturmak icin kayit ol -></a>
             </div>
         </EditForm>
     </div>
@@ -71,17 +88,83 @@
 @code {
     private readonly LoginRequest _model = new();
     private bool _isSubmitting;
+    private bool _canResendVerification;
     private string? _error;
+    private string? _info;
+
+    [SupplyParameterFromQuery(Name = "tenant")] public string? TenantQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "email")] public string? EmailQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "message")] public string? MessageQuery { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(TenantQuery))
+        {
+            _model.TenantIdentifier = TenantQuery;
+        }
+
+        if (!string.IsNullOrWhiteSpace(EmailQuery))
+        {
+            _model.Email = EmailQuery;
+        }
+
+        _info = MessageQuery;
+    }
 
     private async Task LoginAsync()
     {
         _isSubmitting = true;
         _error = null;
+        _canResendVerification = false;
 
         try
         {
-            await AuthService.LoginAsync(_model);
+            var response = await AuthService.LoginAsync(_model);
+            if (response?.RequiresTwoFactor == true && !string.IsNullOrWhiteSpace(response.TwoFactorToken))
+            {
+                var uri = QueryHelpers.AddQueryString("/two-factor", new Dictionary<string, string?>
+                {
+                    ["ticket"] = response.TwoFactorToken,
+                    ["tenant"] = response.TenantIdentifier,
+                    ["email"] = response.Email
+                });
+
+                NavigationManager.NavigateTo(uri);
+                return;
+            }
+
             NavigationManager.NavigateTo("/dashboard");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _canResendVerification =
+                !string.IsNullOrWhiteSpace(_model.TenantIdentifier) &&
+                !string.IsNullOrWhiteSpace(_model.Email) &&
+                ex.Message.Contains("dogrula", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ResendVerificationAsync()
+    {
+        _isSubmitting = true;
+        _error = null;
+        _info = null;
+
+        try
+        {
+            var response = await AuthService.ResendEmailVerificationAsync(new ResendEmailVerificationRequest
+            {
+                TenantIdentifier = _model.TenantIdentifier,
+                Email = _model.Email
+            });
+
+            _info = response?.Message ?? "Dogrulama e-postasi gonderildi.";
+            _canResendVerification = false;
         }
         catch (Exception ex)
         {

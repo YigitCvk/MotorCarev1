@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MotorCare.Infrastructure.Persistence;
 using MotorCare.Infrastructure.Persistence.Repositories;
 using MotorCare.Infrastructure.Persistence.Seed;
@@ -46,9 +48,9 @@ public static class DependencyInjection
         services.AddScoped<LoggingEmailSender>();
         services.AddScoped<IEmailSender>(sp =>
         {
-            var env = sp.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+            var env = sp.GetRequiredService<IHostEnvironment>();
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailOptions>>().Value;
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("MotorCare.Infrastructure.Email");
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("MotorCare.Infrastructure.Email");
 
             if (!options.SendEmails)
             {

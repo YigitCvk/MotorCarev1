@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
 
 namespace MotorCare.Infrastructure.Persistence.Configurations;
