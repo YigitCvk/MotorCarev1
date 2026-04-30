@@ -79,6 +79,31 @@ public sealed class AuthService
         return _apiClient.PostAsync<ResendTwoFactorRequest, AuthActionResponse>("/api/auth/two-factor/resend", request, authorized: false, cancellationToken);
     }
 
+    public Task<SecurityStatusResponse?> GetSecurityStatusAsync(CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<SecurityStatusResponse>("/api/auth/security-status", authorized: true, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> SendEnableTwoFactorCodeAsync(CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<object, AuthActionResponse>("/api/auth/2fa/enable/send-code", new { }, authorized: true, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> ConfirmEnableTwoFactorAsync(TwoFactorManagementCodeRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<TwoFactorManagementCodeRequest, AuthActionResponse>("/api/auth/2fa/enable/confirm", request, authorized: true, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> SendDisableTwoFactorCodeAsync(CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<object, AuthActionResponse>("/api/auth/2fa/disable/send-code", new { }, authorized: true, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> ConfirmDisableTwoFactorAsync(TwoFactorManagementCodeRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<TwoFactorManagementCodeRequest, AuthActionResponse>("/api/auth/2fa/disable/confirm", request, authorized: true, cancellationToken);
+    }
+
     public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         string? refreshToken = null;

@@ -20,6 +20,9 @@ public sealed class UserSecurityTokenConfiguration : IEntityTypeConfiguration<Us
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(x => x.FailedAttemptCount)
+            .IsRequired();
+
         builder.HasIndex(x => x.TokenHash)
             .IsUnique();
 

@@ -10,4 +10,5 @@ public sealed record AuthResponseDto(
     string Role,
     bool RequiresTwoFactor = false,
     string? TwoFactorToken = null,
-    DateTimeOffset? TwoFactorExpiresAtUtc = null);
+    DateTimeOffset? TwoFactorExpiresAtUtc = null,
+    string? TwoFactorProvider = null);

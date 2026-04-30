@@ -3,20 +3,20 @@ using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 
-namespace MotorCare.Application.Auth.Queries.GetCurrentUser;
+namespace MotorCare.Application.Auth.Queries.GetSecurityStatus;
 
-public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, CurrentUserDto>
+public sealed class GetSecurityStatusQueryHandler : IRequestHandler<GetSecurityStatusQuery, SecurityStatusDto>
 {
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly IUserRepository _userRepository;
 
-    public GetCurrentUserQueryHandler(ICurrentUserProvider currentUserProvider, IUserRepository userRepository)
+    public GetSecurityStatusQueryHandler(ICurrentUserProvider currentUserProvider, IUserRepository userRepository)
     {
         _currentUserProvider = currentUserProvider;
         _userRepository = userRepository;
     }
 
-    public async Task<CurrentUserDto> Handle(GetCurrentUserQuery request, CancellationToken cancellationToken)
+    public async Task<SecurityStatusDto> Handle(GetSecurityStatusQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserProvider.GetUserId()
             ?? throw new UnauthorizedAccessException("Current user is not available.");
@@ -32,13 +32,8 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, C
             throw new UnauthorizedAccessException("The user is inactive.");
         }
 
-        return new CurrentUserDto(
-            user.Id,
-            _currentUserProvider.GetTenantId() ?? string.Empty,
-            tenantIdentifier,
-            user.FullName,
+        return new SecurityStatusDto(
             user.Email,
-            user.Role.ToString(),
             user.IsEmailVerified,
             user.TwoFactorEnabled,
             user.TwoFactorProvider?.ToString());

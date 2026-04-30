@@ -75,6 +75,21 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<UserSecurityToken?> GetLatestActiveSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        return await _context.UserSecurityTokens
+            .AsTracking()
+            .Where(x => x.UserId == userId &&
+                        x.Purpose == purpose &&
+                        x.RevokedAt == null &&
+                        x.ConsumedAt == null &&
+                        x.ExpiresAt > now)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

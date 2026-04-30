@@ -31,20 +31,28 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
     {
         var ticketHash = _securityTokenFactory.Hash(request.Ticket);
         var challenge = await _userRepository.GetActiveSecurityTokenByHashAsync(ticketHash, UserSecurityTokenPurpose.TwoFactorChallenge, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Doğrulama oturumu geçersiz veya süresi dolmuş.");
+            ?? throw new UnauthorizedAccessException("Dogrulama oturumu gecersiz veya suresi dolmus.");
 
         var user = await _userRepository.GetByIdAsync(challenge.UserId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Doğrulama oturumu geçersiz veya süresi dolmuş.");
+            ?? throw new UnauthorizedAccessException("Dogrulama oturumu gecersiz veya suresi dolmus.");
 
         var otpHash = _securityTokenFactory.Hash(request.Code);
         var otp = await _userRepository.GetActiveSecurityTokenByHashAsync(otpHash, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
         if (otp is null || otp.UserId != user.Id)
         {
-            throw new UnauthorizedAccessException("Doğrulama kodu geçersiz.");
+            var latestOtp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
+            if (latestOtp is not null)
+            {
+                user.RegisterSecurityTokenFailedAttempt(latestOtp.TokenHash, DateTimeOffset.UtcNow);
+                _userRepository.Update(user);
+                await _userRepository.SaveChangesAsync(cancellationToken);
+            }
+
+            throw new UnauthorizedAccessException("Dogrulama kodu gecersiz.");
         }
 
         var tenant = await _tenantRepository.GetByIdentifierAsync(user.TenantId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("İşletme bulunamadı.");
+            ?? throw new UnauthorizedAccessException("Isletme bulunamadi.");
 
         var now = DateTimeOffset.UtcNow;
         user.ConsumeSecurityToken(ticketHash, now);

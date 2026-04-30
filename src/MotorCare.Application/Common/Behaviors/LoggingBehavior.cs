@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common.Exceptions;
 
 namespace MotorCare.Application.Common.Behaviors;
 
@@ -41,8 +42,14 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
         {
             sw.Stop();
 
-            _logger.LogError(
-                EventIdStore.Common.UnhandledException,
+            var logLevel = ExpectedExceptionClassifier.GetLogLevel(ex);
+            var eventId = ex is AppValidationException
+                ? EventIdStore.Common.ValidationFailed
+                : EventIdStore.Common.UnhandledException;
+
+            _logger.Log(
+                logLevel,
+                eventId,
                 ex,
                 "Request {RequestName} failed after {ElapsedMs}ms",
                 requestName,

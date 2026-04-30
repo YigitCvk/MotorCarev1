@@ -132,6 +132,14 @@ public class User : AggregateRoot, ITenantEntity
         token.Consume(consumedAt);
     }
 
+    public void RegisterSecurityTokenFailedAttempt(string tokenHash, DateTimeOffset attemptedAt, int maxAttempts = 5)
+    {
+        var token = _securityTokens.FirstOrDefault(t => t.TokenHash == tokenHash)
+            ?? throw new DomainException("Security token was not found.");
+
+        token.RegisterFailedAttempt(attemptedAt, maxAttempts);
+    }
+
     private static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();

@@ -10,6 +10,7 @@ public class UserSecurityToken : AuditableEntity
     public DateTimeOffset ExpiresAt { get; private set; }
     public DateTimeOffset? ConsumedAt { get; private set; }
     public DateTimeOffset? RevokedAt { get; private set; }
+    public int FailedAttemptCount { get; private set; }
 
     private UserSecurityToken()
     {
@@ -36,6 +37,16 @@ public class UserSecurityToken : AuditableEntity
     internal void Consume(DateTimeOffset consumedAt)
     {
         ConsumedAt = consumedAt;
+    }
+
+    internal void RegisterFailedAttempt(DateTimeOffset attemptedAt, int maxAttempts = 5)
+    {
+        FailedAttemptCount++;
+
+        if (FailedAttemptCount >= maxAttempts)
+        {
+            RevokedAt = attemptedAt;
+        }
     }
 
     public bool IsActive(DateTimeOffset now)

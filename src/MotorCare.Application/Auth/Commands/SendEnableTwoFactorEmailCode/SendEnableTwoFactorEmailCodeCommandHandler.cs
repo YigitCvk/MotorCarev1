@@ -1,0 +1,105 @@
+using MediatR;
+using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common;
+using MotorCare.Application.Common.Interfaces;
+using MotorCare.Domain.Repositories;
+using MotorCare.Domain.Users.Entities;
+
+namespace MotorCare.Application.Auth.Commands.SendEnableTwoFactorEmailCode;
+
+public sealed class SendEnableTwoFactorEmailCodeCommandHandler : IRequestHandler<SendEnableTwoFactorEmailCodeCommand, AuthActionMessageDto>
+{
+    private readonly ICurrentUserProvider _currentUserProvider;
+    private readonly IUserRepository _userRepository;
+    private readonly IEmailSender _emailSender;
+    private readonly ISecurityTokenFactory _securityTokenFactory;
+    private readonly ILogger<SendEnableTwoFactorEmailCodeCommandHandler> _logger;
+
+    public SendEnableTwoFactorEmailCodeCommandHandler(
+        ICurrentUserProvider currentUserProvider,
+        IUserRepository userRepository,
+        IEmailSender emailSender,
+        ISecurityTokenFactory securityTokenFactory,
+        ILogger<SendEnableTwoFactorEmailCodeCommandHandler> logger)
+    {
+        _currentUserProvider = currentUserProvider;
+        _userRepository = userRepository;
+        _emailSender = emailSender;
+        _securityTokenFactory = securityTokenFactory;
+        _logger = logger;
+    }
+
+    public async Task<AuthActionMessageDto> Handle(SendEnableTwoFactorEmailCodeCommand request, CancellationToken cancellationToken)
+    {
+        var user = await GetCurrentUserAsync(cancellationToken);
+        if (user.TwoFactorEnabled)
+        {
+            return new AuthActionMessageDto("Iki asamali dogrulama zaten etkin.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var latestOtp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorEnableEmailOtp, cancellationToken);
+        if (latestOtp is not null && latestOtp.CreatedAt >= now.AddMinutes(-1))
+        {
+            return new AuthActionMessageDto("Lutfen yeni kod istemeden once kisa sure bekleyin.");
+        }
+
+        user.RevokeSecurityTokens(UserSecurityTokenPurpose.TwoFactorEnableEmailOtp, now);
+        var code = _securityTokenFactory.GenerateNumericCode();
+        var otp = user.AddSecurityToken(
+            UserSecurityTokenPurpose.TwoFactorEnableEmailOtp,
+            _securityTokenFactory.Hash(code),
+            now.AddMinutes(10),
+            now);
+
+        _userRepository.Update(user);
+        _userRepository.AddSecurityToken(otp);
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Auth.TwoFactorEmailSendRequested,
+            "Two-factor enable email requested. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
+            user.Id,
+            otp.ExpiresAt);
+
+        try
+        {
+            await _emailSender.SendTwoFactorCodeAsync(user.Email, user.FullName, code, otp.ExpiresAt.UtcDateTime, cancellationToken);
+            _logger.LogInformation(
+                EventIdStore.Auth.TwoFactorEmailSent,
+                "Two-factor enable email sent. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
+                user.Id,
+                otp.ExpiresAt);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                EventIdStore.Auth.TwoFactorEmailSendFailed,
+                ex,
+                "Two-factor enable email send failed. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
+                user.Id,
+                otp.ExpiresAt);
+        }
+
+        return new AuthActionMessageDto("Dogrulama kodu e-posta adresinize gonderildi.");
+    }
+
+    private async Task<Domain.Users.User> GetCurrentUserAsync(CancellationToken cancellationToken)
+    {
+        var userId = _currentUserProvider.GetUserId()
+            ?? throw new UnauthorizedAccessException("Current user is not available.");
+
+        var tenantIdentifier = _currentUserProvider.GetTenantIdentifier()
+            ?? throw new UnauthorizedAccessException("Current tenant is not available.");
+
+        var user = await _userRepository.GetByIdAsync(userId, tenantIdentifier, cancellationToken)
+            ?? throw new UnauthorizedAccessException("Current user is not available.");
+
+        if (!user.IsActive)
+        {
+            throw new UnauthorizedAccessException("The user is inactive.");
+        }
+
+        return user;
+    }
+}

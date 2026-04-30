@@ -12,6 +12,7 @@ public interface IUserRepository
     Task<User?> GetByRefreshTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
     Task<UserSecurityToken?> GetActiveSecurityTokenByHashAsync(string tokenHash, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default);
     Task<UserSecurityToken?> GetLatestSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default);
+    Task<UserSecurityToken?> GetLatestActiveSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
     void AddRefreshToken(RefreshToken refreshToken);
     void AddSecurityToken(UserSecurityToken securityToken);

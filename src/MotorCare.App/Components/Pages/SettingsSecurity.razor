@@ -1,0 +1,224 @@
+@page "/settings/security"
+@inject AuthService AuthService
+
+<PageTitle>Guvenlik</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <div class="eyebrow">Ayarlar</div>
+            <h1 class="page-title">Guvenlik</h1>
+            <p class="page-description">E-posta dogrulama ve iki asamali dogrulama ayarlarinizi yonetin.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="app-btn-secondary" href="/settings">Ayarlara Don</a>
+        </div>
+    </section>
+
+    @if (_isLoading)
+    {
+        <section class="app-card">
+            <div class="state-loading">Guvenlik durumu yukleniyor...</div>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <section class="app-card">
+            <div class="alert alert-danger">@_loadError</div>
+        </section>
+    }
+    else if (_status is not null)
+    {
+        <section class="admin-grid">
+            <article class="app-card admin-card">
+                <div class="admin-card-top">
+                    <div>
+                        <div class="section-title">E-posta Dogrulamasi</div>
+                        <div class="section-subtitle">@_status.Email</div>
+                    </div>
+                    <span class="status-badge @(_status.IsEmailVerified ? "badge-open" : "badge-progress")">
+                        @(_status.IsEmailVerified ? "Dogrulandi" : "Bekliyor")
+                    </span>
+                </div>
+                <p class="admin-card-copy">
+                    @(_status.IsEmailVerified
+                        ? "Bu hesap e-posta dogrulamasini tamamladi."
+                        : "Bu hesap henuz e-posta dogrulamasini tamamlamadi.")
+                </p>
+            </article>
+
+            <article class="app-card admin-card">
+                <div class="admin-card-top">
+                    <div>
+                        <div class="section-title">Iki Asamali Dogrulama</div>
+                        <div class="section-subtitle">Saglayici: @(_status.TwoFactorProvider ?? "Email")</div>
+                    </div>
+                    <span class="status-badge @(_status.TwoFactorEnabled ? "badge-open" : "badge-progress")">
+                        @(_status.TwoFactorEnabled ? "Etkin" : "Pasif")
+                    </span>
+                </div>
+
+                <p class="admin-card-copy">
+                    @(_status.TwoFactorEnabled
+                        ? "Giris sirasinda e-posta adresinize tek kullanimlik kod gonderilir."
+                        : "2FA etkinlestirildiginde giris sirasinda e-posta kodu istenir.")
+                </p>
+
+                @if (!string.IsNullOrWhiteSpace(_message))
+                {
+                    <div class="alert alert-success mt-3">@_message</div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger mt-3">@_error</div>
+                }
+
+                @if (_awaitingCode)
+                {
+                    <EditForm Model="_codeModel" OnValidSubmit="ConfirmCodeAsync">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-grid auth-form-grid mt-3">
+                            <div class="full-span">
+                                <label class="form-label">Dogrulama Kodu</label>
+                                <InputText class="form-control" @bind-Value="_codeModel.Code" autocomplete="one-time-code" />
+                            </div>
+                        </div>
+
+                        <div class="admin-card-actions">
+                            <button type="submit" class="app-btn-primary" disabled="@_isSubmitting">
+                                @(_isSubmitting ? "Dogrulaniyor..." : (_pendingAction == "enable" ? "2FA'yi Etkinlestir" : "2FA'yi Devre Disi Birak"))
+                            </button>
+                            <button type="button" class="app-btn-secondary" @onclick="CancelPendingAsync" disabled="@_isSubmitting">Vazgec</button>
+                        </div>
+                    </EditForm>
+                }
+                else
+                {
+                    <div class="admin-card-actions">
+                        @if (_status.TwoFactorEnabled)
+                        {
+                            <button type="button" class="app-btn-primary" @onclick="SendDisableCodeAsync" disabled="@_isSubmitting">2FA'yi Devre Disi Birak</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="app-btn-primary" @onclick="SendEnableCodeAsync" disabled="@_isSubmitting">2FA'yi Etkinlestir</button>
+                        }
+                    </div>
+                }
+            </article>
+        </section>
+    }
+</div>
+
+@code {
+    private SecurityStatusResponse? _status;
+    private readonly TwoFactorManagementCodeRequest _codeModel = new();
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool _awaitingCode;
+    private string? _pendingAction;
+    private string? _message;
+    private string? _error;
+    private string? _loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatusAsync();
+    }
+
+    private async Task LoadStatusAsync()
+    {
+        _isLoading = true;
+        _loadError = null;
+
+        try
+        {
+            _status = await AuthService.GetSecurityStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            _loadError = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SendEnableCodeAsync()
+    {
+        await BeginCodeFlowAsync("enable", () => AuthService.SendEnableTwoFactorCodeAsync());
+    }
+
+    private async Task SendDisableCodeAsync()
+    {
+        await BeginCodeFlowAsync("disable", () => AuthService.SendDisableTwoFactorCodeAsync());
+    }
+
+    private async Task BeginCodeFlowAsync(string action, Func<Task<AuthActionResponse?>> sender)
+    {
+        _isSubmitting = true;
+        _message = null;
+        _error = null;
+
+        try
+        {
+            var response = await sender();
+            _pendingAction = action;
+            _awaitingCode = true;
+            _codeModel.Code = string.Empty;
+            _message = response?.Message ?? "Dogrulama kodu gonderildi.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ConfirmCodeAsync()
+    {
+        _isSubmitting = true;
+        _message = null;
+        _error = null;
+
+        try
+        {
+            AuthActionResponse? response = _pendingAction switch
+            {
+                "enable" => await AuthService.ConfirmEnableTwoFactorAsync(_codeModel),
+                "disable" => await AuthService.ConfirmDisableTwoFactorAsync(_codeModel),
+                _ => null
+            };
+
+            _message = response?.Message ?? "Islem tamamlandi.";
+            _awaitingCode = false;
+            _pendingAction = null;
+            _codeModel.Code = string.Empty;
+            await LoadStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private Task CancelPendingAsync()
+    {
+        _awaitingCode = false;
+        _pendingAction = null;
+        _codeModel.Code = string.Empty;
+        _message = null;
+        _error = null;
+        return Task.CompletedTask;
+    }
+}

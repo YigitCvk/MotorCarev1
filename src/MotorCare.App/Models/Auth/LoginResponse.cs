@@ -12,4 +12,5 @@ public sealed class LoginResponse
     public bool RequiresTwoFactor { get; set; }
     public string? TwoFactorToken { get; set; }
     public DateTimeOffset? TwoFactorExpiresAtUtc { get; set; }
+    public string? TwoFactorProvider { get; set; }
 }

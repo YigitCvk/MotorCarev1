@@ -195,7 +195,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             user.Role.ToString(),
             true,
             ticket,
-            challengeExpiresAt);
+            challengeExpiresAt,
+            TwoFactorProvider.Email.ToString());
     }
 
     internal static string HashToken(string token)

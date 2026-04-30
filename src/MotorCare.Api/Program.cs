@@ -110,8 +110,6 @@ try
         .SetApplicationName("MotorCare.Api")
         .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 
-    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-    builder.Services.AddProblemDetails();
     builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
 
     builder.Services.AddCarter();
@@ -212,7 +210,7 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseExceptionHandler();
+    app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseHttpsRedirection();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
@@ -223,7 +221,7 @@ try
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
         options.GetLevel = static (ctx, elapsed, ex) =>
-            ex is not null || ctx.Response.StatusCode >= 500
+            ctx.Response.StatusCode >= 500
                 ? LogEventLevel.Error
                 : ctx.Response.StatusCode >= 400
                     ? LogEventLevel.Warning

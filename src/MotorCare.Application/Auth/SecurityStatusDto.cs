@@ -1,12 +1,7 @@
 namespace MotorCare.Application.Auth;
 
-public sealed record CurrentUserDto(
-    Guid UserId,
-    string TenantId,
-    string TenantIdentifier,
-    string FullName,
+public sealed record SecurityStatusDto(
     string Email,
-    string Role,
     bool IsEmailVerified,
     bool TwoFactorEnabled,
     string? TwoFactorProvider);

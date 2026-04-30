@@ -6,13 +6,18 @@ using MotorCare.Application.Auth;
 using MotorCare.Application.Auth.Commands.ForgotPassword;
 using MotorCare.Application.Auth.Commands.Login;
 using MotorCare.Application.Auth.Commands.Logout;
+using MotorCare.Application.Auth.Commands.ConfirmDisableTwoFactorEmail;
+using MotorCare.Application.Auth.Commands.ConfirmEnableTwoFactorEmail;
 using MotorCare.Application.Auth.Commands.RefreshToken;
 using MotorCare.Application.Auth.Commands.ResendEmailVerification;
 using MotorCare.Application.Auth.Commands.ResendTwoFactorEmail;
 using MotorCare.Application.Auth.Commands.ResetPassword;
+using MotorCare.Application.Auth.Commands.SendDisableTwoFactorEmailCode;
+using MotorCare.Application.Auth.Commands.SendEnableTwoFactorEmailCode;
 using MotorCare.Application.Auth.Commands.VerifyEmail;
 using MotorCare.Application.Auth.Commands.VerifyTwoFactorEmail;
 using MotorCare.Application.Auth.Queries.GetCurrentUser;
+using MotorCare.Application.Auth.Queries.GetSecurityStatus;
 using MotorCare.Application.Tenants.Commands.CreateTenantWithOwner;
 
 namespace MotorCare.Api.Modules;
@@ -110,6 +115,60 @@ public sealed class AuthModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("ResendTwoFactorEmail")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/security-status", [Authorize] async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetSecurityStatusQuery(), ct);
+            return Results.Ok(result);
+        })
+        .WithName("GetSecurityStatus")
+        .RequireAuthorization()
+        .Produces<SecurityStatusDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        group.MapPost("/2fa/enable/send-code", [Authorize] async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new SendEnableTwoFactorEmailCodeCommand(), ct);
+            return Results.Ok(result);
+        })
+        .WithName("SendEnableTwoFactorEmailCode")
+        .RequireAuthorization()
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/2fa/enable/confirm", [Authorize] async (ConfirmEnableTwoFactorEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ConfirmEnableTwoFactorEmail")
+        .RequireAuthorization()
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/2fa/disable/send-code", [Authorize] async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new SendDisableTwoFactorEmailCodeCommand(), ct);
+            return Results.Ok(result);
+        })
+        .WithName("SendDisableTwoFactorEmailCode")
+        .RequireAuthorization()
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/2fa/disable/confirm", [Authorize] async (ConfirmDisableTwoFactorEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ConfirmDisableTwoFactorEmail")
+        .RequireAuthorization()
         .Produces<AuthActionMessageDto>()
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
