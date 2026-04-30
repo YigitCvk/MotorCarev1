@@ -1,10 +1,13 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace MotorCare.Infrastructure.Migrations
 {
+    [DbContext(typeof(Persistence.ApplicationDbContext))]
+    [Migration("20260430003000_AddMotorcycleModelCatalogItems")]
     public partial class AddMotorcycleModelCatalogItems : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
