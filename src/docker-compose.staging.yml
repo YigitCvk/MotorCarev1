@@ -44,7 +44,18 @@ services:
       Elastic__Password: ${ELASTIC_PASSWORD:-}
       Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-staging-{0:yyyy.MM}}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
-      Email__LogEmailBodyInDevelopment: ${EMAIL_LOG_BODY_IN_DEVELOPMENT:-true}
+      Email__Provider: ${Email__Provider:-Smtp}
+      Email__FromEmail: ${Email__FromEmail:-no-reply@bakimsuite.com}
+      Email__FromName: ${Email__FromName:-BakimSuite}
+      Email__SmtpHost: ${Email__SmtpHost:-}
+      Email__SmtpPort: ${Email__SmtpPort:-587}
+      Email__SmtpUsername: ${Email__SmtpUsername:-}
+      Email__SmtpPassword: ${Email__SmtpPassword:-}
+      Email__EnableSsl: ${Email__EnableSsl:-true}
+      Email__UseDefaultCredentials: ${Email__UseDefaultCredentials:-false}
+      Email__AppBaseUrl: ${Email__AppBaseUrl:-https://staging.bakimsuite.com}
+      Email__SendEmails: ${Email__SendEmails:-true}
+      Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection
     ports:
@@ -108,7 +119,7 @@ services:
       Elastic__Username: ${ELASTIC_USERNAME:-}
       Elastic__Password: ${ELASTIC_PASSWORD:-}
       DataProtection__KeysPath: /tmp/dataprotection
-      Email__LogEmailBodyInDevelopment: ${EMAIL_LOG_BODY_IN_DEVELOPMENT:-true}
+      Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     depends_on:
       postgres:
         condition: service_healthy
