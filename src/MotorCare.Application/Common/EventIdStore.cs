@@ -17,6 +17,7 @@ public static class EventIdStore
         public static readonly EventId ValidationFailed    = new(1003, nameof(ValidationFailed));
         public static readonly EventId AuthRecoverySkippedDueToDisposedCircuit = new(1004, nameof(AuthRecoverySkippedDueToDisposedCircuit));
         public static readonly EventId NavigationSkippedDueToDisconnectedCircuit = new(1005, nameof(NavigationSkippedDueToDisconnectedCircuit));
+        public static readonly EventId ExpectedRequestFailure = new(1006, nameof(ExpectedRequestFailure));
     }
 
     // ── Auth  1100-1199 ─────────────────────────────────────────────────────

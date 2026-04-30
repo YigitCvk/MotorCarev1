@@ -43,9 +43,12 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
             sw.Stop();
 
             var logLevel = ExpectedExceptionClassifier.GetLogLevel(ex);
-            var eventId = ex is AppValidationException
-                ? EventIdStore.Common.ValidationFailed
-                : EventIdStore.Common.UnhandledException;
+            var eventId = ex switch
+            {
+                AppValidationException => EventIdStore.Common.ValidationFailed,
+                _ when ExpectedExceptionClassifier.IsExpected(ex) => EventIdStore.Common.ExpectedRequestFailure,
+                _ => EventIdStore.Common.UnhandledException
+            };
 
             _logger.Log(
                 logLevel,

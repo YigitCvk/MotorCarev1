@@ -35,9 +35,12 @@ public sealed class GlobalExceptionMiddleware
     {
         var (statusCode, title, detail, errors) = MapException(exception, _environment.IsDevelopment());
         var logLevel = ExpectedExceptionClassifier.GetLogLevel(exception);
-        var eventId = exception is AppValidationException
-            ? EventIdStore.Common.ValidationFailed
-            : EventIdStore.Common.UnhandledException;
+        var eventId = exception switch
+        {
+            AppValidationException => EventIdStore.Common.ValidationFailed,
+            _ when ExpectedExceptionClassifier.IsExpected(exception) => EventIdStore.Common.ExpectedRequestFailure,
+            _ => EventIdStore.Common.UnhandledException
+        };
 
         _logger.Log(
             logLevel,

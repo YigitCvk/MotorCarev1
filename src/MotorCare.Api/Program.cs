@@ -210,13 +210,6 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseMiddleware<GlobalExceptionMiddleware>();
-    app.UseHttpsRedirection();
-
-    app.UseMiddleware<CorrelationIdMiddleware>();
-    app.UseAuthentication();
-    app.UseMiddleware<UserContextLoggingMiddleware>();
-
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
@@ -235,6 +228,13 @@ try
             diag.Set("CorrelationId", ctx.Response.Headers["X-Correlation-Id"].ToString());
         };
     });
+
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseHttpsRedirection();
+
+    app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseAuthentication();
+    app.UseMiddleware<UserContextLoggingMiddleware>();
 
     app.UseMiddleware<ActiveTenantUserGuardMiddleware>();
     app.UseAuthorization();
