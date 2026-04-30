@@ -1,4 +1,5 @@
 @page "/vehicles/create"
+@implements IDisposable
 @inject AuthService AuthService
 @inject VehiclesService VehiclesService
 @inject CustomersService CustomersService
@@ -27,16 +28,88 @@
             <div class="section-title">Araç Bilgileri</div>
             <div class="form-grid mt-3">
                 <div>
+                    <label class="form-label">Araç Tipi</label>
+                    <select class="form-control" value="@_selectedVehicleKind" @onchange="OnVehicleKindChanged">
+                        <option value="@VehicleCreateKind.Automobile">Otomobil / Genel</option>
+                        <option value="@VehicleCreateKind.Motorcycle">Motosiklet</option>
+                    </select>
+                </div>
+                <div>
                     <label class="form-label">Plaka *</label>
                     <InputText class="form-control" @bind-Value="_form.Plate" placeholder="34ABC123" />
                 </div>
                 <div>
                     <label class="form-label">Marka *</label>
-                    <InputText class="form-control" @bind-Value="_form.Brand" placeholder="Toyota" />
+                    <input class="form-control"
+                           value="@_brandSearchText"
+                           @oninput="OnBrandInputChanged"
+                           placeholder="Honda"
+                           autocomplete="off" />
+                    @if (IsMotorcycleMode)
+                    {
+                        <div class="catalog-helper-text">En az 2 karakter yazın. Sonuç bulunamazsa manuel giriş yapabilirsiniz.</div>
+                        @if (_isBrandLoading || _brandSuggestions.Count > 0 || !string.IsNullOrWhiteSpace(_brandSuggestionMessage))
+                        {
+                            <div class="catalog-suggestion-panel">
+                                @if (_isBrandLoading)
+                                {
+                                    <div class="catalog-suggestion-state">Marka önerileri yükleniyor...</div>
+                                }
+                                else if (_brandSuggestions.Count > 0)
+                                {
+                                    @foreach (var brand in _brandSuggestions)
+                                    {
+                                        <button type="button" class="catalog-suggestion-item" @onclick="() => SelectBrandSuggestion(brand)">
+                                            @brand
+                                        </button>
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(_brandSuggestionMessage))
+                                {
+                                    <div class="catalog-suggestion-state">@_brandSuggestionMessage</div>
+                                }
+                            </div>
+                        }
+                    }
                 </div>
                 <div>
                     <label class="form-label">Model *</label>
-                    <InputText class="form-control" @bind-Value="_form.Model" placeholder="Corolla" />
+                    <input class="form-control"
+                           value="@_modelSearchText"
+                           @oninput="OnModelInputChanged"
+                           placeholder="CB750 Hornet"
+                           autocomplete="off"
+                           disabled="@IsModelInputDisabled" />
+                    @if (IsMotorcycleMode)
+                    {
+                        <div class="catalog-helper-text">Marka seçildikten sonra modele göre öneri alınır.</div>
+                        @if (_isModelLoading || _modelSuggestions.Count > 0 || !string.IsNullOrWhiteSpace(_modelSuggestionMessage))
+                        {
+                            <div class="catalog-suggestion-panel">
+                                @if (_isModelLoading)
+                                {
+                                    <div class="catalog-suggestion-state">Model önerileri yükleniyor...</div>
+                                }
+                                else if (_modelSuggestions.Count > 0)
+                                {
+                                    @foreach (var model in _modelSuggestions)
+                                    {
+                                        <button type="button" class="catalog-suggestion-item" @onclick="() => SelectModelSuggestion(model)">
+                                            <span>@model.DisplayName</span>
+                                            @if (!string.IsNullOrWhiteSpace(model.Segment) || model.EngineCc.HasValue)
+                                            {
+                                                <small>@FormatModelMeta(model)</small>
+                                            }
+                                        </button>
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(_modelSuggestionMessage))
+                                {
+                                    <div class="catalog-suggestion-state">@_modelSuggestionMessage</div>
+                                }
+                            </div>
+                        }
+                    }
                 </div>
                 <div>
                     <label class="form-label">Yıl *</label>
@@ -78,10 +151,27 @@
     private CustomerLookupResponse? _selectedCustomer;
     private string? _error;
     private bool _isSaving;
+    private VehicleCreateKind _selectedVehicleKind = VehicleCreateKind.Automobile;
+    private string _brandSearchText = string.Empty;
+    private string _modelSearchText = string.Empty;
+    private List<string> _brandSuggestions = [];
+    private List<MotorcycleCatalogSuggestionResponse> _modelSuggestions = [];
+    private bool _isBrandLoading;
+    private bool _isModelLoading;
+    private string? _brandSuggestionMessage;
+    private string? _modelSuggestionMessage;
+    private CancellationTokenSource? _brandSearchCts;
+    private CancellationTokenSource? _modelSearchCts;
+
+    private bool IsMotorcycleMode => _selectedVehicleKind == VehicleCreateKind.Motorcycle;
+    private bool IsModelInputDisabled => IsMotorcycleMode && string.IsNullOrWhiteSpace(_form.Brand);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+
+        _brandSearchText = _form.Brand;
+        _modelSearchText = _form.Model;
 
         if (!await AuthService.IsAuthenticatedAsync())
         {
@@ -96,8 +186,171 @@
                 _selectedCustomer = await CustomersService.GetByIdAsync(CustomerId.Value);
                 await InvokeAsync(StateHasChanged);
             }
-            catch { }
+            catch
+            {
+            }
         }
+    }
+
+    private Task OnVehicleKindChanged(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<VehicleCreateKind>(args.Value?.ToString(), out var kind))
+        {
+            _selectedVehicleKind = kind;
+        }
+
+        _brandSearchText = _form.Brand;
+        _modelSearchText = _form.Model;
+        ClearCatalogSearchState();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnBrandInputChanged(ChangeEventArgs args)
+    {
+        _brandSearchText = args.Value?.ToString() ?? string.Empty;
+        _form.Brand = _brandSearchText.Trim();
+        _brandSuggestionMessage = null;
+        _brandSuggestions.Clear();
+
+        if (!IsMotorcycleMode)
+        {
+            return;
+        }
+
+        _modelSuggestions.Clear();
+        _modelSuggestionMessage = string.IsNullOrWhiteSpace(_form.Brand) ? "Önce marka girin veya seçin." : null;
+
+        await DebouncedBrandSearchAsync(_brandSearchText);
+    }
+
+    private async Task OnModelInputChanged(ChangeEventArgs args)
+    {
+        _modelSearchText = args.Value?.ToString() ?? string.Empty;
+        _form.Model = _modelSearchText.Trim();
+        _modelSuggestionMessage = null;
+        _modelSuggestions.Clear();
+
+        if (!IsMotorcycleMode)
+        {
+            return;
+        }
+
+        await DebouncedModelSearchAsync(_modelSearchText);
+    }
+
+    private void SelectBrandSuggestion(string brand)
+    {
+        _form.Brand = brand;
+        _brandSearchText = brand;
+        _brandSuggestions.Clear();
+        _brandSuggestionMessage = null;
+    }
+
+    private void SelectModelSuggestion(MotorcycleCatalogSuggestionResponse item)
+    {
+        _form.Brand = item.Brand;
+        _brandSearchText = item.Brand;
+        _form.Model = item.Model;
+        _modelSearchText = item.Model;
+        _modelSuggestions.Clear();
+        _modelSuggestionMessage = null;
+    }
+
+    private async Task DebouncedBrandSearchAsync(string search)
+    {
+        _brandSearchCts?.Cancel();
+        _brandSearchCts?.Dispose();
+        _brandSearchCts = new CancellationTokenSource();
+        var token = _brandSearchCts.Token;
+
+        if (search.Trim().Length < 2)
+        {
+            _isBrandLoading = false;
+            _brandSuggestionMessage = "En az 2 karakter yazın.";
+            return;
+        }
+
+        try
+        {
+            _isBrandLoading = true;
+            await Task.Delay(300, token);
+
+            var brands = await VehiclesService.SearchMotorcycleBrandsAsync(search.Trim(), token) ?? [];
+            _brandSuggestions = brands.ToList();
+            _brandSuggestionMessage = _brandSuggestions.Count == 0
+                ? "Sonuç bulunamadı, manuel giriş yapabilirsiniz."
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+            _brandSuggestions.Clear();
+            _brandSuggestionMessage = "Marka önerileri alınamadı, manuel giriş yapabilirsiniz.";
+        }
+        finally
+        {
+            _isBrandLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DebouncedModelSearchAsync(string search)
+    {
+        _modelSearchCts?.Cancel();
+        _modelSearchCts?.Dispose();
+        _modelSearchCts = new CancellationTokenSource();
+        var token = _modelSearchCts.Token;
+
+        if (string.IsNullOrWhiteSpace(_form.Brand))
+        {
+            _isModelLoading = false;
+            _modelSuggestionMessage = "Önce marka girin veya seçin.";
+            return;
+        }
+
+        if (search.Trim().Length < 2)
+        {
+            _isModelLoading = false;
+            _modelSuggestionMessage = "En az 2 karakter yazın.";
+            return;
+        }
+
+        try
+        {
+            _isModelLoading = true;
+            await Task.Delay(300, token);
+
+            var models = await VehiclesService.SearchMotorcycleModelsAsync(_form.Brand, search.Trim(), token) ?? [];
+            _modelSuggestions = models.ToList();
+            _modelSuggestionMessage = _modelSuggestions.Count == 0
+                ? "Sonuç bulunamadı, manuel giriş yapabilirsiniz."
+                : null;
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+            _modelSuggestions.Clear();
+            _modelSuggestionMessage = "Model önerileri alınamadı, manuel giriş yapabilirsiniz.";
+        }
+        finally
+        {
+            _isModelLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ClearCatalogSearchState()
+    {
+        _brandSuggestions.Clear();
+        _modelSuggestions.Clear();
+        _brandSuggestionMessage = null;
+        _modelSuggestionMessage = null;
+        _isBrandLoading = false;
+        _isModelLoading = false;
     }
 
     private async Task SaveAsync()
@@ -106,6 +359,8 @@
         {
             _isSaving = true;
             _error = null;
+            _form.Brand = _form.Brand.Trim();
+            _form.Model = _form.Model.Trim();
 
             if (string.IsNullOrWhiteSpace(_form.Plate))
             {
@@ -143,5 +398,36 @@
         {
             _isSaving = false;
         }
+    }
+
+    private static string FormatModelMeta(MotorcycleCatalogSuggestionResponse item)
+    {
+        var meta = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(item.Segment))
+        {
+            meta.Add(item.Segment);
+        }
+
+        if (item.EngineCc.HasValue && item.EngineCc.Value > 0)
+        {
+            meta.Add($"{item.EngineCc} cc");
+        }
+
+        return string.Join(" · ", meta);
+    }
+
+    public void Dispose()
+    {
+        _brandSearchCts?.Cancel();
+        _brandSearchCts?.Dispose();
+        _modelSearchCts?.Cancel();
+        _modelSearchCts?.Dispose();
+    }
+
+    private enum VehicleCreateKind
+    {
+        Automobile,
+        Motorcycle
     }
 }

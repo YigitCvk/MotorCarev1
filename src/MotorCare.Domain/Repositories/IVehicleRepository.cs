@@ -12,3 +12,10 @@ public interface IVehicleRepository
     void Update(Vehicle vehicle);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+
+public interface IMotorcycleModelCatalogRepository
+{
+    Task<IReadOnlyList<string>> SearchBrandsAsync(string? search, int maxResults, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MotorcycleModelCatalogItem>> SearchModelsAsync(string brand, string? search, int maxResults, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MotorcycleModelCatalogItem>> SearchAsync(string? query, int maxResults, CancellationToken cancellationToken = default);
+}

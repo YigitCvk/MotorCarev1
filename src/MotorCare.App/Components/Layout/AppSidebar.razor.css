@@ -1,35 +1,37 @@
 .app-sidebar {
-  width: 264px;
+  width: 272px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 22px 16px 18px;
+  padding: 24px 16px 18px;
   background:
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 18rem),
-    linear-gradient(180deg, #081225 0%, #09162d 100%);
+    radial-gradient(circle at top, rgba(79, 140, 255, 0.18), transparent 18rem),
+    linear-gradient(180deg, #081224 0%, #0b1730 100%);
   color: #fff;
   position: sticky;
   top: 0;
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 .app-sidebar__brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 8px 18px;
-  margin-bottom: 14px;
+  padding: 8px 10px 20px;
+  margin-bottom: 10px;
 }
 
 .app-sidebar__brand-mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #f97316, #facc15);
-  color: #111827;
+  background: linear-gradient(145deg, #f59e0b, #facc15);
+  color: #101828;
   font-weight: 900;
-  box-shadow: 0 14px 34px rgba(249, 115, 22, 0.32);
+  box-shadow: 0 18px 36px rgba(245, 158, 11, 0.28);
 }
 
 .app-sidebar__brand-copy {
@@ -38,16 +40,16 @@
 
 .app-sidebar__brand-title {
   color: #f8fafc;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .app-sidebar__brand-subtitle {
   margin-top: 2px;
-  color: rgba(226, 232, 240, 0.68);
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
+  color: rgba(148, 163, 184, 0.84);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -55,21 +57,21 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .app-sidebar__group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .app-sidebar__group-label {
-  padding: 0 10px 6px;
-  color: rgba(148, 163, 184, 0.9);
+  padding: 0 12px 6px;
+  color: rgba(148, 163, 184, 0.88);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -77,40 +79,41 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 46px;
-  padding: 11px 12px;
-  border-radius: 14px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 16px;
   border: 1px solid transparent;
-  color: rgba(226, 232, 240, 0.78);
+  color: rgba(226, 232, 240, 0.76);
   text-decoration: none;
   font-size: 0.93rem;
   font-weight: 600;
+  background: transparent;
   transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .app-sidebar__link:hover {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.14);
   color: #fff;
   transform: translateX(1px);
 }
 
 .app-sidebar__link.active {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(56, 189, 248, 0.12));
-  border-color: rgba(251, 146, 60, 0.24);
-  color: #fff7ed;
-  box-shadow: inset 3px 0 0 #f97316, 0 10px 24px rgba(15, 23, 42, 0.22);
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.22), rgba(18, 35, 68, 0.92));
+  border-color: rgba(110, 168, 254, 0.34);
+  color: #f5f7fb;
+  box-shadow: inset 3px 0 0 #6ea8fe, 0 12px 28px rgba(8, 18, 36, 0.32);
 }
 
 .app-sidebar .icon {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
 }
 
 .app-sidebar__footer {
-  margin-top: 18px;
-  padding: 16px 10px 6px;
+  margin-top: 20px;
+  padding: 18px 12px 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 

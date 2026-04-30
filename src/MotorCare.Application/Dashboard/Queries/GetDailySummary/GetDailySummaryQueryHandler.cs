@@ -5,6 +5,7 @@ using MotorCare.Application.Common;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
+using MotorCare.Domain.ServiceOrders;
 
 namespace MotorCare.Application.Dashboard.Queries.GetDailySummary;
 
@@ -39,7 +40,9 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var (todayStart, todayEnd) = GetIstanbulDayRange();
-        var summary = await _serviceOrders.GetDailySummaryAsync(tenantId, cancellationToken);
+        var partialFallbackApplied = false;
+        var summary = await TryGetDailySummaryAsync(tenantId, cancellationToken);
+        partialFallbackApplied |= summary.IsFallback;
         var todayAppointments = await _appointments.GetFilteredAsync(
             tenantId,
             todayStart,
@@ -48,16 +51,8 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
             null,
             null,
             cancellationToken);
-        var (recentOrders, _) = await _serviceOrders.GetFilteredPagedAsync(
-            tenantId,
-            null,
-            null,
-            null,
-            null,
-            null,
-            1,
-            5,
-            cancellationToken);
+        var recentOrders = await TryGetRecentDashboardOrdersAsync(tenantId, cancellationToken);
+        partialFallbackApplied |= recentOrders.IsFallback;
 
         var appointmentItems = todayAppointments
             .OrderBy(x => x.StartAt)
@@ -78,7 +73,7 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
         var vehicleCache = new Dictionary<Guid, string?>();
         var recentOrderItems = new List<DashboardServiceOrderItemDto>();
 
-        foreach (var order in recentOrders.OrderByDescending(x => x.OpenedAt))
+        foreach (var order in recentOrders.Items.OrderByDescending(x => x.OpenedAt))
         {
             string? customerName = null;
             if (!customerCache.TryGetValue(order.CustomerId, out customerName))
@@ -107,23 +102,71 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
 
         var result = new DailySummaryDto(
             appointmentItems.Count,
-            summary.ActiveServiceOrders,
-            summary.CompletedServiceOrdersToday,
-            summary.DeliveryWaitingCount,
-            summary.TotalPaymentsToday,
-            summary.TotalPaymentsToday,
-            summary.PendingAmount,
+            summary.Data.ActiveServiceOrders,
+            summary.Data.CompletedServiceOrdersToday,
+            summary.Data.DeliveryWaitingCount,
+            summary.Data.TotalRevenueToday,
+            summary.Data.TotalPaymentsToday,
+            summary.Data.PendingAmount,
             appointmentItems,
             recentOrderItems);
+
+        if (partialFallbackApplied)
+        {
+            _logger.LogWarning(
+                EventIdStore.Dashboard.PartialFallbackApplied,
+                "Dashboard partial fallback applied for TenantId={TenantId}. Appointments={AppointmentCount} RecentOrders={RecentOrderCount}",
+                tenantId,
+                appointmentItems.Count,
+                recentOrderItems.Count);
+        }
 
         _logger.LogInformation(
             EventIdStore.Dashboard.DailySummaryFetched,
             "Daily summary fetched. ActiveOrders={ActiveOrders} TodayAppointments={TodayAppointments} TotalPaymentsToday={TotalPaymentsToday}",
-            summary.ActiveServiceOrders,
+            summary.Data.ActiveServiceOrders,
             appointmentItems.Count,
-            summary.TotalPaymentsToday);
+            summary.Data.TotalPaymentsToday);
 
         return result;
+    }
+
+    private async Task<(ServiceOrderDailySummary Data, bool IsFallback)> TryGetDailySummaryAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var summary = await _serviceOrders.GetDailySummaryAsync(tenantId, cancellationToken);
+            return (summary, false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                EventIdStore.Dashboard.SummaryDataSourceFailed,
+                ex,
+                "Dashboard summary source failed for TenantId={TenantId}. Falling back to zero summary values.",
+                tenantId);
+
+            return (new ServiceOrderDailySummary(0, 0, 0, 0, 0m, 0m, 0m), true);
+        }
+    }
+
+    private async Task<(List<ServiceOrderDashboardSnapshot> Items, bool IsFallback)> TryGetRecentDashboardOrdersAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var items = await _serviceOrders.GetRecentDashboardOrdersAsync(tenantId, 5, cancellationToken);
+            return (items, false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                EventIdStore.Dashboard.RecentOrdersDataSourceFailed,
+                ex,
+                "Dashboard recent service orders source failed for TenantId={TenantId}. Falling back to empty recent orders.",
+                tenantId);
+
+            return ([], true);
+        }
     }
 
     private static (DateTimeOffset Start, DateTimeOffset End) GetIstanbulDayRange()

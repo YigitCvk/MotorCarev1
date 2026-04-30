@@ -45,6 +45,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<MotorcycleModelCatalogItem> MotorcycleModelCatalogItems => Set<MotorcycleModelCatalogItem>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
     public DbSet<ConsumableCatalogItem> ConsumableCatalogItems => Set<ConsumableCatalogItem>();
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();

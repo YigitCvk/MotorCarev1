@@ -45,6 +45,11 @@ public static class EventIdStore
         public static readonly EventId VehicleUpdated       = new(1301, nameof(VehicleUpdated));
         public static readonly EventId VehicleFetched       = new(1302, nameof(VehicleFetched));
         public static readonly EventId VehicleLookupByPlate = new(1303, nameof(VehicleLookupByPlate));
+        public static readonly EventId MotorcycleCatalogBrandSearch = new(1304, nameof(MotorcycleCatalogBrandSearch));
+        public static readonly EventId MotorcycleCatalogModelSearch = new(1305, nameof(MotorcycleCatalogModelSearch));
+        public static readonly EventId MotorcycleCatalogSeeded = new(1306, nameof(MotorcycleCatalogSeeded));
+        public static readonly EventId MotorcycleCatalogDuplicateSkipped = new(1307, nameof(MotorcycleCatalogDuplicateSkipped));
+        public static readonly EventId MotorcycleCatalogSearchError = new(1308, nameof(MotorcycleCatalogSearchError));
     }
 
     // ── Appointment  1400-1499 ──────────────────────────────────────────────
@@ -131,5 +136,8 @@ public static class EventIdStore
     public static class Dashboard
     {
         public static readonly EventId DailySummaryFetched = new(1900, nameof(DailySummaryFetched));
+        public static readonly EventId SummaryDataSourceFailed = new(1901, nameof(SummaryDataSourceFailed));
+        public static readonly EventId RecentOrdersDataSourceFailed = new(1902, nameof(RecentOrdersDataSourceFailed));
+        public static readonly EventId PartialFallbackApplied = new(1903, nameof(PartialFallbackApplied));
     }
 }

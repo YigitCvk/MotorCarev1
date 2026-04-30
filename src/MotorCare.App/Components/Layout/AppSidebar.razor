@@ -1,3 +1,7 @@
+@using Microsoft.Extensions.Options
+@using MotorCare.App.Configuration
+@inject IOptions<BuildInfoOptions> BuildInfo
+
 <aside class="app-sidebar">
     <div class="app-sidebar__brand">
         <div class="app-sidebar__brand-mark">BS</div>
@@ -120,6 +124,41 @@
 
     <div class="app-sidebar__footer">
         <div class="app-sidebar__footer-label">Release</div>
-        <div class="app-sidebar__footer-value">v0.2 · Sprint 2</div>
+        <div class="app-sidebar__footer-value">@FooterVersionText</div>
     </div>
 </aside>
+
+@code {
+    private string FooterVersionText
+    {
+        get
+        {
+            var options = BuildInfo.Value;
+            var releaseParts = new[] { NormalizeReleasePart(options.Version), NormalizeReleasePart(options.Sprint) }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var releaseLabel = string.Join(" · ", releaseParts);
+            var commit = NormalizeCommit(options.CommitSha);
+            var environment = NormalizeReleasePart(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+
+            if (commit == "unknown")
+            {
+                return releaseLabel;
+            }
+
+            if (string.IsNullOrWhiteSpace(environment))
+            {
+                return $"{releaseLabel} · {commit}";
+            }
+
+            return $"{environment} · {commit} · {releaseLabel}";
+        }
+    }
+
+    private static string? NormalizeReleasePart(string? value)
+        => string.IsNullOrWhiteSpace(value) || string.Equals(value, "unknown", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : value.Trim();
+
+    private static string NormalizeCommit(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "unknown" : value.Trim();
+}

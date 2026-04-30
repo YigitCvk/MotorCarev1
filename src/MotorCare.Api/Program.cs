@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
+using MotorCare.Api.Configuration;
 using MotorCare.Api.Logging;
 using MotorCare.Api.Middleware;
 using MotorCare.Api.Swagger;
 using MotorCare.Application;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
+using MotorCare.Infrastructure.Persistence.Seed;
 using MotorCare.Infrastructure.Security;
 using Serilog;
 using Serilog.Events;
@@ -30,6 +32,12 @@ try
     Log.Information("Starting MotorCare API");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        [$"{BuildInfoOptions.SectionName}:CommitSha"] = Environment.GetEnvironmentVariable("MOTORCARE_COMMIT_SHA") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:CommitSha"],
+        [$"{BuildInfoOptions.SectionName}:BuildTime"] = Environment.GetEnvironmentVariable("MOTORCARE_BUILD_TIME") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:BuildTime"]
+    });
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
@@ -104,6 +112,7 @@ try
 
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
     builder.Services.AddProblemDetails();
+    builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
 
     builder.Services.AddCarter();
     builder.Services.AddEndpointsApiExplorer();
@@ -187,6 +196,12 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<MotorcycleModelCatalogSeeder>();
+        await seeder.SeedAsync();
+    }
 
     app.UseForwardedHeaders();
 

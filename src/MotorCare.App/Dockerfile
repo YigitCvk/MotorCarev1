@@ -1,6 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+ARG MOTORCARE_COMMIT_SHA=unknown
+ARG MOTORCARE_BUILD_TIME=unknown
+
 COPY MotorCare.Domain/MotorCare.Domain.csproj MotorCare.Domain/
 COPY MotorCare.Application/MotorCare.Application.csproj MotorCare.Application/
 COPY MotorCare.App/MotorCare.App.csproj MotorCare.App/
@@ -17,6 +20,8 @@ RUN apt-get update \
 
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV DataProtection__KeysPath=/var/lib/motorcare/dataprotection
+ENV MOTORCARE_COMMIT_SHA=$MOTORCARE_COMMIT_SHA
+ENV MOTORCARE_BUILD_TIME=$MOTORCARE_BUILD_TIME
 
 COPY --from=build /app/publish ./
 

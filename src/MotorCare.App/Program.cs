@@ -1,9 +1,16 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using MotorCare.App.Configuration;
 using MotorCare.App.Components;
 using MotorCare.App.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    [$"{BuildInfoOptions.SectionName}:CommitSha"] = Environment.GetEnvironmentVariable("MOTORCARE_COMMIT_SHA") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:CommitSha"],
+    [$"{BuildInfoOptions.SectionName}:BuildTime"] = Environment.GetEnvironmentVariable("MOTORCARE_BUILD_TIME") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:BuildTime"]
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -15,6 +22,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7278";
 

@@ -237,9 +237,9 @@ else
 
             _summary = await AuthService.GetDailySummaryAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _error = ex.Message;
+            _error = "Dashboard verileri şu anda alınamıyor. Lütfen kısa süre sonra tekrar deneyin.";
         }
         finally
         {

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MotorCare.Infrastructure.Persistence;
 using MotorCare.Infrastructure.Persistence.Repositories;
+using MotorCare.Infrastructure.Persistence.Seed;
 using MotorCare.Infrastructure.Services;
 using MotorCare.Infrastructure.Security;
 using MotorCare.Infrastructure.Tenancy;
@@ -22,6 +23,8 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvider, HeaderTenantProvider>();
 
         services.AddScoped<IVehicleRepository, VehicleRepository>();
+        services.AddScoped<IMotorcycleModelCatalogRepository, MotorcycleModelCatalogRepository>();
+        services.AddScoped<MotorcycleModelCatalogSeeder>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();

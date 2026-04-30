@@ -242,6 +242,27 @@ public class ServiceOrderRepository : IServiceOrderRepository
         return (items, totalCount);
     }
 
+    public async Task<List<ServiceOrderDashboardSnapshot>> GetRecentDashboardOrdersAsync(
+        string tenantId,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ServiceOrders
+            .AsNoTracking()
+            .Where(o => o.TenantId == tenantId)
+            .OrderByDescending(o => o.OpenedAt)
+            .Select(o => new ServiceOrderDashboardSnapshot(
+                o.Id,
+                o.OrderNo,
+                o.CustomerId,
+                o.VehicleId,
+                o.Status,
+                o.OpenedAt,
+                o.GrandTotal))
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<(List<ServiceOrder> Items, int TotalCount)> GetByVehicleIdAsync(
         Guid vehicleId, string tenantId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
