@@ -6,7 +6,8 @@ public sealed record CreateTenantWithOwnerResultDto(
     Guid TenantId,
     string TenantIdentifier,
     Guid OwnerId,
-    string OwnerEmail);
+    string OwnerEmail,
+    bool VerificationEmailSent);
 
 public sealed record CreateTenantWithOwnerCommand(
     string TenantIdentifier,

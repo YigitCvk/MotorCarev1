@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MotorCare.Infrastructure.Persistence;
 using MotorCare.Infrastructure.Persistence.Repositories;
 using MotorCare.Infrastructure.Persistence.Seed;
+using MotorCare.Infrastructure.Email;
 using MotorCare.Infrastructure.Services;
 using MotorCare.Infrastructure.Security;
 using MotorCare.Infrastructure.Tenancy;
@@ -21,6 +22,7 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantProvider, HeaderTenantProvider>();
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         services.AddScoped<IVehicleRepository, VehicleRepository>();
         services.AddScoped<IMotorcycleModelCatalogRepository, MotorcycleModelCatalogRepository>();
@@ -38,6 +40,37 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<ISecurityTokenFactory, SecurityTokenFactory>();
+        services.AddScoped<IAuthLinkBuilder, AuthLinkBuilder>();
+        services.AddScoped<SmtpEmailSender>();
+        services.AddScoped<LoggingEmailSender>();
+        services.AddScoped<IEmailSender>(sp =>
+        {
+            var env = sp.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailOptions>>().Value;
+
+            if (!options.SendEmails)
+            {
+                return sp.GetRequiredService<LoggingEmailSender>();
+            }
+
+            var smtpConfigured =
+                string.Equals(options.Provider, "Smtp", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(options.SmtpHost) &&
+                !string.IsNullOrWhiteSpace(options.FromEmail);
+
+            if (smtpConfigured)
+            {
+                return sp.GetRequiredService<SmtpEmailSender>();
+            }
+
+            if (env.IsDevelopment() || env.IsStaging())
+            {
+                return sp.GetRequiredService<LoggingEmailSender>();
+            }
+
+            return sp.GetRequiredService<LoggingEmailSender>();
+        });
         services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));

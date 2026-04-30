@@ -27,6 +27,15 @@ public static class EventIdStore
         public static readonly EventId LoginFailed     = new(1102, nameof(LoginFailed));
         public static readonly EventId TokenRefreshed  = new(1103, nameof(TokenRefreshed));
         public static readonly EventId LogoutSucceeded = new(1104, nameof(LogoutSucceeded));
+        public static readonly EventId EmailVerificationSendRequested = new(1105, nameof(EmailVerificationSendRequested));
+        public static readonly EventId EmailVerificationSent = new(1106, nameof(EmailVerificationSent));
+        public static readonly EventId EmailVerificationSendFailed = new(1107, nameof(EmailVerificationSendFailed));
+        public static readonly EventId PasswordResetEmailSendRequested = new(1108, nameof(PasswordResetEmailSendRequested));
+        public static readonly EventId PasswordResetEmailSent = new(1109, nameof(PasswordResetEmailSent));
+        public static readonly EventId PasswordResetEmailSendFailed = new(1110, nameof(PasswordResetEmailSendFailed));
+        public static readonly EventId TwoFactorEmailSendRequested = new(1111, nameof(TwoFactorEmailSendRequested));
+        public static readonly EventId TwoFactorEmailSent = new(1112, nameof(TwoFactorEmailSent));
+        public static readonly EventId TwoFactorEmailSendFailed = new(1113, nameof(TwoFactorEmailSendFailed));
     }
 
     // ── Customer  1200-1299 ─────────────────────────────────────────────────

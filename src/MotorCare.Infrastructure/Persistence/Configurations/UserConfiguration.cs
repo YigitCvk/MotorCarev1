@@ -39,7 +39,25 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey("UserId")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation(u => u.RefreshTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Property(u => u.IsEmailVerified)
+            .IsRequired();
 
+        builder.Property(u => u.TwoFactorEnabled)
+            .IsRequired();
+
+        builder.Property(u => u.TwoFactorProvider)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
+        builder.Property(u => u.TotpSecretEncrypted)
+            .HasMaxLength(500);
+
+        builder.HasMany(u => u.SecurityTokens)
+            .WithOne()
+            .HasForeignKey("UserId")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(u => u.RefreshTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(u => u.SecurityTokens).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
