@@ -48,9 +48,11 @@ public static class DependencyInjection
         {
             var env = sp.GetRequiredService<Microsoft.Extensions.Hosting.IHostEnvironment>();
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("MotorCare.Infrastructure.Email");
 
             if (!options.SendEmails)
             {
+                logger.LogInformation("Email sending disabled by configuration. Falling back to logging email sender.");
                 return sp.GetRequiredService<LoggingEmailSender>();
             }
 
@@ -66,9 +68,11 @@ public static class DependencyInjection
 
             if (env.IsDevelopment() || env.IsStaging())
             {
+                logger.LogWarning("SMTP configuration is incomplete in {Environment}. Falling back to logging email sender.", env.EnvironmentName);
                 return sp.GetRequiredService<LoggingEmailSender>();
             }
 
+            logger.LogError("SMTP configuration is incomplete in {Environment}. Falling back to logging email sender.", env.EnvironmentName);
             return sp.GetRequiredService<LoggingEmailSender>();
         });
         services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();

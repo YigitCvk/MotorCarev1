@@ -6,4 +6,5 @@ public sealed class RegisterResponse
     public string TenantIdentifier { get; set; } = string.Empty;
     public Guid OwnerId { get; set; }
     public string OwnerEmail { get; set; } = string.Empty;
+    public bool VerificationEmailSent { get; set; }
 }

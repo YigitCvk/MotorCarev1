@@ -28,13 +28,55 @@ public sealed class AuthService
     public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
         var response = await _apiClient.PostAsync<LoginRequest, LoginResponse>("/api/auth/login", request, authorized: false, cancellationToken);
-        if (response is not null)
+        if (response is not null &&
+            !response.RequiresTwoFactor &&
+            !string.IsNullOrWhiteSpace(response.AccessToken) &&
+            !string.IsNullOrWhiteSpace(response.RefreshToken))
         {
             await _tokenStorageService.SetTokensAsync(response.AccessToken, response.RefreshToken);
             AuthenticationStateChanged?.Invoke();
         }
 
         return response;
+    }
+
+    public Task<AuthActionResponse?> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<ForgotPasswordRequest, AuthActionResponse>("/api/auth/forgot-password", request, authorized: false, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<ResetPasswordRequest, AuthActionResponse>("/api/auth/reset-password", request, authorized: false, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<VerifyEmailRequest, AuthActionResponse>("/api/auth/verify-email", request, authorized: false, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> ResendEmailVerificationAsync(ResendEmailVerificationRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<ResendEmailVerificationRequest, AuthActionResponse>("/api/auth/resend-email-verification", request, authorized: false, cancellationToken);
+    }
+
+    public async Task<LoginResponse?> VerifyTwoFactorAsync(VerifyTwoFactorRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await _apiClient.PostAsync<VerifyTwoFactorRequest, LoginResponse>("/api/auth/two-factor/verify", request, authorized: false, cancellationToken);
+        if (response is not null &&
+            !string.IsNullOrWhiteSpace(response.AccessToken) &&
+            !string.IsNullOrWhiteSpace(response.RefreshToken))
+        {
+            await _tokenStorageService.SetTokensAsync(response.AccessToken, response.RefreshToken);
+            AuthenticationStateChanged?.Invoke();
+        }
+
+        return response;
+    }
+
+    public Task<AuthActionResponse?> ResendTwoFactorAsync(ResendTwoFactorRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<ResendTwoFactorRequest, AuthActionResponse>("/api/auth/two-factor/resend", request, authorized: false, cancellationToken);
     }
 
     public async Task LogoutAsync(CancellationToken cancellationToken = default)

@@ -46,11 +46,11 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
         var tenant = await _tenantRepository.GetByIdentifierAsync(user.TenantId, cancellationToken)
             ?? throw new UnauthorizedAccessException("İşletme bulunamadı.");
 
-        challenge.Consume(DateTimeOffset.UtcNow);
-        otp.Consume(DateTimeOffset.UtcNow);
+        var now = DateTimeOffset.UtcNow;
+        user.ConsumeSecurityToken(ticketHash, now);
+        user.ConsumeSecurityToken(otpHash, now);
 
         var refreshToken = _refreshTokenGenerator.Generate();
-        var now = DateTimeOffset.UtcNow;
         user.MarkLogin(now);
         var refreshTokenEntity = user.AddRefreshToken(_securityTokenFactory.Hash(refreshToken), now.AddDays(7), now);
 

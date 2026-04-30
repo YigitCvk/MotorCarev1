@@ -3,9 +3,15 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using MotorCare.Api.Authorization;
 using MotorCare.Application.Auth;
+using MotorCare.Application.Auth.Commands.ForgotPassword;
 using MotorCare.Application.Auth.Commands.Login;
 using MotorCare.Application.Auth.Commands.Logout;
 using MotorCare.Application.Auth.Commands.RefreshToken;
+using MotorCare.Application.Auth.Commands.ResendEmailVerification;
+using MotorCare.Application.Auth.Commands.ResendTwoFactorEmail;
+using MotorCare.Application.Auth.Commands.ResetPassword;
+using MotorCare.Application.Auth.Commands.VerifyEmail;
+using MotorCare.Application.Auth.Commands.VerifyTwoFactorEmail;
 using MotorCare.Application.Auth.Queries.GetCurrentUser;
 using MotorCare.Application.Tenants.Commands.CreateTenantWithOwner;
 
@@ -49,6 +55,65 @@ public sealed class AuthModule : ICarterModule
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        group.MapPost("/forgot-password", async (ForgotPasswordCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ForgotPassword")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/reset-password", async (ResetPasswordCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ResetPassword")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/verify-email", async (VerifyEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("VerifyEmail")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/resend-email-verification", async (ResendEmailVerificationCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ResendEmailVerification")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/two-factor/verify", async (VerifyTwoFactorEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("VerifyTwoFactorEmail")
+        .Produces<AuthResponseDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/two-factor/resend", async (ResendTwoFactorEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ResendTwoFactorEmail")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         group.MapPost("/logout", async (LogoutCommand command, IMediator mediator, CancellationToken ct) =>
         {
             await mediator.Send(command, ct);
@@ -71,4 +136,3 @@ public sealed class AuthModule : ICarterModule
         .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
 }
-

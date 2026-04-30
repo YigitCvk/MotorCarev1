@@ -53,11 +53,14 @@ public class UserRepository : IUserRepository
 
     public async Task<UserSecurityToken?> GetActiveSecurityTokenByHashAsync(string tokenHash, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
     {
+        var now = DateTimeOffset.UtcNow;
+
         return await _context.UserSecurityTokens
             .AsTracking()
             .FirstOrDefaultAsync(
                 x => x.TokenHash == tokenHash &&
                      x.Purpose == purpose &&
+                     x.ExpiresAt > now &&
                      x.RevokedAt == null &&
                      x.ConsumedAt == null,
                 cancellationToken);
