@@ -244,7 +244,7 @@
                                 <div>
                                     <strong>@service.Name</strong>
                                     <div class="small text-muted">@service.CategoryText</div>
-                                    <div class="small text-muted">Tahmini Süre: @service.DefaultDurationMinutes dk · Varsayılan Fiyat: @service.DefaultPrice.ToString("N2") ₺</div>
+                                    <div class="small text-muted">Tahmini Süre: @service.DefaultDurationMinutes dk · Fiyat: @FormatServicePrice(service)</div>
                                 </div>
                                 <span class="type-badge">@(service.Id == _selectedService?.Id ? "Seçildi" : "Seç")</span>
                             </button>
@@ -621,6 +621,9 @@
 
         ApplyServiceDuration(service.DefaultDurationMinutes);
     }
+
+    private static string FormatServicePrice(ServiceCatalogItem service)
+        => $"{service.Price:N2} {(string.IsNullOrWhiteSpace(service.Currency) ? "TRY" : service.Currency)}";
 
     private Task RecalculateEndTimeFromServiceAsync()
     {

@@ -17,17 +17,27 @@ internal static class EmailTemplateFactory
             verificationUrl,
             "Bu işlemi siz başlatmadıysanız bu e-postayı yok sayabilirsiniz.");
 
-    public static EmailMessage CreatePasswordResetEmail(string toEmail, string displayName, string resetUrl)
-        => CreateMessage(
-            toEmail,
-            displayName,
-            "BakımSuite şifre sıfırlama",
-            "Şifrenizi sıfırlayın",
-            $"Merhaba {displayName},",
-            "Şifrenizi sıfırlamak için aşağıdaki bağlantıyı kullanın. Link 30 dakika geçerlidir.",
-            "Şifre Sıfırla",
-            resetUrl,
-            "Bu işlemi siz başlatmadıysanız bu e-postayı yok sayabilirsiniz.");
+    public static EmailMessage CreatePasswordResetCodeEmail(string toEmail, string displayName, string code, DateTime expiresAtUtc)
+    {
+        var remaining = Math.Max(1, (int)Math.Ceiling((expiresAtUtc - DateTime.UtcNow).TotalMinutes));
+        var subject = "Garaj360 şifre sıfırlama kodu";
+        var html = $"""
+            <div style="font-family:Segoe UI,Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
+              <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:20px;padding:32px;border:1px solid #e2e8f0">
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">Garaj360</div>
+                <h1 style="font-size:24px;margin:0 0 12px">Şifre sıfırlama kodunuz</h1>
+                <p style="font-size:15px;line-height:1.7;margin:0 0 20px">Merhaba {displayName},</p>
+                <p style="font-size:15px;line-height:1.7;margin:0 0 16px">Şifreni sıfırlamak için doğrulama kodun:</p>
+                <div style="font-size:36px;font-weight:800;letter-spacing:.22em;background:#0f172a;color:#f8fafc;border-radius:16px;padding:18px 24px;text-align:center;margin:0 0 20px">{code}</div>
+                <p style="font-size:14px;line-height:1.7;margin:0 0 8px">Kod {remaining} dakika geçerlidir.</p>
+                <p style="font-size:14px;line-height:1.7;color:#475569;margin:0">Bu işlemi sen başlatmadıysan bu e-postayı yok sayabilirsin.</p>
+              </div>
+            </div>
+            """;
+
+        var text = $"Merhaba {displayName}, şifreni sıfırlamak için doğrulama kodun: {code}. Kod {remaining} dakika geçerlidir. Bu işlemi sen başlatmadıysan bu e-postayı yok sayabilirsin.";
+        return new EmailMessage { ToEmail = toEmail, ToName = displayName, Subject = subject, HtmlBody = html, TextBody = text };
+    }
 
     public static EmailMessage CreateTwoFactorEmail(string toEmail, string displayName, string code, DateTime expiresAtUtc)
     {

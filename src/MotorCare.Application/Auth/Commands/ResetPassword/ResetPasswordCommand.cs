@@ -2,4 +2,4 @@ using MediatR;
 
 namespace MotorCare.Application.Auth.Commands.ResetPassword;
 
-public sealed record ResetPasswordCommand(string Email, string Token, string NewPassword) : IRequest<AuthActionMessageDto>;
+public sealed record ResetPasswordCommand(string Email, string Code, string NewPassword, string ConfirmPassword) : IRequest<AuthActionMessageDto>;

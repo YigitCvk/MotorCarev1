@@ -21,8 +21,8 @@ public sealed class SmtpEmailSender : IEmailSender
     public Task SendEmailVerificationAsync(string toEmail, string displayName, string verificationUrl, CancellationToken cancellationToken)
         => SendAsync(EmailTemplateFactory.CreateVerificationEmail(toEmail, displayName, verificationUrl), cancellationToken);
 
-    public Task SendPasswordResetAsync(string toEmail, string displayName, string resetUrl, CancellationToken cancellationToken)
-        => SendAsync(EmailTemplateFactory.CreatePasswordResetEmail(toEmail, displayName, resetUrl), cancellationToken);
+    public Task SendPasswordResetCodeAsync(string toEmail, string displayName, string code, DateTime expiresAtUtc, CancellationToken cancellationToken)
+        => SendAsync(EmailTemplateFactory.CreatePasswordResetCodeEmail(toEmail, displayName, code, expiresAtUtc), cancellationToken);
 
     public Task SendTwoFactorCodeAsync(string toEmail, string displayName, string code, DateTime expiresAtUtc, CancellationToken cancellationToken)
         => SendAsync(EmailTemplateFactory.CreateTwoFactorEmail(toEmail, displayName, code, expiresAtUtc), cancellationToken);

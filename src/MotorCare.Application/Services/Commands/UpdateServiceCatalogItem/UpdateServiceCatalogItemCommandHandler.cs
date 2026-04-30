@@ -42,7 +42,8 @@ public sealed class UpdateServiceCatalogItemCommandHandler : IRequestHandler<Upd
             request.Category,
             request.Description,
             request.DefaultDurationMinutes,
-            request.DefaultPrice,
+            request.Price,
+            request.Currency,
             request.IsActive);
 
         _repository.Update(item);

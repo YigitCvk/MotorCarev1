@@ -7,6 +7,8 @@ namespace MotorCare.Application.Auth.Commands.ResetPassword;
 
 public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, AuthActionMessageDto>
 {
+    private const string InvalidCodeMessage = "Sifre sifirlama kodu gecersiz veya suresi dolmus.";
+
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ISecurityTokenFactory _securityTokenFactory;
@@ -23,25 +25,45 @@ public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordC
 
     public async Task<AuthActionMessageDto> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
-        var tokenHash = _securityTokenFactory.Hash(request.Token);
-        var token = await _userRepository.GetActiveSecurityTokenByHashAsync(tokenHash, UserSecurityTokenPurpose.PasswordReset, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.");
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var users = await _userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        var codeHash = _securityTokenFactory.Hash(request.Code);
 
-        var user = await _userRepository.GetByIdAsync(token.UserId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.");
-
-        if (!string.Equals(user.Email, request.Email.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase))
+        foreach (var emailUser in users.Where(x => x.IsActive))
         {
-            throw new UnauthorizedAccessException("Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.");
+            var latest = await _userRepository.GetLatestActiveSecurityTokenAsync(emailUser.Id, UserSecurityTokenPurpose.PasswordReset, cancellationToken);
+            if (latest is null)
+            {
+                continue;
+            }
+
+            if (!string.Equals(latest.TokenHash, codeHash, StringComparison.Ordinal))
+            {
+                latest.RegisterFailedAttempt(now);
+                await _userRepository.SaveChangesAsync(cancellationToken);
+                throw new UnauthorizedAccessException(InvalidCodeMessage);
+            }
+
+            var user = await _userRepository.GetByIdWithRefreshTokensAsync(latest.UserId, cancellationToken)
+                ?? throw new UnauthorizedAccessException(InvalidCodeMessage);
+
+            if (_passwordHasher.Verify(user.PasswordHash, request.NewPassword))
+            {
+                throw new InvalidOperationException("Yeni sifre eski sifrenizle ayni olamaz.");
+            }
+
+            user.ChangePasswordHash(_passwordHasher.Hash(request.NewPassword));
+            latest.Consume(now);
+            user.RevokeSecurityTokens(UserSecurityTokenPurpose.PasswordReset, now);
+            user.RevokeActiveRefreshTokens(now);
+
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            return new AuthActionMessageDto("Sifreniz guncellendi.");
         }
 
-        user.ChangePasswordHash(_passwordHasher.Hash(request.NewPassword));
-        user.ConsumeSecurityToken(tokenHash, DateTimeOffset.UtcNow);
-        user.RevokeSecurityTokens(UserSecurityTokenPurpose.PasswordReset, DateTimeOffset.UtcNow);
-
-        _userRepository.Update(user);
-        await _userRepository.SaveChangesAsync(cancellationToken);
-
-        return new AuthActionMessageDto("Şifreniz güncellendi.");
+        throw new UnauthorizedAccessException(InvalidCodeMessage);
     }
 }

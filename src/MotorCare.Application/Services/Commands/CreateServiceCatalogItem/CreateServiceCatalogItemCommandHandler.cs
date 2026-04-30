@@ -41,7 +41,8 @@ public sealed class CreateServiceCatalogItemCommandHandler : IRequestHandler<Cre
             request.Category,
             request.Description,
             request.DefaultDurationMinutes,
-            request.DefaultPrice,
+            request.Price,
+            request.Currency,
             request.IsActive);
 
         await _repository.AddAsync(item, cancellationToken);

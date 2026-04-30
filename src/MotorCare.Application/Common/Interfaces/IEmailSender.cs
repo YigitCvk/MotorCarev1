@@ -10,10 +10,11 @@ public interface IEmailSender
         string verificationUrl,
         CancellationToken cancellationToken);
 
-    Task SendPasswordResetAsync(
+    Task SendPasswordResetCodeAsync(
         string toEmail,
         string displayName,
-        string resetUrl,
+        string code,
+        DateTime expiresAtUtc,
         CancellationToken cancellationToken);
 
     Task SendTwoFactorCodeAsync(

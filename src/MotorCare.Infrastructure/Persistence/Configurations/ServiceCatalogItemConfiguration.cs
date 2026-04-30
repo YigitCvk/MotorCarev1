@@ -30,6 +30,16 @@ public sealed class ServiceCatalogItemConfiguration : IEntityTypeConfiguration<S
             .HasPrecision(18, 2)
             .IsRequired();
 
+        builder.Property(x => x.Price)
+            .HasPrecision(18, 2)
+            .IsRequired()
+            .HasDefaultValue(0m);
+
+        builder.Property(x => x.Currency)
+            .IsRequired()
+            .HasMaxLength(5)
+            .HasDefaultValue("TRY");
+
         builder.Property(x => x.IsActive)
             .IsRequired();
 

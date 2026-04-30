@@ -74,6 +74,14 @@ public class User : AggregateRoot, ITenantEntity
         return _refreshTokens.Any(t => t.TokenHash == tokenHash && t.IsActive(now));
     }
 
+    public void RevokeActiveRefreshTokens(DateTimeOffset revokedAt)
+    {
+        foreach (var token in _refreshTokens.Where(t => t.IsActive(revokedAt)))
+        {
+            token.Revoke(revokedAt);
+        }
+    }
+
     public void MarkEmailVerified()
     {
         IsEmailVerified = true;

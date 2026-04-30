@@ -29,17 +29,17 @@ public class UserSecurityToken : AuditableEntity
         CreatedAt = createdAt;
     }
 
-    internal void Revoke(DateTimeOffset revokedAt)
+    public void Revoke(DateTimeOffset revokedAt)
     {
         RevokedAt = revokedAt;
     }
 
-    internal void Consume(DateTimeOffset consumedAt)
+    public void Consume(DateTimeOffset consumedAt)
     {
         ConsumedAt = consumedAt;
     }
 
-    internal void RegisterFailedAttempt(DateTimeOffset attemptedAt, int maxAttempts = 5)
+    public void RegisterFailedAttempt(DateTimeOffset attemptedAt, int maxAttempts = 5)
     {
         FailedAttemptCount++;
 

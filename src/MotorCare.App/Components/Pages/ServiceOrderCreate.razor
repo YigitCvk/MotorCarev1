@@ -283,7 +283,7 @@
                                 <div>
                                     <strong>@service.Name</strong>
                                     <div class="small text-muted">@service.CategoryText</div>
-                                    <div class="small text-muted">Tahmini Sure: @service.DefaultDurationMinutes dk - Varsayilan Fiyat: @service.DefaultPrice.ToString("N2") ₺</div>
+                                    <div class="small text-muted">Tahmini Sure: @service.DefaultDurationMinutes dk - Fiyat: @FormatServicePrice(service)</div>
                                 </div>
                                 <span class="type-badge">@(service.Id == _selectedService?.Id ? "Secildi" : "Sec")</span>
                             </button>
@@ -1167,7 +1167,7 @@
                         new AddOperationRequest
                         {
                             Description = _selectedService.Name,
-                            Price = _selectedService.DefaultPrice
+                            Price = _selectedService.Price
                         },
                         cancellationToken);
                 }
@@ -1599,7 +1599,10 @@
            !string.IsNullOrWhiteSpace(_newVehicle.EngineNumber) ? _newVehicle.EngineNumber! : "Arac kaydinda yok";
 
     private string GetSelectedServicePriceText()
-        => _selectedService is null ? "-" : $"{_selectedService.DefaultPrice:N2} ₺";
+        => _selectedService is null ? "-" : FormatServicePrice(_selectedService);
+
+    private static string FormatServicePrice(ServiceCatalogItem service)
+        => $"{service.Price:N2} {(string.IsNullOrWhiteSpace(service.Currency) ? "TRY" : service.Currency)}";
 
     private string GetSelectedServiceDurationText()
         => _selectedService is null ? "-" : $"{_selectedService.DefaultDurationMinutes} dk";

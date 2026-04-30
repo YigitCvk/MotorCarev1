@@ -59,7 +59,8 @@ public sealed class ServicesModule : ICarterModule
                     request.Category,
                     request.Description,
                     request.DefaultDurationMinutes,
-                    request.DefaultPrice,
+                    request.EffectivePrice,
+                    request.Currency,
                     request.IsActive),
                 ct);
 
@@ -79,7 +80,8 @@ public sealed class ServicesModule : ICarterModule
                     request.Category,
                     request.Description,
                     request.DefaultDurationMinutes,
-                    request.DefaultPrice,
+                    request.EffectivePrice,
+                    request.Currency,
                     request.IsActive),
                 ct);
 
@@ -112,19 +114,29 @@ public sealed class ServicesModule : ICarterModule
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
     }
 
-    public sealed record CreateServiceCatalogItemRequest(
-        string Name,
-        ServiceCategory Category,
-        string? Description,
-        int DefaultDurationMinutes,
-        decimal DefaultPrice,
-        bool IsActive);
+    public sealed class CreateServiceCatalogItemRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public ServiceCategory Category { get; set; }
+        public string? Description { get; set; }
+        public int DefaultDurationMinutes { get; set; }
+        public decimal DefaultPrice { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "TRY";
+        public bool IsActive { get; set; } = true;
+        public decimal EffectivePrice => Price != 0 ? Price : DefaultPrice;
+    }
 
-    public sealed record UpdateServiceCatalogItemRequest(
-        string Name,
-        ServiceCategory Category,
-        string? Description,
-        int DefaultDurationMinutes,
-        decimal DefaultPrice,
-        bool IsActive);
+    public sealed class UpdateServiceCatalogItemRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public ServiceCategory Category { get; set; }
+        public string? Description { get; set; }
+        public int DefaultDurationMinutes { get; set; }
+        public decimal DefaultPrice { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "TRY";
+        public bool IsActive { get; set; }
+        public decimal EffectivePrice => Price != 0 ? Price : DefaultPrice;
+    }
 }

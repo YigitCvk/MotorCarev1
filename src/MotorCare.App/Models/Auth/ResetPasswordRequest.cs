@@ -9,7 +9,8 @@ public sealed class ResetPasswordRequest
     public string Email { get; set; } = string.Empty;
 
     [Required]
-    public string Token { get; set; } = string.Empty;
+    [RegularExpression("^\\d{6}$", ErrorMessage = "Kod 6 haneli olmali.")]
+    public string Code { get; set; } = string.Empty;
 
     [Required]
     [MinLength(8)]

@@ -9,5 +9,6 @@ public sealed record UpdateServiceCatalogItemCommand(
     ServiceCategory Category,
     string? Description,
     int DefaultDurationMinutes,
-    decimal DefaultPrice,
+    decimal Price,
+    string Currency,
     bool IsActive) : IRequest;

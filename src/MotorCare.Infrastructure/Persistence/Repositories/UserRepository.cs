@@ -28,6 +28,14 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
+    public async Task<User?> GetByIdWithRefreshTokensAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.RefreshTokens)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string tenantId, string normalizedEmail, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -39,6 +47,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .IgnoreQueryFilters()
+            .Include(u => u.SecurityTokens)
             .Where(u => u.Email == normalizedEmail)
             .ToListAsync(cancellationToken);
     }

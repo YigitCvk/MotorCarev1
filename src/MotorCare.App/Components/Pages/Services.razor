@@ -90,7 +90,7 @@
                             <th>Hizmet</th>
                             <th>Kategori</th>
                             <th>Süre</th>
-                            <th>Varsayılan Fiyat</th>
+                            <th>Fiyat</th>
                             <th>Durum</th>
                             <th class="text-end">İşlem</th>
                         </tr>
@@ -105,7 +105,7 @@
                                 </td>
                                 <td>@item.CategoryText</td>
                                 <td>@item.DefaultDurationMinutes dk</td>
-                                <td>@item.DefaultPrice.ToString("N2") ₺</td>
+                                <td>@FormatPrice(item)</td>
                                 <td><span class="status-badge @(item.IsActive ? "badge-open" : "badge-muted")">@(item.IsActive ? "Aktif" : "Pasif")</span></td>
                                 <td class="text-end">
                                     <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
@@ -135,8 +135,8 @@
                     </div>
                     <p class="text-muted small mt-3 mb-3">@(string.IsNullOrWhiteSpace(item.Description) ? "Açıklama girilmedi." : item.Description)</p>
                     <div class="d-flex justify-content-between align-items-center small mb-3">
-                        <span>Varsayılan fiyat</span>
-                        <strong>@item.DefaultPrice.ToString("N2") ₺</strong>
+                        <span>Fiyat</span>
+                        <strong>@FormatPrice(item)</strong>
                     </div>
                     <div class="action-bar">
                         <a class="app-btn-secondary" href="@($"/services/{item.Id}/edit")">Düzenle</a>
@@ -298,4 +298,7 @@
         ServiceCategory.BodyPaint => "Kaporta / Boya",
         _ => "Diğer"
     };
+
+    private static string FormatPrice(ServiceCatalogItem item)
+        => $"{item.Price:N2} {(string.IsNullOrWhiteSpace(item.Currency) ? "TRY" : item.Currency)}";
 }

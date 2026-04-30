@@ -9,24 +9,21 @@ namespace MotorCare.Application.Auth.Commands.ForgotPassword;
 
 public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, AuthActionMessageDto>
 {
-    private const string GenericMessage = "Eğer bu e-posta ile kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderildi.";
+    private const string GenericMessage = "Eger bu e-posta ile kayitli bir hesap varsa 6 haneli sifre sifirlama kodu gonderildi.";
 
     private readonly IUserRepository _userRepository;
     private readonly IEmailSender _emailSender;
-    private readonly IAuthLinkBuilder _authLinkBuilder;
     private readonly ISecurityTokenFactory _securityTokenFactory;
     private readonly ILogger<ForgotPasswordCommandHandler> _logger;
 
     public ForgotPasswordCommandHandler(
         IUserRepository userRepository,
         IEmailSender emailSender,
-        IAuthLinkBuilder authLinkBuilder,
         ISecurityTokenFactory securityTokenFactory,
         ILogger<ForgotPasswordCommandHandler> logger)
     {
         _userRepository = userRepository;
         _emailSender = emailSender;
-        _authLinkBuilder = authLinkBuilder;
         _securityTokenFactory = securityTokenFactory;
         _logger = logger;
     }
@@ -46,11 +43,12 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
             }
 
             user.RevokeSecurityTokens(UserSecurityTokenPurpose.PasswordReset, now);
-            var plainToken = _securityTokenFactory.GenerateOpaqueToken();
+            var plainCode = _securityTokenFactory.GenerateNumericCode();
+            var expiresAt = now.AddMinutes(15);
             var token = user.AddSecurityToken(
                 UserSecurityTokenPurpose.PasswordReset,
-                _securityTokenFactory.Hash(plainToken),
-                now.AddMinutes(30),
+                _securityTokenFactory.Hash(plainCode),
+                expiresAt,
                 now);
 
             _userRepository.Update(user);
@@ -59,18 +57,17 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
 
             _logger.LogInformation(
                 EventIdStore.Auth.PasswordResetEmailSendRequested,
-                "Password reset email requested. UserId={UserId} Provider={Provider} ExpiresAtUtc={ExpiresAtUtc}",
+                "Password reset code email requested. UserId={UserId} Provider={Provider} ExpiresAtUtc={ExpiresAtUtc}",
                 user.Id,
                 "Email",
                 token.ExpiresAt);
 
             try
             {
-                var resetUrl = _authLinkBuilder.BuildPasswordResetUrl(user.Email, plainToken);
-                await _emailSender.SendPasswordResetAsync(user.Email, user.FullName, resetUrl, cancellationToken);
+                await _emailSender.SendPasswordResetCodeAsync(user.Email, user.FullName, plainCode, expiresAt.UtcDateTime, cancellationToken);
                 _logger.LogInformation(
                     EventIdStore.Auth.PasswordResetEmailSent,
-                    "Password reset email sent. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
+                    "Password reset code email sent. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
                     user.Id,
                     token.ExpiresAt);
             }
@@ -79,7 +76,7 @@ public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswor
                 _logger.LogError(
                     EventIdStore.Auth.PasswordResetEmailSendFailed,
                     ex,
-                    "Password reset email send failed. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
+                    "Password reset code email send failed. UserId={UserId} ExpiresAtUtc={ExpiresAtUtc}",
                     user.Id,
                     token.ExpiresAt);
             }

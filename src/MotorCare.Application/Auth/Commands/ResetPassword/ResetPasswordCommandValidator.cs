@@ -7,7 +7,13 @@ public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPassw
     public ResetPasswordCommandValidator()
     {
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Token).NotEmpty();
+        RuleFor(x => x.Code)
+            .NotEmpty()
+            .Matches("^\\d{6}$")
+            .WithMessage("Kod 6 haneli olmali.");
         RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8);
+        RuleFor(x => x.ConfirmPassword)
+            .Equal(x => x.NewPassword)
+            .WithMessage("Sifreler eslesmeli.");
     }
 }

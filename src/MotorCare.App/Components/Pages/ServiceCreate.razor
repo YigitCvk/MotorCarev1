@@ -45,8 +45,12 @@
                 <InputNumber class="form-control" @bind-Value="_form.DefaultDurationMinutes" />
             </div>
             <div>
-                <label class="form-label">Varsayılan fiyat *</label>
-                <InputNumber class="form-control" @bind-Value="_form.DefaultPrice" />
+                <label class="form-label">Fiyat</label>
+                <InputNumber class="form-control" @bind-Value="_form.Price" placeholder="0,00" />
+            </div>
+            <div>
+                <label class="form-label">Para birimi</label>
+                <InputText class="form-control" @bind-Value="_form.Currency" maxlength="5" />
             </div>
             <div class="full-span">
                 <label class="form-label">Açıklama</label>
@@ -106,9 +110,15 @@
                 return;
             }
 
-            if (_form.DefaultPrice < 0)
+            if (_form.Price < 0)
             {
-                _error = "Varsayılan fiyat negatif olamaz.";
+                _error = "Fiyat negatif olamaz.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_form.Currency))
+            {
+                _error = "Para birimi zorunludur.";
                 return;
             }
 
