@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="auth-panel auth-panel-form">
+    <div class="auth-panel auth-panel-form register-card">
         <div class="section-header mb-2">
             <div>
                 <div class="section-title">İlk işletme kaydını oluştur</div>
@@ -36,29 +36,29 @@
         <EditForm Model="_model" OnValidSubmit="RegisterAsync">
             <DataAnnotationsValidator />
 
-            <div class="form-grid auth-form-grid">
-                <div>
+            <div class="form-grid auth-form-grid two-columns register-form-grid">
+                <div class="form-field">
                     <label class="form-label">İşletme Kodu</label>
                     <InputText class="form-control" @bind-Value="_model.TenantIdentifier" placeholder="asya-motor" />
-                    <div class="form-text">Küçük harf ve tire ile kullanılır.</div>
+                    <div class="form-text form-hint">Küçük harf ve tire ile kullanılır.</div>
                 </div>
 
-                <div>
+                <div class="form-field">
                     <label class="form-label">Servis Adı</label>
                     <InputText class="form-control" @bind-Value="_model.TenantName" placeholder="Asya Motor" />
                 </div>
 
-                <div class="full-span">
+                <div class="form-field full-span">
                     <label class="form-label">Yetkili Ad Soyad</label>
                     <InputText class="form-control" @bind-Value="_model.OwnerFullName" placeholder="Yiğit Çevik" />
                 </div>
 
-                <div>
+                <div class="form-field">
                     <label class="form-label">E-posta</label>
                     <InputText class="form-control" @bind-Value="_model.OwnerEmail" placeholder="owner@servisiniz.com" autocomplete="email" />
                 </div>
 
-                <div>
+                <div class="form-field">
                     <label class="form-label">Şifre</label>
                     <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" placeholder="••••••••" autocomplete="new-password" />
                 </div>
@@ -69,11 +69,11 @@
                 <div class="alert alert-danger mt-3">@_error</div>
             }
 
-            <div class="auth-actions">
-                <button type="submit" class="btn btn-primary btn-lg" disabled="@_isSubmitting">
+            <div class="auth-actions register-actions">
+                <button type="submit" class="btn btn-primary btn-lg submit-button" disabled="@_isSubmitting">
                     @(_isSubmitting ? "Kayıt oluşturuluyor..." : "Kayıt Ol")
                 </button>
-                <a class="auth-link" href="/login">Zaten hesabın var mı? Giriş yap →</a>
+                <a class="auth-link register-link" href="/login">Zaten hesabın var mı? Giriş yap →</a>
             </div>
         </EditForm>
     </div>
