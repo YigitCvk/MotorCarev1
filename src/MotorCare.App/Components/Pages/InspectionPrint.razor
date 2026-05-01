@@ -122,6 +122,57 @@
                 </section>
             </div>
 
+            @if (BodyMapItems.Count > 0)
+            {
+                <section class="print-card print-body-map-card">
+                    <div class="print-section-title-row">
+                        <h2>GÃ¶rsel Ekspertiz / Body Map</h2>
+                        <span class="print-count-badge">@MarkedBodyMapEntries.Count iÅŸaretli bÃ¶lge</span>
+                    </div>
+
+                    <div class="print-body-map-legend">
+                        @foreach (var option in MotorcycleBodyMapDefinitions.StatusOptions)
+                        {
+                            <span>
+                                <i style="@($"background:{MotorcycleBodyMapDefinitions.GetStatusColor(option.Status)}")"></i>
+                                @option.Label
+                            </span>
+                        }
+                    </div>
+
+                    <div class="print-body-map-grid">
+                        @RenderPrintBodyMap(MotorcycleViewType.Left)
+                        @RenderPrintBodyMap(MotorcycleViewType.Right)
+                    </div>
+
+                    @if (MarkedBodyMapEntries.Count == 0)
+                    {
+                        <p class="print-empty-note">Body map Ã¼zerinde iÅŸaretlenmiÅŸ parÃ§a bulunmamaktadÄ±r.</p>
+                    }
+                    else
+                    {
+                        <div class="print-body-map-list">
+                            @foreach (var entry in MarkedBodyMapEntries)
+                            {
+                                <div class="print-body-map-list-item">
+                                    <span class="print-body-map-list-no" style="@($"--map-color:{MotorcycleBodyMapDefinitions.GetStatusColor(entry.Status)}")">
+                                        @entry.Definition.Number
+                                    </span>
+                                    <div>
+                                        <strong>@GetViewText(entry.Definition.ViewType) - @entry.Definition.Label</strong>
+                                        <span>@MotorcycleBodyMapDefinitions.GetStatusText(entry.Status)</span>
+                                        @if (!string.IsNullOrWhiteSpace(entry.Item.Notes))
+                                        {
+                                            <small>@entry.Item.Notes</small>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
             <section class="print-card">
                 <h2>Kritik Bulgular <span class="print-count-badge">@CriticalItems.Count adet</span></h2>
                 @if (CriticalItems.Count == 0)
@@ -248,6 +299,13 @@
     private bool _loading = true;
     private string? _error;
 
+    private static readonly HashSet<string> BodyMapKeys = MotorcycleBodyMapDefinitions.LeftParts
+        .Concat(MotorcycleBodyMapDefinitions.RightParts)
+        .SelectMany(part => part.MatchKeys.Append(part.Label))
+        .Select(NormalizeText)
+        .Where(key => !string.IsNullOrWhiteSpace(key))
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
     private string BrandModelText
     {
         get
@@ -270,6 +328,27 @@
                     && x.Result is not MotorcycleInspectionResult.NotChecked)
         .OrderBy(x => x.SortOrder)
         .ToList() ?? [];
+
+    private List<MotorcycleInspectionItem> BodyMapItems => _inspection?.Items?
+        .Where(x => x.Category == MotorcycleInspectionCategory.BodyAndFairing && IsBodyMapItem(x))
+        .OrderBy(x => x.SortOrder)
+        .ToList() ?? [];
+
+    private List<PrintBodyMapEntry> MarkedBodyMapEntries => MotorcycleBodyMapDefinitions.LeftParts
+        .Concat(MotorcycleBodyMapDefinitions.RightParts)
+        .Select(definition =>
+        {
+            var item = ResolveBodyMapItem(definition);
+            var status = item is null ? MotorcyclePartStatus.Unmarked : MapToPartStatus(item.Result);
+            return item is null || status == MotorcyclePartStatus.Unmarked
+                ? null
+                : new PrintBodyMapEntry(definition, item, status);
+        })
+        .Where(entry => entry is not null)
+        .Cast<PrintBodyMapEntry>()
+        .OrderBy(entry => entry.Definition.ViewType)
+        .ThenBy(entry => entry.Definition.Number)
+        .ToList();
 
     private List<MotorcycleInspectionItem> OtherCheckedItems => _inspection?.Items?
         .Where(x => x.Category != MotorcycleInspectionCategory.BodyAndFairing
@@ -322,6 +401,76 @@
     private int Count(MotorcycleInspectionResult result)
         => _inspection?.Items?.Count(x => x.Result == result) ?? 0;
 
+    private RenderFragment RenderPrintBodyMap(MotorcycleViewType viewType) => @<section class="print-body-map-view">
+        <header>
+            <strong>@GetViewText(viewType) GÃ¶rÃ¼nÃ¼m</strong>
+            <span>@MotorcycleBodyMapDefinitions.GetParts(viewType).Count(definition => GetBodyMapStatus(definition) != MotorcyclePartStatus.Unmarked) iÅŸaret</span>
+        </header>
+        <div class="print-body-map-stage">
+            <img src="@MotorcycleBodyMapDefinitions.GetImagePath(viewType)" alt="@($"{GetViewText(viewType)} motosiklet gÃ¶rÃ¼nÃ¼mÃ¼")" />
+            @foreach (var definition in MotorcycleBodyMapDefinitions.GetParts(viewType))
+            {
+                var status = GetBodyMapStatus(definition);
+                if (status == MotorcyclePartStatus.Unmarked)
+                {
+                    continue;
+                }
+
+                <span class="print-body-map-marker"
+                      style="@GetBodyMapMarkerStyle(definition, status)"
+                      title="@definition.Label">
+                    @definition.Number
+                </span>
+            }
+        </div>
+    </section>;
+
+    private MotorcyclePartStatus GetBodyMapStatus(MotorcyclePartDefinition definition)
+    {
+        var item = ResolveBodyMapItem(definition);
+        return item is null ? MotorcyclePartStatus.Unmarked : MapToPartStatus(item.Result);
+    }
+
+    private MotorcycleInspectionItem? ResolveBodyMapItem(MotorcyclePartDefinition definition)
+        => BodyMapItems.FirstOrDefault(item => definition.MatchKeys.Any(key => string.Equals(NormalizeText(key), NormalizeText(item.Name), StringComparison.OrdinalIgnoreCase)));
+
+    private bool IsBodyMapItem(MotorcycleInspectionItem item)
+        => BodyMapKeys.Contains(NormalizeText(item.Name));
+
+    private static string GetBodyMapMarkerStyle(MotorcyclePartDefinition definition, MotorcyclePartStatus status)
+        => $"left:{definition.HotspotLeftPercent:F2}%;top:{definition.HotspotTopPercent:F2}%;--map-color:{MotorcycleBodyMapDefinitions.GetStatusColor(status)};";
+
+    private static MotorcyclePartStatus MapToPartStatus(MotorcycleInspectionResult result) => result switch
+    {
+        MotorcycleInspectionResult.Original => MotorcyclePartStatus.Original,
+        MotorcycleInspectionResult.Painted => MotorcyclePartStatus.Painted,
+        MotorcycleInspectionResult.Changed => MotorcyclePartStatus.Replaced,
+        MotorcycleInspectionResult.Damaged => MotorcyclePartStatus.Damaged,
+        MotorcycleInspectionResult.Scratched => MotorcyclePartStatus.Scratched,
+        _ => MotorcyclePartStatus.Unmarked
+    };
+
+    private static string GetViewText(MotorcycleViewType viewType)
+        => viewType == MotorcycleViewType.Left ? "Sol" : "SaÄŸ";
+
+    private static string NormalizeText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Trim()
+            .ToLowerInvariant()
+            .Replace("Ä±", "i")
+            .Replace("ÄŸ", "g")
+            .Replace("Ã¼", "u")
+            .Replace("ÅŸ", "s")
+            .Replace("Ã¶", "o")
+            .Replace("Ã§", "c");
+    }
+
     private static string GetStatusBadgeClass(MotorcycleInspectionStatus status) => status switch
     {
         MotorcycleInspectionStatus.Draft => "badge-muted",
@@ -330,4 +479,9 @@
         MotorcycleInspectionStatus.Cancelled => "badge-cancelled",
         _ => "badge-muted"
     };
+
+    private sealed record PrintBodyMapEntry(
+        MotorcyclePartDefinition Definition,
+        MotorcycleInspectionItem Item,
+        MotorcyclePartStatus Status);
 }
