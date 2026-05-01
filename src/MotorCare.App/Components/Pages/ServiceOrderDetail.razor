@@ -616,7 +616,7 @@
         {
             await JSRuntime.InvokeVoidAsync("motorCareUi.scrollToElement", id);
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
             TryNavigateTo($"/service-orders/{Id}#{id}", replace: true);
         }
@@ -628,7 +628,7 @@
         {
             NavigationManager.NavigateTo(uri, replace: replace);
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
             _error = "Sayfa gecisi tamamlanamadi. Lutfen tekrar deneyin.";
         }

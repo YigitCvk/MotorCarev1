@@ -319,11 +319,12 @@
             await RefreshCurrentUserAsync();
             await SafeStateHasChangedAsync();
         }
-        catch (Exception ex) when (_isDisposed || ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        catch (Exception ex) when (_isDisposed || ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException or TaskCanceledException or OperationCanceledException)
         {
             _currentUser = null;
-            Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit, ex,
-                "Main layout auth recovery skipped because circuit is disposed or disconnected.");
+            Logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit,
+                "Main layout auth recovery skipped because circuit is disposed or disconnected. ExceptionType={ExceptionType}",
+                ex.GetType().Name);
         }
     }
 
@@ -365,10 +366,12 @@
         {
             NavigationManager.NavigateTo(uri);
         }
-        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException or TaskCanceledException or OperationCanceledException)
         {
-            Logger.LogWarning(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit, ex,
-                "Navigation skipped because main layout circuit is disconnected. Target={Target}", uri);
+            Logger.LogDebug(EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit,
+                "Navigation skipped because main layout circuit is disconnected. Target={Target} ExceptionType={ExceptionType}",
+                uri,
+                ex.GetType().Name);
         }
     }
 

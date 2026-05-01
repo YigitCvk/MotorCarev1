@@ -1648,7 +1648,7 @@
     {
         if (_isDisposed || _lifetimeCts.IsCancellationRequested)
         {
-            Logger.LogInformation(
+            Logger.LogDebug(
                 EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit,
                 "Navigation skipped because service order create component is disposed. Target={Target}",
                 uri);
@@ -1659,13 +1659,13 @@
         {
             NavigationManager.NavigateTo(uri);
         }
-        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException)
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or Microsoft.JSInterop.JSDisconnectedException or TaskCanceledException or OperationCanceledException)
         {
-            Logger.LogWarning(
+            Logger.LogDebug(
                 EventIdStore.Common.NavigationSkippedDueToDisconnectedCircuit,
-                ex,
-                "Navigation skipped because circuit is disconnected. Target={Target}",
-                uri);
+                "Navigation skipped because circuit is disconnected. Target={Target} ExceptionType={ExceptionType}",
+                uri,
+                ex.GetType().Name);
         }
     }
 

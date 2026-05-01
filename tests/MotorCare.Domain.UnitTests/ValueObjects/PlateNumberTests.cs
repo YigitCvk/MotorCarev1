@@ -23,10 +23,10 @@ public class PlateNumberTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Create_ShouldThrowArgumentException_WhenGivenEmptyString(string input)
+    public void Create_ShouldThrowArgumentException_WhenGivenEmptyString(string? input)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => PlateNumber.Create(input));
+        Assert.Throws<ArgumentException>(() => PlateNumber.Create(input!));
     }
 
     [Theory]

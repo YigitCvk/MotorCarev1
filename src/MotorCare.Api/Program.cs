@@ -19,6 +19,7 @@ using MotorCare.Infrastructure.Security;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Serilog.Settings.Configuration;
 using Serilog.Sinks.Elasticsearch;
 
 Log.Logger = new LoggerConfiguration()
@@ -52,7 +53,7 @@ try
         var env = ctx.HostingEnvironment;
 
         cfg
-            .ReadFrom.Configuration(ctx.Configuration, sectionName: "Serilog")
+            .ReadFrom.Configuration(ctx.Configuration, new ConfigurationReaderOptions { SectionName = "Serilog" })
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithEnvironmentName()
