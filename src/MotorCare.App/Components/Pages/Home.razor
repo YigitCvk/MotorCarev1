@@ -1,186 +1,110 @@
 @page "/"
 @layout Layout.PublicLayout
 
-<PageTitle>BakımSuite</PageTitle>
+<PageTitle>GarajPass</PageTitle>
 
-<div class="landing-page">
-    <div class="landing-grid"></div>
+<div class="gp-landing">
+    <header class="gp-nav">
+        <a class="gp-brand" href="/" aria-label="GarajPass ana sayfa">
+            <span class="gp-brand-mark">GP</span>
+            <span class="gp-brand-copy">
+                <strong>GarajPass</strong>
+                <small>Servis & Ekspertiz OS</small>
+            </span>
+        </a>
 
-    <div class="landing-container">
-        <header class="landing-topbar">
-            <a class="landing-brand" href="/">
-                <span class="landing-brand-mark">BS</span>
-                <span>BakımSuite</span>
-            </a>
+        <nav class="gp-nav-links" aria-label="GarajPass">
+            <a href="#features">Ozellikler</a>
+            <a href="#vision">Vizyon</a>
+            <a href="/login">Giris Yap</a>
+            <a href="/register">Hesap Olustur</a>
+        </nav>
 
-            <nav class="landing-nav" aria-label="Public">
-                <a href="/">Ana Sayfa</a>
-                <a href="#features">Özellikler</a>
-                <a href="#appointments">Randevu</a>
-                <a href="#services">Servisler</a>
-                <a href="#pricing">Fiyatlar</a>
-            </nav>
+        <a class="gp-btn gp-btn-primary" href="/register">Demo Baslat</a>
+    </header>
 
-            <div class="landing-actions">
-                <a class="landing-link-button" href="/login">Giriş Yap</a>
-                <a class="landing-btn landing-btn-primary" href="/register">Demo Al</a>
+    <main>
+        <section class="gp-hero">
+            <div class="gp-hero-copy">
+                <div class="gp-kicker">Form follows function</div>
+                <h1>Servis, ekspertiz ve arac gecmisi tek sistemde.</h1>
+                <p>
+                    GarajPass; servis operasyonlarini, musteri ve arac kayitlarini, ekspertiz sureclerini
+                    ve arac gecmisi raporlamasini tek platformda birlestirir.
+                </p>
+                <div class="gp-hero-actions">
+                    <a class="gp-btn gp-btn-primary gp-btn-large" href="/register">Hemen Basla</a>
+                    <a class="gp-btn gp-btn-secondary gp-btn-large" href="/login">Giris Yap</a>
+                </div>
             </div>
-        </header>
 
-        <main>
-            <section class="landing-hero">
-                <div class="landing-hero-copy">
-                    <div class="landing-eyebrow">Araç servis, yıkama ve randevu yönetimi</div>
-                    <h1>Araç bakım operasyonunu tek panelden yönetin.</h1>
-                    <p>
-                        BakımSuite ile randevu alın, aracı kabul edin, servis emri oluşturun,
-                        işçilik/parça takibi yapın ve müşteriye teslim sürecini profesyonel şekilde yönetin.
-                    </p>
+            <div class="gp-system-board" aria-label="GarajPass operasyon kartlari">
+                <div class="gp-board-card gp-yellow gp-wide"><span>01</span><strong>Servis Emri</strong></div>
+                <div class="gp-board-card gp-blue"><span>02</span><strong>Arac Pass</strong></div>
+                <div class="gp-board-card gp-red"><span>03</span><strong>Ekspertiz Kaydi</strong></div>
+                <div class="gp-board-card gp-white"><span>04</span><strong>Randevu</strong></div>
+                <div class="gp-board-card gp-black gp-tall"><span>05</span><strong>360 derece gecmis</strong></div>
+            </div>
+        </section>
 
-                    <div class="landing-hero-actions">
-                        <a class="landing-btn landing-btn-primary landing-btn-lg" href="/register">Ücretsiz Demo Planla</a>
-                        <a class="landing-btn landing-btn-secondary" href="#features">Özellikleri İncele</a>
-                    </div>
+        <section class="gp-section" id="features">
+            <div class="gp-section-head">
+                <span>Ozellikler</span>
+                <h2>Servis operasyonu icin net, kayitli ve olculebilir akis.</h2>
+            </div>
 
-                    <div class="landing-trust-grid">
-                        <article class="landing-trust-card">
-                            <strong>5 dk</strong>
-                            <span>Hızlı randevu oluşturma akışı</span>
-                        </article>
-                        <article class="landing-trust-card">
-                            <strong>360°</strong>
-                            <span>Araç, müşteri ve servis geçmişi</span>
-                        </article>
-                        <article class="landing-trust-card">
-                            <strong>Mobil</strong>
-                            <span>Telefon ve tablette uyumlu kullanım</span>
-                        </article>
-                    </div>
+            <div class="gp-feature-grid">
+                <article class="gp-feature-card gp-yellow">
+                    <span>01</span>
+                    <h3>Servis Yonetimi</h3>
+                    <p>Randevu, musteri, arac ve servis emirlerini tek panelden yonetin.</p>
+                </article>
+                <article class="gp-feature-card gp-blue">
+                    <span>02</span>
+                    <h3>Ekspertiz Kayitlari</h3>
+                    <p>Motosiklet ve arac ekspertiz sureclerini standart checklist yapisiyla kayit altina alin.</p>
+                </article>
+                <article class="gp-feature-card gp-red">
+                    <span>03</span>
+                    <h3>Arac Gecmisi</h3>
+                    <p>Bugunun servis kayitlarini yarinin dogrulanabilir arac gecmisi raporlarina donusturun.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="gp-section">
+            <div class="gp-workflow">
+                <div class="gp-workflow-title">
+                    <span>Akis</span>
+                    <h2>Operasyon akisi net, kayitlar duzenli.</h2>
                 </div>
-
-                <div class="landing-hero-visual">
-                    <div class="landing-car-stage" aria-hidden="true">
-                        <div class="landing-car-glow"></div>
-                        <div class="landing-car-body">
-                            <div class="landing-car-window landing-car-window-front"></div>
-                            <div class="landing-car-window landing-car-window-rear"></div>
-                            <div class="landing-car-light"></div>
-                        </div>
-                        <div class="landing-car-wheel landing-car-wheel-front"></div>
-                        <div class="landing-car-wheel landing-car-wheel-rear"></div>
-                    </div>
-
-                    <aside class="landing-booking-card" id="appointments">
-                        <div class="landing-booking-header">
-                            <div>
-                                <div class="landing-booking-eyebrow">Hızlı Randevu</div>
-                                <h2>Hızlı Randevu</h2>
-                            </div>
-                            <span class="landing-badge-soft">Aktif</span>
-                        </div>
-
-                        <p>
-                            Müşteri, araç ve hizmet tipini seçerek dakikalar içinde randevu oluştur.
-                        </p>
-
-                        <div class="landing-booking-field">
-                            <label>Plaka</label>
-                            <div class="landing-booking-value">34 ABC 123</div>
-                        </div>
-
-                        <div class="landing-booking-field">
-                            <label>Hizmet</label>
-                            <div class="landing-booking-value landing-booking-value-stack">
-                                <span>Periyodik Bakım</span>
-                                <div class="landing-booking-tags">
-                                    <span>Periyodik Bakım</span>
-                                    <span>Oto Yıkama</span>
-                                    <span>Detailing</span>
-                                    <span>Lastik Değişimi</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="landing-booking-field">
-                            <label>Saat</label>
-                            <div class="landing-booking-value">10:30</div>
-                        </div>
-
-                        <button type="button" class="landing-btn landing-btn-primary landing-btn-block">Randevu Oluştur</button>
-                    </aside>
+                <div class="gp-step-grid">
+                    <article><strong>01</strong><span>Musteri ve arac kaydi</span></article>
+                    <article><strong>02</strong><span>Servis kabul ve is emri</span></article>
+                    <article><strong>03</strong><span>Ekspertiz ve islem gecmisi</span></article>
+                    <article><strong>04</strong><span>Raporlama ve takip</span></article>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section class="landing-section" id="features">
-                <div class="landing-section-heading">
-                    <div class="landing-eyebrow">Operasyonun tamamı tek akışta</div>
-                    <h2>Servis kabulden teslimata kadar modern bir çalışma alanı</h2>
-                    <p>
-                        Masaüstü programların dağınık menülerini değil; hız, görünürlük ve mobil erişimi öncelikleyen
-                        bir operasyon merkezi.
-                    </p>
-                </div>
+        <section class="gp-vision" id="vision">
+            <div class="gp-vision-mark"></div>
+            <div>
+                <span>Vizyon</span>
+                <h2>Bugunun servis operasyonu, yarinin dogrulanabilir arac gecmisi.</h2>
+                <p>
+                    GarajPass, servislerin operasyonel yukunu azaltirken araclarin bakim ve ekspertiz
+                    gecmisini guvenilir kayitlarla takip edilebilir hale getirir.
+                </p>
+            </div>
+        </section>
 
-                <div class="landing-service-grid">
-                    <article class="landing-service-card">
-                        <div class="landing-service-icon">SE</div>
-                        <h3>Servis Emri</h3>
-                        <p>Araç kabulden teslimata kadar tüm operasyonu durum bazlı takip edin.</p>
-                    </article>
-
-                    <article class="landing-service-card">
-                        <div class="landing-service-icon">RP</div>
-                        <h3>Randevu Planlama</h3>
-                        <p>Bakım, yıkama, detailing ve lastik işlemlerini kapasiteye göre planlayın.</p>
-                    </article>
-
-                    <article class="landing-service-card">
-                        <div class="landing-service-icon">AG</div>
-                        <h3>Araç Geçmişi</h3>
-                        <p>Plaka bazlı bakım, parça, kilometre ve müşteri geçmişini saklayın.</p>
-                    </article>
-
-                    <article class="landing-service-card">
-                        <div class="landing-service-icon">MB</div>
-                        <h3>Müşteri Bildirimi</h3>
-                        <p>Randevu onayı, araç hazır ve teslim mesajlarını kolayca yönetin.</p>
-                    </article>
-                </div>
-            </section>
-
-            <section class="landing-section landing-highlight-section" id="services">
-                <div class="landing-highlight-card">
-                    <div class="landing-highlight-copy">
-                        <div class="landing-eyebrow">Servisler</div>
-                        <h2>Bakım, onarım, yıkama ve hızlı kabul için tek operasyon paneli</h2>
-                        <p>
-                            Servis emirleri, tahsilatlar, randevular ve müşteri geçmişi aynı veri akışında birleşir.
-                            Ön büro ve usta aynı resmi görür.
-                        </p>
-                    </div>
-                    <div class="landing-highlight-metrics">
-                        <div>
-                            <strong>Günlük Akış</strong>
-                            <span>Randevu → Kabul → İş Emri → Tahsilat</span>
-                        </div>
-                        <div>
-                            <strong>Hızlı Erişim</strong>
-                            <span>Tablet ve mobil ekranlarda operasyon takibi</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="landing-section landing-pricing-section" id="pricing">
-                <div class="landing-pricing-card">
-                    <div>
-                        <div class="landing-eyebrow">Fiyatlar</div>
-                        <h2>Küçük ve orta ölçekli servisler için erişilebilir başlangıç</h2>
-                        <p>Canlı demo ile akışı görün, servisinize uygun kurulum planını birlikte netleştirelim.</p>
-                    </div>
-                    <a class="landing-btn landing-btn-primary landing-btn-lg" href="/register">Demo Al</a>
-                </div>
-            </section>
-        </main>
-    </div>
+        <section class="gp-final-cta">
+            <h2>Garajini dijitallestir. Kayitlarini guclendir. Gecmisi gorunur kil.</h2>
+            <div class="gp-hero-actions">
+                <a class="gp-btn gp-btn-primary gp-btn-large" href="/register">GarajPass'e Basla</a>
+                <a class="gp-inline-link" href="/login">Zaten hesabin var mi? Giris yap</a>
+            </div>
+        </section>
+    </main>
 </div>

@@ -1,4 +1,5 @@
 @page "/appointments"
+@using System.Globalization
 @using System.Net
 @inject AppointmentsService AppointmentsService
 @inject AuthService AuthService
@@ -6,42 +7,54 @@
 
 <PageTitle>Randevular</PageTitle>
 
-<div class="page-shell">
+<div class="page-shell appointments-page">
     <section class="page-header">
         <div>
             <h1 class="page-title">Randevular</h1>
-            <p class="page-description">Servis öncesi planlamayı tek ekrandan yönetin, filtreleyin ve iş emrine dönüştürün.</p>
+            <p class="page-description">Haftalik servis planini, randevu akisini ve is emrine donusum surecini tek ekrandan yonetin.</p>
         </div>
         <div class="page-header-actions">
             <a href="/appointments/create" class="app-btn-primary">+ Yeni Randevu</a>
         </div>
     </section>
 
+    <section class="surface-card appointments-plan-toolbar">
+        <div class="week-nav">
+            <button type="button" class="app-btn-secondary" @onclick="@(() => MoveWeekAsync(-1))">Onceki hafta</button>
+            <button type="button" class="app-btn-secondary" @onclick="GoToThisWeekAsync">Bu hafta</button>
+            <button type="button" class="app-btn-secondary" @onclick="@(() => MoveWeekAsync(1))">Sonraki hafta</button>
+        </div>
+
+        <div class="week-range">
+            <span>Haftalik Plan</span>
+            <strong>@GetWeekRangeText()</strong>
+        </div>
+
+        <div class="view-switch" role="group" aria-label="Randevu gorunumu">
+            <button type="button" class="@GetViewButtonClass(WeeklyView)" @onclick="@(() => SetViewAsync(WeeklyView))">Haftalik Plan</button>
+            <button type="button" class="@GetViewButtonClass(ListView)" @onclick="@(() => SetViewAsync(ListView))">Liste</button>
+        </div>
+    </section>
+
     <section class="filter-card">
         <div class="filter-grid">
-            <div>
-                <label class="form-label">Hızlı filtre</label>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="@GetQuickFilterButtonClass("today")" @onclick='@(() => SetQuickFilterAsync("today"))'>Bugün</button>
-                    <button type="button" class="@GetQuickFilterButtonClass("week")" @onclick='@(() => SetQuickFilterAsync("week"))'>Bu hafta</button>
-                    <button type="button" class="@GetQuickFilterButtonClass(string.Empty)" @onclick='@(() => SetQuickFilterAsync(string.Empty))'>Tümü</button>
+            @if (_view == ListView)
+            {
+                <div>
+                    <label class="form-label">Baslangic tarihi</label>
+                    <InputDate class="form-control" @bind-Value="_startDate" @bind:after="ResetAndLoadAsync" />
                 </div>
-            </div>
 
-            <div>
-                <label class="form-label">Başlangıç tarihi</label>
-                <InputDate class="form-control" @bind-Value="_startDate" @bind:after="ResetAndLoadAsync" />
-            </div>
-
-            <div>
-                <label class="form-label">Bitiş tarihi</label>
-                <InputDate class="form-control" @bind-Value="_endDate" @bind:after="ResetAndLoadAsync" />
-            </div>
+                <div>
+                    <label class="form-label">Bitis tarihi</label>
+                    <InputDate class="form-control" @bind-Value="_endDate" @bind:after="ResetAndLoadAsync" />
+                </div>
+            }
 
             <div>
                 <label class="form-label">Durum</label>
                 <InputSelect class="form-select" @bind-Value="_statusFilter" @bind:after="ResetAndLoadAsync">
-                    <option value="">Tümü</option>
+                    <option value="">Tumu</option>
                     @foreach (var status in Enum.GetValues<AppointmentStatus>())
                     {
                         <option value="@((int)status)">@GetStatusText(status)</option>
@@ -50,9 +63,9 @@
             </div>
 
             <div>
-                <label class="form-label">Tür</label>
+                <label class="form-label">Tur</label>
                 <InputSelect class="form-select" @bind-Value="_typeFilter" @bind:after="ResetAndLoadAsync">
-                    <option value="">Tümü</option>
+                    <option value="">Tumu</option>
                     @foreach (var type in Enum.GetValues<AppointmentType>())
                     {
                         <option value="@((int)type)">@GetTypeText(type)</option>
@@ -62,42 +75,111 @@
 
             <div class="full-span">
                 <label class="form-label">Ara</label>
-                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Müşteri adı, telefon veya plaka ile ara" />
+                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Musteri adi, telefon veya plaka ile ara" />
             </div>
-            <div>
-                <label class="form-label">Sayfa boyutu</label>
-                <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
-                    <option value="10">10 / sayfa</option>
-                    <option value="20">20 / sayfa</option>
-                    <option value="50">50 / sayfa</option>
-                </select>
-            </div>
+
+            @if (_view == ListView)
+            {
+                <div>
+                    <label class="form-label">Sayfa boyutu</label>
+                    <select class="form-select page-size-select" @bind="_pageSize" @bind:after="ResetAndLoadAsync">
+                        <option value="10">10 / sayfa</option>
+                        <option value="20">20 / sayfa</option>
+                        <option value="50">50 / sayfa</option>
+                    </select>
+                </div>
+            }
         </div>
     </section>
 
     @if (_loading)
     {
         <section class="loading-state">
-            <strong>Randevular yükleniyor</strong>
-            <p>Lütfen bekleyin.</p>
+            <strong>Randevular yukleniyor</strong>
+            <p>Lutfen bekleyin.</p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
-            <strong>Randevular alınamadı</strong>
+            <strong>Randevular alinamadi</strong>
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
+            }
+        </section>
+    }
+    else if (_view == WeeklyView)
+    {
+        @if (_items.Count == 0)
+        {
+            <section class="empty-state appointment-week-empty">
+                <strong>Bu hafta icin randevu bulunmuyor.</strong>
+                <p>Haftalik plan bos. Yeni randevu olusturarak servis akisini planlayin.</p>
+                <a href="/appointments/create" class="app-btn-primary">Yeni Randevu Olustur</a>
+            </section>
+        }
+
+        <section class="appointment-week-grid">
+            @foreach (var day in GetWeekDays())
+            {
+                var dayItems = GetAppointmentsForDay(day).ToList();
+                <article class="appointment-day-card">
+                    <header class="appointment-day-header">
+                        <div>
+                            <strong>@GetDayName(day)</strong>
+                            <span>@day.ToString("dd MMMM yyyy", TurkishCulture)</span>
+                        </div>
+                        <div class="appointment-day-density">
+                            <b>@dayItems.Count</b>
+                            <span>randevu</span>
+                            @if (dayItems.Count > 0)
+                            {
+                                <small>@FormatDuration(dayItems)</small>
+                            }
+                        </div>
+                    </header>
+
+                    <div class="appointment-day-body">
+                        @if (dayItems.Count == 0)
+                        {
+                            <div class="appointment-day-empty">Bu gun icin randevu yok</div>
+                        }
+                        else
+                        {
+                            @foreach (var item in dayItems)
+                            {
+                                <article class="appointment-plan-card @GetPlanCardClass(item.Status)" @onclick="@(() => OpenDetail(item.Id))" tabindex="0" role="button">
+                                    <div class="appointment-plan-time">
+                                        <strong>@item.StartAt.ToLocalTime().ToString("HH:mm")</strong>
+                                        <span>@item.EndAt.ToLocalTime().ToString("HH:mm")</span>
+                                    </div>
+                                    <div class="appointment-plan-main">
+                                        <div class="appointment-plan-topline">
+                                            <strong>@item.CustomerName</strong>
+                                            <span class="status-badge @GetStatusClass(item.Status)">@GetStatusText(item.Status)</span>
+                                        </div>
+                                        <div class="appointment-plan-vehicle">@GetVehicleLine(item)</div>
+                                        <div class="appointment-plan-service">@GetServiceLine(item)</div>
+                                        @if (HasNote(item))
+                                        {
+                                            <div class="appointment-plan-note">Not var</div>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </article>
             }
         </section>
     }
     else if (_items.Count == 0)
     {
         <section class="empty-state">
-            <strong>Randevu bulunamadı</strong>
-            <p>Filtreleri temizleyin veya yeni bir randevu oluşturun.</p>
+            <strong>Randevu bulunamadi</strong>
+            <p>Filtreleri temizleyin veya yeni bir randevu olusturun.</p>
         </section>
     }
     else
@@ -107,11 +189,11 @@
                 <table class="table modern-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Müşteri</th>
+                            <th>Musteri</th>
                             <th>Plaka</th>
-                            <th>Tür</th>
-                            <th>Başlangıç</th>
-                            <th>Bitiş</th>
+                            <th>Tur</th>
+                            <th>Baslangic</th>
+                            <th>Bitis</th>
                             <th>Durum</th>
                         </tr>
                     </thead>
@@ -148,8 +230,8 @@
                     </div>
                     <div class="mt-3 d-flex flex-column gap-2 text-muted small">
                         <span>Plaka: @(string.IsNullOrWhiteSpace(item.Plate) ? "-" : item.Plate)</span>
-                        <span>Başlangıç: @item.StartAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
-                        <span>Bitiş: @item.EndAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        <span>Baslangic: @item.StartAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        <span>Bitis: @item.EndAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
                     </div>
                     <div class="mt-3">
                         <span class="type-badge">@GetTypeText(item.Type)</span>
@@ -159,31 +241,37 @@
         </section>
     }
 
-    @if (_totalPages > 1 || _totalCount > 0)
+    @if (_view == ListView && (_totalPages > 1 || _totalCount > 0))
     {
         <div class="pagination-bar">
             <div class="pagination-info">
-                Toplam kayıt: <strong>@_totalCount</strong> &nbsp;·&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+                Toplam kayit: <strong>@_totalCount</strong> &nbsp;-&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
             </div>
             <div class="pagination-actions">
-                <button class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Önceki</button>
-                <button class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
+                <button type="button" class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Onceki</button>
+                <button type="button" class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
             </div>
         </div>
     }
 </div>
 
 @code {
+    private const string WeeklyView = "week";
+    private const string ListView = "list";
+    private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");
+    private static readonly string[] DayNames = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"];
+
     private readonly List<AppointmentDto> _items = [];
     private bool _loading;
     private string? _error;
     private string? _errorEndpoint;
-    private string _quickFilter = "today";
+    private string _view = WeeklyView;
     private int? _statusFilter;
     private int? _typeFilter;
     private string? _searchText;
     private DateTime? _startDate;
     private DateTime? _endDate;
+    private DateTime _weekStart;
 
     private int _pageNumber = 1;
     private int _pageSize = 20;
@@ -205,39 +293,44 @@
             return;
         }
 
-        ApplyQuickFilterDates();
+        SetWeekRange(GetStartOfWeek(DateTime.Today));
         await LoadAsync();
     }
 
-    private async Task SetQuickFilterAsync(string filter)
+    private async Task SetViewAsync(string view)
     {
-        _quickFilter = filter;
+        _view = view;
         _pageNumber = 1;
-        ApplyQuickFilterDates();
+
+        if (_view == WeeklyView)
+        {
+            SetWeekRange(_weekStart == default ? GetStartOfWeek(DateTime.Today) : _weekStart);
+        }
+
         await LoadAsync();
     }
 
-    private void ApplyQuickFilterDates()
+    private async Task MoveWeekAsync(int offset)
     {
-        var today = DateTime.Today;
+        SetWeekRange((_weekStart == default ? GetStartOfWeek(DateTime.Today) : _weekStart).AddDays(offset * 7));
+        _view = WeeklyView;
+        _pageNumber = 1;
+        await LoadAsync();
+    }
 
-        if (_quickFilter == "today")
-        {
-            _startDate = today;
-            _endDate = today;
-        }
-        else if (_quickFilter == "week")
-        {
-            var diff = ((int)today.DayOfWeek + 6) % 7;
-            var monday = today.AddDays(-diff);
-            _startDate = monday;
-            _endDate = monday.AddDays(6);
-        }
-        else
-        {
-            _startDate = null;
-            _endDate = null;
-        }
+    private async Task GoToThisWeekAsync()
+    {
+        SetWeekRange(GetStartOfWeek(DateTime.Today));
+        _view = WeeklyView;
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private void SetWeekRange(DateTime monday)
+    {
+        _weekStart = monday.Date;
+        _startDate = _weekStart;
+        _endDate = _weekStart.AddDays(6);
     }
 
     private async Task LoadAsync()
@@ -253,12 +346,14 @@
             DateTimeOffset? endTo = _endDate.HasValue ? ToEndOfDay(_endDate.Value) : null;
             var status = _statusFilter.HasValue ? (AppointmentStatus?)_statusFilter.Value : null;
             var type = _typeFilter.HasValue ? (AppointmentType?)_typeFilter.Value : null;
+            var pageSize = _view == WeeklyView ? 100 : _pageSize;
+            var pageNumber = _view == WeeklyView ? 1 : _pageNumber;
 
-            var result = await AppointmentsService.GetAppointmentsAsync(startFrom, endTo, status, type, _searchText, _pageNumber, _pageSize);
+            var result = await AppointmentsService.GetAppointmentsAsync(startFrom, endTo, status, type, _searchText, pageNumber, pageSize);
             _items.Clear();
             if (result is not null)
             {
-                _items.AddRange(result.Items);
+                _items.AddRange(result.Items.OrderBy(x => x.StartAt.ToLocalTime()));
                 _totalCount = result.TotalCount;
                 _totalPages = result.TotalPages;
                 _hasPreviousPage = result.HasPreviousPage;
@@ -307,6 +402,26 @@
         NavigationManager.NavigateTo($"/appointments/{id}");
     }
 
+    private IEnumerable<DateTime> GetWeekDays()
+    {
+        var start = _weekStart == default ? GetStartOfWeek(DateTime.Today) : _weekStart;
+        for (var i = 0; i < 7; i++)
+        {
+            yield return start.AddDays(i);
+        }
+    }
+
+    private IEnumerable<AppointmentDto> GetAppointmentsForDay(DateTime day)
+        => _items
+            .Where(x => x.StartAt.ToLocalTime().Date == day.Date)
+            .OrderBy(x => x.StartAt.ToLocalTime());
+
+    private static DateTime GetStartOfWeek(DateTime date)
+    {
+        var diff = ((int)date.DayOfWeek + 6) % 7;
+        return date.Date.AddDays(-diff);
+    }
+
     private static DateTimeOffset ToStartOfDay(DateTime date)
     {
         var local = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Local);
@@ -319,10 +434,60 @@
         return new DateTimeOffset(local);
     }
 
-    private string GetQuickFilterButtonClass(string filter)
+    private string GetViewButtonClass(string view)
+        => _view == view ? "app-btn-primary" : "app-btn-secondary";
+
+    private string GetWeekRangeText()
     {
-        return _quickFilter == filter ? "app-btn-primary" : "app-btn-secondary";
+        var start = _weekStart == default ? GetStartOfWeek(DateTime.Today) : _weekStart;
+        var end = start.AddDays(6);
+        return $"{start.ToString("d MMMM", TurkishCulture)} - {end.ToString("d MMMM yyyy", TurkishCulture)}";
     }
+
+    private static string GetDayName(DateTime day)
+        => DayNames[((int)day.DayOfWeek + 6) % 7];
+
+    private static string FormatDuration(IReadOnlyCollection<AppointmentDto> items)
+    {
+        var totalMinutes = items.Sum(x => Math.Max(0, (int)(x.EndAt.ToLocalTime() - x.StartAt.ToLocalTime()).TotalMinutes));
+        if (totalMinutes <= 0)
+        {
+            return "sure yok";
+        }
+
+        var hours = totalMinutes / 60;
+        var minutes = totalMinutes % 60;
+        return hours > 0 ? $"{hours}s {minutes}dk" : $"{minutes}dk";
+    }
+
+    private static string GetVehicleLine(AppointmentDto item)
+        => string.IsNullOrWhiteSpace(item.Plate) ? "Arac bilgisi yok" : item.Plate;
+
+    private static string GetServiceLine(AppointmentDto item)
+    {
+        var text = GetTypeText(item.Type);
+        if (!string.IsNullOrWhiteSpace(item.Complaint))
+        {
+            return $"{text} - {item.Complaint}";
+        }
+
+        return text;
+    }
+
+    private static bool HasNote(AppointmentDto item)
+        => !string.IsNullOrWhiteSpace(item.Note);
+
+    private static string GetPlanCardClass(AppointmentStatus status) => status switch
+    {
+        AppointmentStatus.Scheduled => "plan-scheduled",
+        AppointmentStatus.Confirmed => "plan-confirmed",
+        AppointmentStatus.CheckedIn => "plan-checkedin",
+        AppointmentStatus.ConvertedToOrder => "plan-converted",
+        AppointmentStatus.Cancelled => "plan-cancelled",
+        AppointmentStatus.NoShow => "plan-noshow",
+        AppointmentStatus.Completed => "plan-completed",
+        _ => string.Empty
+    };
 
     private static string GetStatusClass(AppointmentStatus status) => status switch
     {
@@ -338,24 +503,24 @@
 
     private static string GetTypeText(AppointmentType type) => type switch
     {
-        AppointmentType.Maintenance => "Bakım",
-        AppointmentType.Repair => "Onarım",
+        AppointmentType.Maintenance => "Bakim",
+        AppointmentType.Repair => "Onarim",
         AppointmentType.Cleaning => "Temizlik",
-        AppointmentType.Washing => "Yıkama",
+        AppointmentType.Washing => "Yikama",
         AppointmentType.Inspection => "Kontrol",
-        AppointmentType.TireChange => "Lastik Değişimi",
-        _ => "Diğer"
+        AppointmentType.TireChange => "Lastik Degisimi",
+        _ => "Diger"
     };
 
     private static string GetStatusText(AppointmentStatus status) => status switch
     {
-        AppointmentStatus.Scheduled => "Planlandı",
-        AppointmentStatus.Confirmed => "Onaylandı",
-        AppointmentStatus.CheckedIn => "Servise Geldi",
-        AppointmentStatus.ConvertedToOrder => "İş Emrine Dönüştü",
-        AppointmentStatus.Cancelled => "İptal",
+        AppointmentStatus.Scheduled => "Planlandi",
+        AppointmentStatus.Confirmed => "Onaylandi",
+        AppointmentStatus.CheckedIn => "Geldi",
+        AppointmentStatus.ConvertedToOrder => "Is Emrine Donustu",
+        AppointmentStatus.Cancelled => "Iptal",
         AppointmentStatus.NoShow => "Gelmedi",
-        AppointmentStatus.Completed => "Tamamlandı",
+        AppointmentStatus.Completed => "Tamamlandi",
         _ => status.ToString()
     };
 }

@@ -4,13 +4,13 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>E-posta Dogrulama - BakimSuite</PageTitle>
+<PageTitle>E-posta Dogrulama - GarajPass</PageTitle>
 
 <div class="auth-shell auth-shell-login">
     <div class="auth-panel auth-panel-brand">
         <div class="eyebrow" style="color:#fdba74">Hesap aktivasyonu</div>
         <h1 class="auth-title">E-posta dogrulama</h1>
-        <p class="auth-copy">Dogrulama baglantisi gecerliyse hesabinizi aktif hale getiririz.</p>
+        <p class="auth-copy">Dogrulama baglantisi gecerliyse GarajPass hesabini aktif hale getiririz.</p>
     </div>
 
     <div class="auth-panel auth-panel-form auth-panel-narrow">
@@ -72,7 +72,7 @@
                 Token = Token
             });
 
-            _message = response?.Message ?? "E-posta adresiniz dogrulandi.";
+            _message = response?.Message ?? "E-posta adresin dogrulandi. GarajPass'e giris yapabilirsin.";
             var uri = QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
             {
                 ["email"] = Email,

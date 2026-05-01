@@ -4,6 +4,7 @@
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Servis Detayı</PageTitle>
 
@@ -57,11 +58,11 @@
 
             <div class="page-header-actions action-bar">
                 <a class="app-btn-secondary" href="@($"/service-orders/{Id}/print")">Yazdır / PDF Al</a>
-                <a class="app-btn-secondary" href="/service-orders">Listeye Dön</a>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("operations-section"))">İşçilik</button>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("parts-section"))">Parça</button>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollTo("payments-section"))">Tahsilat</button>
-                <button type="button" class="app-btn-primary" @onclick="@(() => ScrollTo("status-section"))">Durum Güncelle</button>
+                <button type="button" class="app-btn-secondary" @onclick="BackToList">Listeye Dön</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("operations-section"))">İşçilik</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("parts-section"))">Parça</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
+                <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
             </div>
         </section>
 
@@ -604,7 +605,34 @@
         }
     }
 
-    private void ScrollTo(string id) => NavigationManager.NavigateTo($"#{id}", forceLoad: false);
+    private void BackToList()
+    {
+        TryNavigateTo("/service-orders");
+    }
+
+    private async Task ScrollToAsync(string id)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("motorCareUi.scrollToElement", id);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        {
+            TryNavigateTo($"/service-orders/{Id}#{id}", replace: true);
+        }
+    }
+
+    private void TryNavigateTo(string uri, bool replace = false)
+    {
+        try
+        {
+            NavigationManager.NavigateTo(uri, replace: replace);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        {
+            _error = "Sayfa gecisi tamamlanamadi. Lutfen tekrar deneyin.";
+        }
+    }
 
     private static string GetStatusBadgeClass(string status) => status switch
     {

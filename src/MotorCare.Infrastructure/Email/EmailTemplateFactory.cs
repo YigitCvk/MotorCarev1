@@ -9,10 +9,10 @@ internal static class EmailTemplateFactory
         => CreateMessage(
             toEmail,
             displayName,
-            "BakımSuite e-posta doğrulama",
+            "GarajPass e-posta doğrulama kodu",
             "Hesabınızı doğrulayın",
             $"Merhaba {displayName},",
-            "BakımSuite hesabınızı doğrulamak için aşağıdaki butona tıklayın.",
+            "GarajPass hesabınızı doğrulamak için aşağıdaki butona tıklayın.",
             "Doğrula",
             verificationUrl,
             "Bu işlemi siz başlatmadıysanız bu e-postayı yok sayabilirsiniz.");
@@ -20,11 +20,11 @@ internal static class EmailTemplateFactory
     public static EmailMessage CreatePasswordResetCodeEmail(string toEmail, string displayName, string code, DateTime expiresAtUtc)
     {
         var remaining = Math.Max(1, (int)Math.Ceiling((expiresAtUtc - DateTime.UtcNow).TotalMinutes));
-        var subject = "Garaj360 şifre sıfırlama kodu";
+        var subject = "GarajPass şifre sıfırlama kodu";
         var html = $"""
             <div style="font-family:Segoe UI,Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
               <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:20px;padding:32px;border:1px solid #e2e8f0">
-                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">Garaj360</div>
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">GarajPass</div>
                 <h1 style="font-size:24px;margin:0 0 12px">Şifre sıfırlama kodunuz</h1>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 20px">Merhaba {displayName},</p>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 16px">Şifreni sıfırlamak için doğrulama kodun:</p>
@@ -42,11 +42,11 @@ internal static class EmailTemplateFactory
     public static EmailMessage CreateTwoFactorEmail(string toEmail, string displayName, string code, DateTime expiresAtUtc)
     {
         var remaining = Math.Max(1, (int)Math.Ceiling((expiresAtUtc - DateTime.UtcNow).TotalMinutes));
-        var subject = "BakımSuite doğrulama kodu";
+        var subject = "GarajPass doğrulama kodu";
         var html = $"""
             <div style="font-family:Segoe UI,Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
               <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:20px;padding:32px;border:1px solid #e2e8f0">
-                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">BakımSuite</div>
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">GarajPass</div>
                 <h1 style="font-size:24px;margin:0 0 12px">Doğrulama kodunuz</h1>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 20px">Merhaba {displayName},</p>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 16px">Doğrulama kodunuz:</p>
@@ -75,7 +75,7 @@ internal static class EmailTemplateFactory
         var html = $"""
             <div style="font-family:Segoe UI,Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
               <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:20px;padding:32px;border:1px solid #e2e8f0">
-                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">BakımSuite</div>
+                <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#f97316;margin-bottom:12px">GarajPass</div>
                 <h1 style="font-size:24px;margin:0 0 12px">{title}</h1>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 12px">{greeting}</p>
                 <p style="font-size:15px;line-height:1.7;margin:0 0 24px">{description}</p>

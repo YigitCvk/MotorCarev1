@@ -6,7 +6,7 @@ public sealed class EmailOptions
 
     public string Provider { get; set; } = "Smtp";
     public string FromEmail { get; set; } = string.Empty;
-    public string FromName { get; set; } = "BakımSuite";
+    public string FromName { get; set; } = "GarajPass";
     public string SmtpHost { get; set; } = string.Empty;
     public int SmtpPort { get; set; } = 587;
     public string SmtpUsername { get; set; } = string.Empty;

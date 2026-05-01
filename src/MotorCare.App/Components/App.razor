@@ -28,6 +28,14 @@
                 localStorage.removeItem(refreshKey);
             }
         };
+        window.motorCareUi = window.motorCareUi || {
+            scrollToElement: function (id) {
+                var element = document.getElementById(id);
+                if (element) {
+                    element.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            }
+        };
     </script>
     <script src="@AssetPath("/js/storage.js")"></script>
     <script src="@AssetPath("/_framework/blazor.web.js")"></script>

@@ -34,7 +34,7 @@
 
             <header class="print-header">
                 <div>
-                    <div class="print-brand">BakımSuite</div>
+                    <div class="print-brand">GarajPass</div>
                     <h1>Servis Emri Raporu</h1>
                     <p>@(_currentUser?.TenantIdentifier ?? "İşletme") · @_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</p>
                 </div>
@@ -217,7 +217,7 @@
             </div>
 
             <footer class="print-footer">
-                <span>BakımSuite · Motosiklet Servis Yönetim Sistemi</span>
+                <span>GarajPass · Motosiklet Servis Yönetim Sistemi</span>
                 <span>@_order.OrderNo · @_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy")</span>
             </footer>
 
