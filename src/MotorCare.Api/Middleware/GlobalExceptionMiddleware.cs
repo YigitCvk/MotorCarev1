@@ -25,6 +25,14 @@ public sealed class GlobalExceptionMiddleware
         {
             await _next(httpContext);
         }
+        catch (OperationCanceledException) when (httpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogDebug(
+                EventIdStore.Common.ExpectedRequestFailure,
+                "Request canceled by client. Path={Path} CorrelationId={CorrelationId}",
+                httpContext.Request.Path,
+                httpContext.TraceIdentifier);
+        }
         catch (Exception exception)
         {
             await HandleAsync(httpContext, exception);

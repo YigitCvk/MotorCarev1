@@ -24,7 +24,7 @@ public sealed class TokenStorageService
         }
         catch (Exception ex) when (IsRecoverableStorageException(ex))
         {
-            _logger.LogWarning(ex, "Token storage set failed.");
+            _logger.LogDebug("Browser storage set skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
         }
     }
 
@@ -36,7 +36,7 @@ public sealed class TokenStorageService
         }
         catch (Exception ex) when (IsRecoverableStorageException(ex))
         {
-            _logger.LogWarning(ex, "Token storage access token read failed.");
+            _logger.LogDebug("Browser storage read skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
             return null;
         }
     }
@@ -49,7 +49,7 @@ public sealed class TokenStorageService
         }
         catch (Exception ex) when (IsRecoverableStorageException(ex))
         {
-            _logger.LogWarning(ex, "Token storage refresh token read failed.");
+            _logger.LogDebug("Browser storage read skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
             return null;
         }
     }
@@ -62,10 +62,10 @@ public sealed class TokenStorageService
         }
         catch (Exception ex) when (IsRecoverableStorageException(ex))
         {
-            _logger.LogWarning(ex, "Token storage clear failed.");
+            _logger.LogDebug("Browser storage clear skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
         }
     }
 
     private static bool IsRecoverableStorageException(Exception exception)
-        => exception is JSException && exception is not JSDisconnectedException;
+        => exception is JSException or JSDisconnectedException or TaskCanceledException or OperationCanceledException or ObjectDisposedException;
 }

@@ -112,9 +112,9 @@ public sealed class AuthService
         {
             refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
-            _logger.LogWarning(ex, "Logout token read skipped because circuit is disconnected.");
+            _logger.LogDebug("Logout browser storage read skipped because circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
         }
 
         if (!string.IsNullOrWhiteSpace(refreshToken))
@@ -140,10 +140,12 @@ public sealed class AuthService
             var token = await _tokenStorageService.GetAccessTokenAsync();
             return !string.IsNullOrWhiteSpace(token);
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
-            _logger.LogWarning(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit, ex, "Authentication check skipped because circuit is disconnected.");
-            throw;
+            _logger.LogDebug(EventIdStore.Common.AuthRecoverySkippedDueToDisposedCircuit,
+                "Authentication check skipped because circuit is disconnected. ExceptionType={ExceptionType}",
+                ex.GetType().Name);
+            return false;
         }
     }
 
@@ -159,9 +161,9 @@ public sealed class AuthService
             AuthenticationStateChanged?.Invoke();
             return null;
         }
-        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
-            _logger.LogDebug(ex, "Current user lookup skipped because circuit is disconnected.");
+            _logger.LogDebug("Current user lookup skipped because circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
             return null;
         }
         catch

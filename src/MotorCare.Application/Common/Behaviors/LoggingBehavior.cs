@@ -42,6 +42,17 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
         {
             sw.Stop();
 
+            if (ex is OperationCanceledException && cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    EventIdStore.Common.ExpectedRequestFailure,
+                    "Request {RequestName} canceled after {ElapsedMs}ms",
+                    requestName,
+                    sw.ElapsedMilliseconds);
+
+                throw;
+            }
+
             var logLevel = ExpectedExceptionClassifier.GetLogLevel(ex);
             var eventId = ex switch
             {
