@@ -16,7 +16,7 @@
 - Service Catalog: fiyat ve currency ile create/update/list/detail.
 - Motorcycle catalog suggestions: motosiklet marka/model suggestion.
 - Inspection PDF/body map: print sayfasinda motosiklet gorseli, isaretli body-map bolgeleri, legend ve notlar.
-- Email flow: GarajPass branding ile verification, reset code ve 2FA email akislari.
+- Email flow: GarajPass branding ile verification, reset code ve 2FA email akislari. Email flow manually tested: Passed.
 - Basic mobile responsiveness: landing, auth ve ana dashboard ekranlari icin temel responsive davranis.
 
 ## 2. Kismen Tamamlanan Moduller
@@ -29,9 +29,9 @@
 
 ## 3. MVP Icin Zorunlu Ama Eksik Kalan Isler
 
-- Production email verification gercek inbox testi.
 - Role/permission final kontrolu.
 - Backup/restore plani ve restore tatbikati.
+- UAT feedback toplama ve kritik bulgularin kapanmasi.
 - Production deployment checklist onayi.
 - Monitoring/logging dashboard.
 - Error alerting.
@@ -52,15 +52,15 @@
 ## 5. Riskler
 
 - Blazor Server circuit noise: hizli browser close/navigate durumlari framework loglarinda gorunebilir; kullanici akisi etkilenmemeli.
-- Email dogrulama gercek mailbox testi bu smoke ortaminda yapilmadiysa production oncesi zorunludur.
+- Email dogrulama, forgot password ve reset code akislari gercek mailbox ile manuel test edildi: Passed.
 - Staging ve production env ayrimi: secret, SMTP, AppBaseUrl ve logging seviyeleri final kontrol ister.
 - Backup stratejisi: otomatik backup ve restore testi tamamlanmadan production riski vardir.
-- Package warnings: build warningleri temizlenmeli veya risk kabul dokumani olusturulmalidir.
+- UAT feedback: gercek kullanici testi tamamlanmadan son UX ve operasyonel riskler kapanmis sayilmaz.
 
 ## 6. Onerilen Siradaki 5 Adim
 
 1. Production env checklist'ini doldur ve secret/AppBaseUrl/SMTP degerlerini ikinci kisiyle dogrula.
-2. Gercek mailbox ile register, verify email, forgot password ve reset code akisini test et.
-3. Backup/restore tatbikati yap ve geri donus suresini kaydet.
+2. Backup/restore tatbikati yap ve geri donus suresini kaydet.
+3. UAT test planini ilk test kullanicisiyla calistir ve feedback topla.
 4. Owner/Admin/Receptionist/Technician rolleriyle permission regresyonu kos.
 5. Production deploy sonrasi ayni smoke akisini calistirip `/api/version`, log guvenligi ve kritik CRUD akislari icin imzali onay al.
