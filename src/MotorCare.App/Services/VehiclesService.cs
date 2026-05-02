@@ -11,6 +11,10 @@ public sealed class VehiclesService(ApiClient apiClient)
         => apiClient.GetAsync<VehicleLookupResponse>(
             $"/api/vehicles/{Uri.EscapeDataString(plate)}", authorized: true, ct);
 
+    public Task<VehicleServiceHistoryResponse?> GetServiceHistoryAsync(Guid id, CancellationToken ct = default)
+        => apiClient.GetAsync<VehicleServiceHistoryResponse>(
+            $"/api/vehicles/{id}/history", authorized: true, ct);
+
     public Task<Guid> CreateAsync(CreateVehicleRequest request, CancellationToken ct = default)
         => apiClient.PostAsync<CreateVehicleRequest, Guid>("/api/vehicles", request, authorized: true, ct)!;
 

@@ -1,5 +1,7 @@
 @page "/service-orders/{Id:guid}"
+@using System.Globalization
 @using System.Net
+@using MotorCare.Application.ServiceOrders
 @using ServiceOrderDetailModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
@@ -61,6 +63,8 @@
                 <button type="button" class="app-btn-secondary" @onclick="BackToList">Listeye Dön</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("operations-section"))">İşçilik</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("parts-section"))">Parça</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("consumables-section"))">Sarf Ürün</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("attachments-section"))">Dosyalar</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
                 <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
             </div>
@@ -86,7 +90,7 @@
             <div class="metric-card mc-primary">
                 <div class="metric-label">Toplam Tutar</div>
                 <div class="metric-value">@_order.GrandTotal.ToString("N2") ₺</div>
-                <div class="metric-sub">İşçilik + parça - indirim</div>
+                <div class="metric-sub">İşçilik + parça + sarf - indirim</div>
             </div>
             <div class="metric-card mc-success">
                 <div class="metric-label">Tahsil Edilen</div>
@@ -132,6 +136,8 @@
                     }
                     <dt>Açılış</dt>
                     <dd>@_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                    <dt>Güncelleme</dt>
+                    <dd>@(_order.UpdatedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
                     <dt>Kapanış</dt>
                     <dd>@(_order.ClosedAt?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-")</dd>
                     <dt>Şikayet</dt>
@@ -162,8 +168,16 @@
                     <dd>@_order.LaborTotal.ToString("N2") ₺</dd>
                     <dt>Parça</dt>
                     <dd>@_order.PartsTotal.ToString("N2") ₺</dd>
+                    <dt>Sarf Ürün</dt>
+                    <dd>@_order.ConsumablesTotal.ToString("N2") ₺</dd>
                     <dt>İndirim</dt>
                     <dd>@_order.DiscountTotal.ToString("N2") ₺</dd>
+                    <dt>Genel Toplam</dt>
+                    <dd>@_order.GrandTotal.ToString("N2") ₺</dd>
+                    <dt>Tahsil Edilen</dt>
+                    <dd>@_order.PaidTotal.ToString("N2") ₺</dd>
+                    <dt>Kalan</dt>
+                    <dd>@_order.RemainingTotal.ToString("N2") ₺</dd>
                 </dl>
 
                 <div class="inline-form sticky-mobile-action">
@@ -172,7 +186,7 @@
                         <InputSelect class="form-select" @bind-Value="_statusRequest.Status">
                             <option value="InProgress">İşlemde</option>
                             <option value="WaitingForParts">Parça Bekliyor</option>
-                            <option value="Completed">Tamamlandı</option>
+                            <option value="Completed">Teslime Hazır</option>
                             <option value="Delivered">Teslim Edildi</option>
                             <option value="Cancelled">İptal</option>
                         </InputSelect>
@@ -180,8 +194,132 @@
                             Kaydet
                         </button>
                     </div>
+                    <div class="mt-3">
+                        <label class="form-label">Açıklama</label>
+                        <InputTextArea class="form-control" @bind-Value="_statusRequest.Note" maxlength="500" placeholder="Durum değişikliği ile ilgili kısa not ekleyin..." />
+                        <div class="text-muted small mt-1">En fazla 500 karakter.</div>
+                    </div>
                 </div>
             </section>
+        </section>
+
+        <section class="app-card service-order-attachments-card" id="attachments-section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Dosyalar ve Fotoğraflar</div>
+                    <div class="section-subtitle">Servis emri fotoğrafları, evraklar ve faturalar</div>
+                </div>
+            </div>
+
+            <div class="service-order-attachments-form">
+                <div>
+                    <label class="form-label fw-semibold">Dosya seç</label>
+                    <InputFile @key="_attachmentInputKey"
+                               class="form-control"
+                               OnChange="OnAttachmentFileChanged"
+                               accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" />
+                    <div class="text-muted small mt-1">JPG, PNG, WEBP veya PDF. En fazla 5 MB.</div>
+                    @if (_selectedAttachmentFile is not null)
+                    {
+                        <div class="text-muted small mt-1">@_selectedAttachmentFile.Name (@FormatFileSize(_selectedAttachmentFile.Size))</div>
+                    }
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">Dosya türü</label>
+                    <InputSelect class="form-select" @bind-Value="_attachmentType">
+                        @foreach (var option in AttachmentTypeOptions)
+                        {
+                            <option value="@option.Value">@option.Text</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="full-span">
+                    <label class="form-label fw-semibold">Açıklama</label>
+                    <InputTextArea class="form-control"
+                                   @bind-Value="_attachmentDescription"
+                                   maxlength="500"
+                                   placeholder="Dosya ile ilgili kısa açıklama..." />
+                    <div class="text-muted small mt-1">En fazla 500 karakter.</div>
+                </div>
+                <div class="full-span filter-actions">
+                    <button type="button"
+                            class="app-btn-primary"
+                            @onclick="UploadAttachmentAsync"
+                            disabled="@(_isWorking || _isUploadingAttachment || _selectedAttachmentFile is null)">
+                        @(_isUploadingAttachment ? "Yükleniyor..." : "Yükle")
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_attachmentsError))
+            {
+                <div class="error-state compact mt-3">
+                    <strong>Dosya işlemi tamamlanamadı</strong>
+                    <p>@_attachmentsError</p>
+                </div>
+            }
+
+            @if (_isAttachmentsLoading)
+            {
+                <div class="loading-state compact mt-3">
+                    <strong>Dosyalar yükleniyor</strong>
+                    <p>Lütfen bekleyin.</p>
+                </div>
+            }
+            else if (_attachments.Count == 0)
+            {
+                <div class="empty-state compact mt-3">
+                    <strong>Bu servis emrine henüz dosya eklenmemiş.</strong>
+                    <p>Fotoğraf veya evrak eklemek için yukarıdaki formu kullanın.</p>
+                </div>
+            }
+            else
+            {
+                <div class="service-order-attachments-grid mt-3">
+                    @foreach (var attachment in _attachments)
+                    {
+                        <article class="service-order-attachment-card">
+                            <div class="service-order-attachment-thumb">
+                                @if (attachment.IsImage)
+                                {
+                                    <img id="@GetAttachmentImageElementId(attachment.Id)" alt="@attachment.OriginalFileName" />
+                                }
+                                else
+                                {
+                                    <div class="service-order-attachment-doc">
+                                        <span>@(attachment.IsPdf ? "PDF" : "DOSYA")</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="service-order-attachment-body">
+                                <div class="service-order-attachment-title-row">
+                                    <strong>@attachment.OriginalFileName</strong>
+                                    <span class="status-badge status-info">@attachment.AttachmentTypeText</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(attachment.Description))
+                                {
+                                    <p>@attachment.Description</p>
+                                }
+                                <div class="service-order-attachment-meta">
+                                    <span>@FormatFileSize(attachment.FileSize)</span>
+                                    <span>@(string.IsNullOrWhiteSpace(attachment.UploadedByUserName) ? "Sistem" : attachment.UploadedByUserName)</span>
+                                    <span>@attachment.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</span>
+                                </div>
+                                <div class="service-order-attachment-actions">
+                                    <button type="button" class="app-btn-secondary" @onclick="() => ViewAttachmentAsync(attachment)">Görüntüle</button>
+                                    <button type="button" class="app-btn-secondary" @onclick="() => DownloadAttachmentAsync(attachment)">İndir</button>
+                                    <button type="button"
+                                            class="app-btn-secondary danger-action"
+                                            @onclick="() => DeleteAttachmentAsync(attachment.Id)"
+                                            disabled="@(_isWorking || _deletingAttachmentId == attachment.Id)">
+                                        @(_deletingAttachmentId == attachment.Id ? "Siliniyor..." : "Sil")
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </section>
 
         <section class="content-grid service-order-work-grid">
@@ -357,6 +495,133 @@
             </div>
         </section>
 
+        <section class="app-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Aktivite Akışı</div>
+                    <div class="section-subtitle">Servis emri üzerinde gerçekleşen işlemler</div>
+                </div>
+            </div>
+
+            @if (_isActivityFeedLoading)
+            {
+                <div class="loading-state compact">
+                    <strong>Aktivite akışı yükleniyor</strong>
+                    <p>Lütfen bekleyin.</p>
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_activityFeedError))
+            {
+                <div class="error-state compact">
+                    <strong>Aktivite akışı yüklenemedi.</strong>
+                    <p>@_activityFeedError</p>
+                </div>
+            }
+            else if (_activityFeed.Count == 0)
+            {
+                <div class="empty-state compact">
+                    <strong>Bu servis emri için henüz aktivite bulunmuyor.</strong>
+                </div>
+            }
+            else
+            {
+                <div class="service-order-timeline activity-feed-timeline">
+                    @foreach (var activity in _activityFeed)
+                    {
+                        <article class="service-order-timeline-item activity-feed-item">
+                            <div class="@GetActivityMarkerClass(activity.Severity)">
+                                <span>@GetActivityIconText(activity.IconName)</span>
+                            </div>
+                            <div class="service-order-timeline-content activity-feed-content">
+                                <div class="activity-feed-title-row">
+                                    <div>
+                                        <strong>@activity.Title</strong>
+                                        <div class="text-muted small">@activity.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
+                                    </div>
+                                    <span class="@GetActivityBadgeClass(activity.Severity)">@activity.ActivityTypeText</span>
+                                </div>
+                                <p>@(string.IsNullOrWhiteSpace(activity.Description) ? "Detay bulunmuyor." : activity.Description)</p>
+                                <div class="activity-feed-meta">
+                                    <span>Kullanıcı: @(string.IsNullOrWhiteSpace(activity.ActorName) ? "Sistem" : activity.ActorName)</span>
+                                    @if (activity.Amount.HasValue)
+                                    {
+                                        <strong>@FormatActivityAmount(activity.Amount.Value, activity.Currency)</strong>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="app-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Notlar</div>
+                    <div class="section-subtitle">Müşteri şikayeti, servis notu ve iç notlar</div>
+                </div>
+            </div>
+
+            <dl class="detail-list">
+                <dt>Müşteri Şikayeti</dt>
+                <dd>@(string.IsNullOrWhiteSpace(_order.Complaint) ? "-" : _order.Complaint)</dd>
+                <dt>Servis Notu / Yapılan İş</dt>
+                <dd>@(string.IsNullOrWhiteSpace(_order.WorkDescription) ? "-" : _order.WorkDescription)</dd>
+                <dt>Usta / İç Not</dt>
+                <dd>@(string.IsNullOrWhiteSpace(_order.InternalNote) ? "-" : _order.InternalNote)</dd>
+            </dl>
+        </section>
+
+        <section class="app-card">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Durum Geçmişi</div>
+                    <div class="section-subtitle">Servis emri yaşam döngüsü ve değişiklik notları</div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_statusHistoryError))
+            {
+                <div class="summary-list-item text-muted">
+                    <span>@_statusHistoryError</span>
+                </div>
+            }
+            else if (_statusHistory.Count == 0)
+            {
+                <div class="summary-list-item text-muted">
+                    <span>Henüz durum geçmişi bulunmuyor.</span>
+                </div>
+            }
+            else
+            {
+                <div class="service-order-timeline">
+                    @foreach (var item in _statusHistory)
+                    {
+                        <article class="service-order-timeline-item">
+                            <div class="service-order-timeline-marker"></div>
+                            <div class="service-order-timeline-content">
+                                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                    <div>
+                                        <strong>@GetStatusChangeText(item)</strong>
+                                        <div class="text-muted small">@item.CreatedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
+                                    </div>
+                                    <span class="@GetStatusBadgeClass(item.ToStatus)">@item.ToStatusText</span>
+                                </div>
+                                <div class="text-muted small mt-2">
+                                    Kullanıcı: @(string.IsNullOrWhiteSpace(item.ChangedByUserName) ? "Sistem" : item.ChangedByUserName)
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Note))
+                                {
+                                    <div class="mt-2">@item.Note</div>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
         <section class="app-card service-order-payments-card" id="payments-section">
             <div class="section-header">
                 <div>
@@ -414,35 +679,95 @@
     }
 </div>
 
+@if (_previewAttachment is not null)
+{
+    <div class="attachment-preview-backdrop" @onclick="CloseAttachmentPreview">
+        <section class="attachment-preview-dialog" @onclick:stopPropagation="true">
+            <header>
+                <div>
+                    <strong>@_previewAttachment.OriginalFileName</strong>
+                    <span>@_previewAttachment.AttachmentTypeText</span>
+                </div>
+                <button type="button" class="app-btn-secondary" @onclick="CloseAttachmentPreview">Kapat</button>
+            </header>
+            <div class="attachment-preview-stage">
+                <img id="@GetAttachmentPreviewElementId(_previewAttachment.Id)" alt="@_previewAttachment.OriginalFileName" />
+            </div>
+            <footer>
+                <button type="button" class="app-btn-primary" @onclick="() => DownloadAttachmentAsync(_previewAttachment!)">İndir</button>
+            </footer>
+        </section>
+    </div>
+}
+
 @code {
     [Parameter] public Guid Id { get; set; }
 
     private bool _isLoading = true;
     private bool _isWorking;
+    private bool _isActivityFeedLoading;
+    private bool _isAttachmentsLoading;
+    private bool _isUploadingAttachment;
+    private bool _shouldRefreshAttachmentImages;
+    private bool _shouldRefreshPreviewImage;
     private string? _error;
     private string? _errorEndpoint;
     private string? _actionMessage;
     private ServiceOrderDetailModel? _order;
+    private readonly List<ServiceOrderActivityFeedItem> _activityFeed = [];
+    private readonly List<ServiceOrderStatusHistoryItem> _statusHistory = [];
+    private readonly List<ServiceOrderAttachment> _attachments = [];
+    private string? _activityFeedError;
+    private string? _statusHistoryError;
+    private string? _attachmentsError;
     private readonly AddOperationRequest _operationRequest = new();
     private readonly AddPartRequest _partRequest = new() { Quantity = 1 };
     private readonly AddPaymentRequest _paymentRequest = new() { Method = "Cash" };
     private readonly UpdateServiceOrderStatusRequest _statusRequest = new() { Status = "InProgress" };
+    private IBrowserFile? _selectedAttachmentFile;
+    private string _attachmentType = "BeforeServicePhoto";
+    private string? _attachmentDescription;
+    private Guid _attachmentInputKey = Guid.NewGuid();
+    private Guid? _deletingAttachmentId;
+    private ServiceOrderAttachment? _previewAttachment;
     private DateTime? _paymentDate = DateTime.Today;
+
+    private static readonly IReadOnlyList<AttachmentTypeOption> AttachmentTypeOptions =
+    [
+        new("BeforeServicePhoto", "İşlem Öncesi Fotoğraf"),
+        new("AfterServicePhoto", "İşlem Sonrası Fotoğraf"),
+        new("DamagePhoto", "Hasar Fotoğrafı"),
+        new("PartInvoice", "Parça Faturası"),
+        new("ServiceDocument", "Servis Evrakı"),
+        new("InspectionPhoto", "Ekspertiz Fotoğrafı"),
+        new("Other", "Diğer")
+    ];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (firstRender)
         {
+            if (!await AuthService.IsAuthenticatedAsync())
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            await LoadAsync();
             return;
         }
 
-        if (!await AuthService.IsAuthenticatedAsync())
+        if (_shouldRefreshAttachmentImages)
         {
-            NavigationManager.NavigateTo("/login");
-            return;
+            _shouldRefreshAttachmentImages = false;
+            await LoadAttachmentImagesAsync();
         }
 
-        await LoadAsync();
+        if (_shouldRefreshPreviewImage && _previewAttachment is not null)
+        {
+            _shouldRefreshPreviewImage = false;
+            await LoadAttachmentPreviewImageAsync(_previewAttachment);
+        }
     }
 
     private async Task LoadAsync(bool resetMessages = true)
@@ -461,6 +786,9 @@
             if (_order is not null)
             {
                 _statusRequest.Status = _order.Status is "Open" ? "InProgress" : _order.Status;
+                await LoadActivityFeedAsync();
+                await LoadStatusHistoryAsync();
+                await LoadAttachmentsAsync();
             }
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
@@ -489,6 +817,274 @@
         await ExecuteActionAsync(
             () => ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest),
             "Servis durumu güncellendi.");
+        _statusRequest.Note = null;
+    }
+
+    private async Task LoadActivityFeedAsync()
+    {
+        try
+        {
+            _isActivityFeedLoading = true;
+            _activityFeedError = null;
+            _activityFeed.Clear();
+
+            var feed = await ServiceOrdersService.GetActivityFeedAsync(Id);
+            if (feed is not null)
+            {
+                _activityFeed.AddRange(feed);
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch
+        {
+            _activityFeedError = "Aktivite akışı yüklenemedi.";
+        }
+        finally
+        {
+            _isActivityFeedLoading = false;
+        }
+    }
+
+    private async Task LoadStatusHistoryAsync()
+    {
+        try
+        {
+            _statusHistoryError = null;
+            _statusHistory.Clear();
+
+            var history = await ServiceOrdersService.GetStatusHistoryAsync(Id);
+            if (history is not null)
+            {
+                _statusHistory.AddRange(history);
+            }
+        }
+        catch
+        {
+            _statusHistoryError = "Durum geçmişi şu anda alınamıyor. Servis detayını kullanmaya devam edebilirsiniz.";
+        }
+    }
+
+    private async Task LoadAttachmentsAsync()
+    {
+        try
+        {
+            _isAttachmentsLoading = true;
+            _attachmentsError = null;
+            _attachments.Clear();
+            _previewAttachment = null;
+
+            var attachments = await ServiceOrdersService.GetAttachmentsAsync(Id);
+            if (attachments is not null)
+            {
+                _attachments.AddRange(attachments);
+            }
+
+            _shouldRefreshAttachmentImages = _attachments.Any(x => x.IsImage);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _attachmentsError = ex.Message;
+        }
+        catch
+        {
+            _attachmentsError = "Dosyalar şu anda alınamıyor. Servis detayını kullanmaya devam edebilirsiniz.";
+        }
+        finally
+        {
+            _isAttachmentsLoading = false;
+        }
+    }
+
+    private void OnAttachmentFileChanged(InputFileChangeEventArgs args)
+    {
+        _selectedAttachmentFile = args.File;
+        _attachmentsError = null;
+
+        if (_selectedAttachmentFile.Size > ServiceOrderAttachmentFileRules.MaxFileSizeBytes)
+        {
+            _attachmentsError = "Dosya boyutu 5 MB sınırını aşamaz.";
+            return;
+        }
+
+        if (!ServiceOrderAttachmentFileRules.IsAllowedExtensionContentTypePair(_selectedAttachmentFile.Name, _selectedAttachmentFile.ContentType))
+        {
+            _attachmentsError = "Yalnızca jpg, jpeg, png, webp veya pdf dosyaları yüklenebilir.";
+        }
+    }
+
+    private async Task UploadAttachmentAsync()
+    {
+        if (_selectedAttachmentFile is null)
+        {
+            _attachmentsError = "Lütfen bir dosya seçin.";
+            return;
+        }
+
+        if (_selectedAttachmentFile.Size > ServiceOrderAttachmentFileRules.MaxFileSizeBytes)
+        {
+            _attachmentsError = "Dosya boyutu 5 MB sınırını aşamaz.";
+            return;
+        }
+
+        if (!ServiceOrderAttachmentFileRules.IsAllowedExtensionContentTypePair(_selectedAttachmentFile.Name, _selectedAttachmentFile.ContentType))
+        {
+            _attachmentsError = "Dosya uzantısı ve içerik tipi desteklenmiyor.";
+            return;
+        }
+
+        try
+        {
+            _isUploadingAttachment = true;
+            _attachmentsError = null;
+            _error = null;
+            _errorEndpoint = null;
+            _actionMessage = null;
+
+            await ServiceOrdersService.UploadAttachmentAsync(
+                Id,
+                _selectedAttachmentFile,
+                _attachmentType,
+                _attachmentDescription);
+
+            _actionMessage = "Dosya yüklendi.";
+            _selectedAttachmentFile = null;
+            _attachmentDescription = null;
+            _attachmentInputKey = Guid.NewGuid();
+            await LoadAttachmentsAsync();
+            await LoadActivityFeedAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _attachmentsError = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _attachmentsError = ex.Message;
+        }
+        finally
+        {
+            _isUploadingAttachment = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteAttachmentAsync(Guid attachmentId)
+    {
+        try
+        {
+            _deletingAttachmentId = attachmentId;
+            _attachmentsError = null;
+            _actionMessage = null;
+
+            await ServiceOrdersService.DeleteAttachmentAsync(Id, attachmentId);
+            _actionMessage = "Dosya pasife alındı.";
+            await LoadAttachmentsAsync();
+            await LoadActivityFeedAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _attachmentsError = ex.Message;
+            _errorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _attachmentsError = ex.Message;
+        }
+        finally
+        {
+            _deletingAttachmentId = null;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ViewAttachmentAsync(ServiceOrderAttachment attachment)
+    {
+        if (attachment.IsImage)
+        {
+            _previewAttachment = attachment;
+            _shouldRefreshPreviewImage = true;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        await OpenAttachmentAsync(attachment, download: false);
+    }
+
+    private Task DownloadAttachmentAsync(ServiceOrderAttachment attachment)
+        => OpenAttachmentAsync(attachment, download: true);
+
+    private async Task OpenAttachmentAsync(ServiceOrderAttachment attachment, bool download)
+    {
+        try
+        {
+            _attachmentsError = null;
+            await JSRuntime.InvokeVoidAsync(
+                "motorCareUi.openAuthorizedFile",
+                attachment.FileUrl,
+                TokenStorageService.AccessTokenKey,
+                download,
+                attachment.OriginalFileName);
+        }
+        catch (Exception ex) when (IsRecoverableUiException(ex))
+        {
+            _attachmentsError = "Dosya açılamadı. Lütfen tekrar deneyin.";
+        }
+    }
+
+    private async Task LoadAttachmentImagesAsync()
+    {
+        foreach (var attachment in _attachments.Where(x => x.IsImage))
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "motorCareUi.loadAuthorizedImage",
+                    GetAttachmentImageElementId(attachment.Id),
+                    attachment.FileUrl,
+                    TokenStorageService.AccessTokenKey);
+            }
+            catch (Exception ex) when (IsRecoverableUiException(ex))
+            {
+                _attachmentsError ??= "Bazı görsel önizlemeleri yüklenemedi.";
+            }
+        }
+    }
+
+    private async Task LoadAttachmentPreviewImageAsync(ServiceOrderAttachment attachment)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "motorCareUi.loadAuthorizedImage",
+                GetAttachmentPreviewElementId(attachment.Id),
+                attachment.FileUrl,
+                TokenStorageService.AccessTokenKey);
+        }
+        catch (Exception ex) when (IsRecoverableUiException(ex))
+        {
+            _attachmentsError = "Görsel önizleme yüklenemedi.";
+        }
+    }
+
+    private void CloseAttachmentPreview()
+    {
+        _previewAttachment = null;
     }
 
     private async Task AddOperationAsync()
@@ -650,7 +1246,7 @@
         "Open" => "Açık",
         "InProgress" => "İşlemde",
         "WaitingForParts" => "Parça Bekliyor",
-        "Completed" => "Tamamlandı",
+        "Completed" => "Teslime Hazır",
         "Delivered" => "Teslim Edildi",
         "Cancelled" => "İptal",
         _ => status
@@ -664,9 +1260,70 @@
         _ => method
     };
 
+    private static string GetActivityMarkerClass(string severity)
+        => $"service-order-timeline-marker activity-feed-marker activity-feed-marker-{NormalizeActivitySeverity(severity)}";
+
+    private static string GetActivityBadgeClass(string severity)
+        => $"status-badge activity-feed-badge activity-feed-badge-{NormalizeActivitySeverity(severity)}";
+
+    private static string NormalizeActivitySeverity(string? severity) => severity switch
+    {
+        "success" => "success",
+        "warning" => "warning",
+        "danger" => "danger",
+        _ => "info"
+    };
+
+    private static string GetActivityIconText(string? iconName) => iconName switch
+    {
+        "wrench" => "IS",
+        "package" => "PR",
+        "credit-card" => "TL",
+        "file" => "DF",
+        "note" => "NT",
+        _ => "AK"
+    };
+
+    private static string FormatActivityAmount(decimal amount, string? currency)
+    {
+        var formattedAmount = amount.ToString("N2", CultureInfo.GetCultureInfo("tr-TR"));
+        return string.Equals(currency, "TRY", StringComparison.OrdinalIgnoreCase)
+            ? $"{formattedAmount} TL"
+            : $"{formattedAmount} {currency}";
+    }
+
+    private static string GetStatusChangeText(ServiceOrderStatusHistoryItem item)
+        => string.IsNullOrWhiteSpace(item.FromStatusText)
+            ? item.ToStatusText
+            : $"{item.FromStatusText} → {item.ToStatusText}";
+
+    private static string GetAttachmentImageElementId(Guid id) => $"attachment-img-{id:N}";
+
+    private static string GetAttachmentPreviewElementId(Guid id) => $"attachment-preview-{id:N}";
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024)
+        {
+            return $"{bytes} B";
+        }
+
+        if (bytes < 1024 * 1024)
+        {
+            return $"{bytes / 1024d:N1} KB";
+        }
+
+        return $"{bytes / 1024d / 1024d:N1} MB";
+    }
+
+    private static bool IsRecoverableUiException(Exception exception)
+        => exception is JSException or JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException;
+
     private bool CanRemoveOperation(ServiceOrderOperation operation)
         => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - operation.Price);
 
     private bool CanRemovePart(ServiceOrderPart part)
         => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - part.TotalPrice);
+
+    private sealed record AttachmentTypeOption(string Value, string Text);
 }

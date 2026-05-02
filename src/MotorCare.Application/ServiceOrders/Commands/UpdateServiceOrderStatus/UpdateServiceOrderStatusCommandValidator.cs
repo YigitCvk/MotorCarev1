@@ -11,6 +11,11 @@ public class UpdateServiceOrderStatusCommandValidator : AbstractValidator<Update
         RuleFor(x => x.Status)
             .IsInEnum()
             .Must(status => status != ServiceOrderStatus.Open)
-            .WithMessage("Transition to Open is not supported.");
+            .WithMessage("Gecersiz servis emri durumu. Acik durumuna geri donus desteklenmiyor.");
+
+        RuleFor(x => x.Note)
+            .MaximumLength(500)
+            .When(x => !string.IsNullOrWhiteSpace(x.Note))
+            .WithMessage("Durum aciklamasi en fazla 500 karakter olabilir.");
     }
 }

@@ -100,16 +100,26 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
                 order.GrandTotal));
         }
 
+        var readyForDeliveryItems = recentOrderItems
+            .Where(x => x.Status == ServiceOrderStatus.Completed.ToString())
+            .Take(5)
+            .ToList();
+
         var result = new DailySummaryDto(
             appointmentItems.Count,
             summary.Data.ActiveServiceOrders,
+            summary.Data.OpenServiceOrders,
+            summary.Data.InProgressServiceOrders,
+            summary.Data.WaitingForPartsServiceOrders,
             summary.Data.CompletedServiceOrdersToday,
             summary.Data.DeliveryWaitingCount,
             summary.Data.TotalRevenueToday,
             summary.Data.TotalPaymentsToday,
+            summary.Data.TotalPaymentsThisMonth,
             summary.Data.PendingAmount,
             appointmentItems,
-            recentOrderItems);
+            recentOrderItems,
+            readyForDeliveryItems);
 
         if (partialFallbackApplied)
         {
@@ -146,7 +156,7 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
                 "Dashboard summary source failed for TenantId={TenantId}. Falling back to zero summary values.",
                 tenantId);
 
-            return (new ServiceOrderDailySummary(0, 0, 0, 0, 0m, 0m, 0m), true);
+            return (new ServiceOrderDailySummary(0, 0, 0, 0, 0, 0, 0, 0m, 0m, 0m, 0m), true);
         }
     }
 
@@ -222,7 +232,7 @@ public class GetDailySummaryQueryHandler : IRequestHandler<GetDailySummaryQuery,
         ServiceOrderStatus.Open => "Açık",
         ServiceOrderStatus.InProgress => "İşlemde",
         ServiceOrderStatus.WaitingForParts => "Parça Bekliyor",
-        ServiceOrderStatus.Completed => "Tamamlandı",
+        ServiceOrderStatus.Completed => "Teslime Hazır",
         ServiceOrderStatus.Delivered => "Teslim Edildi",
         ServiceOrderStatus.Cancelled => "İptal",
         _ => status.ToString()

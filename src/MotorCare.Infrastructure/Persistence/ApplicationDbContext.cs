@@ -47,6 +47,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<MotorcycleModelCatalogItem> MotorcycleModelCatalogItems => Set<MotorcycleModelCatalogItem>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+    public DbSet<ServiceOrderAttachment> ServiceOrderAttachments => Set<ServiceOrderAttachment>();
+    public DbSet<ServiceOrderStatusHistory> ServiceOrderStatusHistories => Set<ServiceOrderStatusHistory>();
     public DbSet<ConsumableCatalogItem> ConsumableCatalogItems => Set<ConsumableCatalogItem>();
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
@@ -68,6 +70,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Appointment>().HasQueryFilter(a => a.TenantId == CurrentTenantId);
         modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ServiceOrderAttachment>().HasQueryFilter(a => a.TenantId == CurrentTenantId && !a.IsDeleted);
+        modelBuilder.Entity<ServiceOrderStatusHistory>().HasQueryFilter(h => h.TenantId == CurrentTenantId);
         modelBuilder.Entity<ConsumableCatalogItem>().HasQueryFilter(c => c.IsSystemDefault || c.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => s.TenantId == CurrentTenantId);
         modelBuilder.Entity<InventoryItem>().HasQueryFilter(i => i.TenantId == CurrentTenantId);

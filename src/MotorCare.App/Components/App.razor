@@ -34,6 +34,64 @@
                 if (element) {
                     element.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
+            },
+            loadAuthorizedImage: async function (elementId, url, tokenKey) {
+                var element = document.getElementById(elementId);
+                if (!element) {
+                    return;
+                }
+
+                var token = localStorage.getItem(tokenKey);
+                var headers = token ? { "Authorization": "Bearer " + token } : {};
+                var response = await fetch(url, { headers: headers });
+                if (!response.ok) {
+                    return;
+                }
+
+                var blob = await response.blob();
+                var previousUrl = element.dataset.objectUrl;
+                var objectUrl = URL.createObjectURL(blob);
+                element.src = objectUrl;
+                element.dataset.objectUrl = objectUrl;
+
+                if (previousUrl) {
+                    URL.revokeObjectURL(previousUrl);
+                }
+            },
+            openAuthorizedFile: async function (url, tokenKey, download, fileName) {
+                var token = localStorage.getItem(tokenKey);
+                var headers = token ? { "Authorization": "Bearer " + token } : {};
+                var requestUrl = new URL(url, window.location.origin);
+                if (download) {
+                    requestUrl.searchParams.set("download", "true");
+                }
+
+                var response = await fetch(requestUrl.toString(), { headers: headers });
+                if (!response.ok) {
+                    throw new Error("Dosya alınamadı.");
+                }
+
+                var blob = await response.blob();
+                var objectUrl = URL.createObjectURL(blob);
+                var anchor = document.createElement("a");
+                anchor.href = objectUrl;
+
+                if (download) {
+                    anchor.download = fileName || "dosya";
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    anchor.remove();
+                } else {
+                    anchor.target = "_blank";
+                    anchor.rel = "noopener";
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    anchor.remove();
+                }
+
+                window.setTimeout(function () {
+                    URL.revokeObjectURL(objectUrl);
+                }, 60000);
             }
         };
     </script>

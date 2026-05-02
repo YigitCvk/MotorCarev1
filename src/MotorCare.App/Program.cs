@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Net.Http.Headers;
 using MotorCare.App.Configuration;
 using MotorCare.App.Components;
 using MotorCare.App.Services;
@@ -84,6 +85,41 @@ if (Directory.Exists(app.Environment.WebRootPath))
 {
     app.UseStaticFiles();
 }
+
+app.MapGet("/attachment-proxy/service-orders/{id:guid}/attachments/{attachmentId:guid}/download", async (
+    Guid id,
+    Guid attachmentId,
+    HttpContext context,
+    HttpClient httpClient,
+    CancellationToken cancellationToken) =>
+{
+    var apiPath = $"/api/service-orders/{id:D}/attachments/{attachmentId:D}/download{context.Request.QueryString}";
+    using var message = new HttpRequestMessage(HttpMethod.Get, apiPath);
+
+    if (context.Request.Headers.TryGetValue("Authorization", out var authorization) &&
+        AuthenticationHeaderValue.TryParse(authorization.ToString(), out var authorizationHeader))
+    {
+        message.Headers.Authorization = authorizationHeader;
+    }
+
+    using var response = await httpClient.SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+    if (!response.IsSuccessStatusCode)
+    {
+        return Results.StatusCode((int)response.StatusCode);
+    }
+
+    var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+    var download = context.Request.Query.TryGetValue("download", out var downloadValue) &&
+                   bool.TryParse(downloadValue.ToString(), out var parsedDownload) &&
+                   parsedDownload;
+    var fileName = download
+        ? response.Content.Headers.ContentDisposition?.FileNameStar ??
+          response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+        : null;
+
+    return Results.File(bytes, contentType, fileName);
+});
 
 app.UseAntiforgery();
 

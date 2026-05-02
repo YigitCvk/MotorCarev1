@@ -32,8 +32,15 @@ public interface IServiceOrderRepository
         int take,
         CancellationToken cancellationToken = default);
     Task<(List<ServiceOrder> Items, int TotalCount)> GetByVehicleIdAsync(Guid vehicleId, string tenantId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ServiceOrderStatusHistory>> GetStatusHistoryAsync(Guid serviceOrderId, string tenantId, CancellationToken cancellationToken = default);
+    Task<bool> ExistsAsync(Guid id, string tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ServiceOrderAttachment>> GetAttachmentsAsync(Guid serviceOrderId, string tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ServiceOrderAttachment>> GetAttachmentsIncludingDeletedAsync(Guid serviceOrderId, string tenantId, CancellationToken cancellationToken = default);
+    Task<ServiceOrderAttachment?> GetAttachmentAsync(Guid serviceOrderId, Guid attachmentId, string tenantId, CancellationToken cancellationToken = default);
     Task<int> GetTodayOrderCountAsync(string tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(ServiceOrder order, CancellationToken cancellationToken = default);
+    Task AddStatusHistoryAsync(ServiceOrderStatusHistory history, CancellationToken cancellationToken = default);
+    Task AddAttachmentAsync(ServiceOrderAttachment attachment, CancellationToken cancellationToken = default);
     void Update(ServiceOrder order);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

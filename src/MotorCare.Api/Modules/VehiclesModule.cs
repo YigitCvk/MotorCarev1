@@ -3,6 +3,7 @@ using MediatR;
 using MotorCare.Api.Authorization;
 using MotorCare.Application.Vehicles.Commands.CreateVehicle;
 using MotorCare.Application.Vehicles.Queries.GetVehicleByPlate;
+using MotorCare.Application.Vehicles.Queries.GetVehicleServiceHistory;
 using MotorCare.Application.Vehicles;
 
 namespace MotorCare.Api.Modules;
@@ -35,6 +36,17 @@ public sealed class VehiclesModule : ICarterModule
         .WithName("GetVehicleByPlate")
         .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
         .Produces<VehicleDto>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapGet("/{id:guid}/history", async (Guid id, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetVehicleServiceHistoryQuery(id), ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        })
+        .WithName("GetVehicleServiceHistory")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces<VehicleServiceHistoryDto>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);
     }

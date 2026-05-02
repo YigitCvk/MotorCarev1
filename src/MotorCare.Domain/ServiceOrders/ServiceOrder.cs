@@ -39,6 +39,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     private readonly List<ServicePayment> _payments = new();
     public IReadOnlyCollection<ServicePayment> Payments => _payments;
 
+    private readonly List<ServiceOrderAttachment> _attachments = new();
+    public IReadOnlyCollection<ServiceOrderAttachment> Attachments => _attachments;
+
     private ServiceOrder() { }
 
     public ServiceOrder(string tenantId, string orderNo, Guid vehicleId, Guid customerId, int vehicleKm, string? complaint)

@@ -86,6 +86,7 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
         builder.Navigation(o => o.Parts).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Consumables).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(o => o.Payments).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(o => o.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);
 
     }
 }

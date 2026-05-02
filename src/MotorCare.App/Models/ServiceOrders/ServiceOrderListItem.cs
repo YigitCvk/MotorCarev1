@@ -11,6 +11,7 @@ public class ServiceOrderListItem
     public string? VehicleDisplay { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTimeOffset OpenedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
     public DateTimeOffset? ClosedAt { get; set; }
     public int VehicleKm { get; set; }
     public string? Complaint { get; set; }
@@ -18,6 +19,7 @@ public class ServiceOrderListItem
     public string? InternalNote { get; set; }
     public decimal LaborTotal { get; set; }
     public decimal PartsTotal { get; set; }
+    public decimal ConsumablesTotal { get; set; }
     public decimal DiscountTotal { get; set; }
     public decimal GrandTotal { get; set; }
     public decimal PaidTotal { get; set; }

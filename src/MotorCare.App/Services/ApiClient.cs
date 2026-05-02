@@ -49,6 +49,25 @@ public sealed class ApiClient
         return SendAsync<object>(HttpMethod.Delete, uri, null, authorized, cancellationToken);
     }
 
+    public Task<TResponse?> PostMultipartAsync<TResponse>(
+        string uri,
+        MultipartFormDataContent content,
+        bool authorized = true,
+        CancellationToken cancellationToken = default)
+    {
+        return SendContentAsync<TResponse>(HttpMethod.Post, uri, content, authorized, cancellationToken);
+    }
+
+    public string ToAbsoluteApiUrl(string uri)
+    {
+        if (Uri.TryCreate(uri, UriKind.Absolute, out var absolute))
+        {
+            return absolute.ToString();
+        }
+
+        return new Uri(_httpClient.BaseAddress!, uri).ToString();
+    }
+
     private async Task<TResponse?> SendAsync<TResponse>(
         HttpMethod method,
         string uri,
@@ -62,6 +81,41 @@ public sealed class ApiClient
         {
             message.Content = JsonContent.Create(request);
         }
+
+        if (authorized)
+        {
+            var accessToken = await _tokenStorageService.GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
+        }
+
+        using var response = await _httpClient.SendAsync(message, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await CreateApiExceptionAsync(response, uri, cancellationToken);
+        }
+
+        if (typeof(TResponse) == typeof(object) || response.Content.Headers.ContentLength == 0)
+        {
+            return default;
+        }
+
+        return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken);
+    }
+
+    private async Task<TResponse?> SendContentAsync<TResponse>(
+        HttpMethod method,
+        string uri,
+        HttpContent content,
+        bool authorized,
+        CancellationToken cancellationToken)
+    {
+        using var message = new HttpRequestMessage(method, uri)
+        {
+            Content = content
+        };
 
         if (authorized)
         {

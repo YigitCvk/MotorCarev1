@@ -1,0 +1,191 @@
+@page "/vehicles/{Id:guid}/history"
+@using System.Net
+@inject AuthService AuthService
+@inject VehiclesService VehiclesService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Araç Servis Geçmişi - GarajPass</PageTitle>
+
+@if (_loading)
+{
+    <div class="page-shell">
+        <section class="loading-state">
+            <strong>Servis geçmişi yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="page-shell">
+        <section class="error-state">
+            <strong>Araç servis geçmişi alınamadı</strong>
+            <p>@_error</p>
+        </section>
+    </div>
+}
+else if (_history is null)
+{
+    <div class="page-shell">
+        <section class="empty-state">
+            <strong>Araç bulunamadı</strong>
+            <p>Bu araç kaydı için servis geçmişi gösterilemiyor.</p>
+            <a class="app-btn-secondary" href="/vehicles">Araçlara Dön</a>
+        </section>
+    </div>
+}
+else
+{
+    <div class="page-shell">
+        <section class="hero-panel compact">
+            <div>
+                <div class="eyebrow">Araç servis geçmişi</div>
+                <h1 class="page-title">@_history.Plate</h1>
+                <p class="page-description">
+                    @_history.Brand @_history.Model (@_history.Year)
+                    @if (_history.CurrentKm.HasValue)
+                    {
+                        <span> · @_history.CurrentKm.Value.ToString("N0") km</span>
+                    }
+                </p>
+            </div>
+            <div class="quick-actions action-bar">
+                <a class="app-btn-secondary" href="/vehicles">Araçlara Dön</a>
+                <a class="app-btn-primary" href="/service-orders/create">Yeni Servis Kaydı</a>
+            </div>
+        </section>
+
+        <section class="metric-grid">
+            <div class="metric-card mc-primary">
+                <div class="metric-label">Toplam Servis</div>
+                <div class="metric-value">@_history.TotalServiceOrderCount</div>
+                <div class="metric-sub">Bu araç için açılan iş emri</div>
+            </div>
+            <div class="metric-card mc-success">
+                <div class="metric-label">Toplam Harcama</div>
+                <div class="metric-value">@_history.TotalSpent.ToString("N0") ₺</div>
+                <div class="metric-sub">Servis emirleri toplamı</div>
+            </div>
+            <div class="metric-card mc-teal">
+                <div class="metric-label">Son Servis</div>
+                <div class="metric-value">@FormatDate(_history.LastServiceDate)</div>
+                <div class="metric-sub">En son açılan servis kaydı</div>
+            </div>
+        </section>
+
+        <section class="surface-card mt-3">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Servis Geçmişi</div>
+                    <div class="section-subtitle">Geçmiş iş emirleri, durumları ve finans özeti</div>
+                </div>
+            </div>
+
+            @if (_history.ServiceOrders.Count == 0)
+            {
+                <div class="empty-state">
+                    <strong>Servis geçmişi bulunmuyor</strong>
+                    <p>Bu araç için ilk servis kaydı oluşturulduğunda burada görünecek.</p>
+                </div>
+            }
+            else
+            {
+                <div class="summary-list">
+                    @foreach (var order in _history.ServiceOrders)
+                    {
+                        <a class="summary-list-item summary-link" href="@($"/service-orders/{order.Id}")">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <strong>@order.OrderNo</strong>
+                                    <div class="text-muted small">@order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</div>
+                                </div>
+                                <span class="@GetStatusBadgeClass(order.Status)">@order.StatusText</span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(order.Complaint))
+                            {
+                                <div class="text-muted small mt-2">@order.Complaint</div>
+                            }
+
+                            <div class="d-flex flex-wrap gap-3 small mt-2">
+                                <span>Toplam: <strong>@order.GrandTotal.ToString("N2") ₺</strong></span>
+                                <span>Tahsilat: <strong>@order.PaidTotal.ToString("N2") ₺</strong></span>
+                                @if (order.RemainingTotal > 0)
+                                {
+                                    <span class="text-warning">Kalan: <strong>@order.RemainingTotal.ToString("N2") ₺</strong></span>
+                                }
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private VehicleServiceHistoryResponse? _history;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+            _history = await VehiclesService.GetServiceHistoryAsync(Id);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _history = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string FormatDate(DateTimeOffset? value)
+        => value.HasValue ? value.Value.LocalDateTime.ToString("dd.MM.yyyy") : "-";
+
+    private static string GetStatusBadgeClass(string status) => status switch
+    {
+        "Open" => "status-badge badge-open",
+        "InProgress" => "status-badge badge-progress",
+        "WaitingForParts" => "status-badge badge-waiting",
+        "Completed" => "status-badge badge-completed",
+        "Delivered" => "status-badge badge-delivered",
+        "Cancelled" => "status-badge badge-cancelled",
+        _ => "status-badge"
+    };
+}

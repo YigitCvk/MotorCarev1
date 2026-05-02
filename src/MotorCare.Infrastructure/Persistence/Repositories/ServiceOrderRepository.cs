@@ -60,6 +60,18 @@ public class ServiceOrderRepository : IServiceOrderRepository
                  o.Status == ServiceOrderStatus.WaitingForParts))
             .CountAsync(cancellationToken);
 
+        var openServiceOrders = await _context.ServiceOrders
+            .Where(o => o.TenantId == tenantId && o.Status == ServiceOrderStatus.Open)
+            .CountAsync(cancellationToken);
+
+        var inProgressServiceOrders = await _context.ServiceOrders
+            .Where(o => o.TenantId == tenantId && o.Status == ServiceOrderStatus.InProgress)
+            .CountAsync(cancellationToken);
+
+        var waitingForPartsServiceOrders = await _context.ServiceOrders
+            .Where(o => o.TenantId == tenantId && o.Status == ServiceOrderStatus.WaitingForParts)
+            .CountAsync(cancellationToken);
+
         var completedServiceOrdersToday = await _context.ServiceOrders
             .Where(o =>
                 o.TenantId == tenantId &&
@@ -80,6 +92,16 @@ public class ServiceOrderRepository : IServiceOrderRepository
             .Select(p => (decimal?)p.Amount)
             .SumAsync(cancellationToken) ?? 0m;
 
+        var monthStart = new DateTimeOffset(todayStart.Year, todayStart.Month, 1, 0, 0, 0, todayStart.Offset);
+        var monthEnd = monthStart.AddMonths(1);
+
+        var totalPaymentsThisMonth = await _context.ServiceOrders
+            .Where(o => o.TenantId == tenantId)
+            .SelectMany(o => o.Payments)
+            .Where(p => p.PaymentDate >= monthStart && p.PaymentDate < monthEnd)
+            .Select(p => (decimal?)p.Amount)
+            .SumAsync(cancellationToken) ?? 0m;
+
         var totalRevenueToday = await _context.ServiceOrders
             .Where(o => o.TenantId == tenantId && o.OpenedAt >= todayStart && o.OpenedAt < todayEnd)
             .Select(o => (decimal?)o.GrandTotal)
@@ -93,9 +115,13 @@ public class ServiceOrderRepository : IServiceOrderRepository
         return new ServiceOrderDailySummary(
             totalServiceOrdersToday,
             activeServiceOrders,
+            openServiceOrders,
+            inProgressServiceOrders,
+            waitingForPartsServiceOrders,
             completedServiceOrdersToday,
             deliveryWaitingCount,
             totalPaymentsToday,
+            totalPaymentsThisMonth,
             totalRevenueToday,
             pendingAmount);
     }
@@ -267,17 +293,81 @@ public class ServiceOrderRepository : IServiceOrderRepository
         Guid vehicleId, string tenantId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = _context.ServiceOrders
+            .AsNoTracking()
             .Where(o => o.VehicleId == vehicleId && o.TenantId == tenantId);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
+            .AsSplitQuery()
+            .Include(o => o.Operations)
+            .Include(o => o.Parts)
+            .Include(o => o.Consumables)
+            .Include(o => o.Payments)
             .OrderByDescending(o => o.OpenedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
+    }
+
+    public async Task<IReadOnlyList<ServiceOrderStatusHistory>> GetStatusHistoryAsync(
+        Guid serviceOrderId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ServiceOrderStatusHistories
+            .AsNoTracking()
+            .Where(x => x.ServiceOrderId == serviceOrderId && x.TenantId == tenantId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> ExistsAsync(Guid id, string tenantId, CancellationToken cancellationToken = default)
+    {
+        return _context.ServiceOrders
+            .AsNoTracking()
+            .AnyAsync(o => o.Id == id && o.TenantId == tenantId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ServiceOrderAttachment>> GetAttachmentsAsync(
+        Guid serviceOrderId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ServiceOrderAttachments
+            .AsNoTracking()
+            .Where(x => x.ServiceOrderId == serviceOrderId && x.TenantId == tenantId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ServiceOrderAttachment>> GetAttachmentsIncludingDeletedAsync(
+        Guid serviceOrderId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ServiceOrderAttachments
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.ServiceOrderId == serviceOrderId && x.TenantId == tenantId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<ServiceOrderAttachment?> GetAttachmentAsync(
+        Guid serviceOrderId,
+        Guid attachmentId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ServiceOrderAttachments
+            .FirstOrDefaultAsync(x =>
+                    x.Id == attachmentId &&
+                    x.ServiceOrderId == serviceOrderId &&
+                    x.TenantId == tenantId,
+                cancellationToken);
     }
 
     public async Task<int> GetTodayOrderCountAsync(string tenantId, CancellationToken cancellationToken = default)
@@ -293,6 +383,16 @@ public class ServiceOrderRepository : IServiceOrderRepository
     public async Task AddAsync(ServiceOrder order, CancellationToken cancellationToken = default)
     {
         await _context.ServiceOrders.AddAsync(order, cancellationToken);
+    }
+
+    public async Task AddStatusHistoryAsync(ServiceOrderStatusHistory history, CancellationToken cancellationToken = default)
+    {
+        await _context.ServiceOrderStatusHistories.AddAsync(history, cancellationToken);
+    }
+
+    public async Task AddAttachmentAsync(ServiceOrderAttachment attachment, CancellationToken cancellationToken = default)
+    {
+        await _context.ServiceOrderAttachments.AddAsync(attachment, cancellationToken);
     }
 
     public void Update(ServiceOrder order)

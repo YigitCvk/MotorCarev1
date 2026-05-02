@@ -191,6 +191,7 @@ else if (_summary is not null)
                         }
                         <div class="vehicle-card-actions mt-3">
                             <a href="@($"/appointments/create?customerName={Uri.EscapeDataString(_summary.FullName)}&plate={Uri.EscapeDataString(v.Plate)}")" class="btn btn-sm btn-outline">Randevu</a>
+                            <a href="@($"/vehicles/{v.Id}/history")" class="btn btn-sm btn-outline">Geçmiş</a>
                             <a href="/service-orders/create" class="btn btn-sm btn-primary">Servis Kaydı</a>
                         </div>
                     </div>

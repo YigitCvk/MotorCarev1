@@ -5,13 +5,18 @@ namespace MotorCare.Application.Dashboard.Queries.GetDailySummary;
 public sealed record DailySummaryDto(
     int TodayAppointmentsCount,
     int ActiveServiceOrdersCount,
+    int OpenServiceOrdersCount,
+    int InProgressServiceOrdersCount,
+    int WaitingForPartsServiceOrdersCount,
     int CompletedServiceOrdersCount,
     int DeliveryWaitingCount,
     decimal DailyRevenue,
     decimal TotalPaymentsToday,
+    decimal TotalPaymentsThisMonth,
     decimal PendingAmount,
     IReadOnlyList<DashboardAppointmentItemDto> TodayAppointments,
-    IReadOnlyList<DashboardServiceOrderItemDto> RecentServiceOrders);
+    IReadOnlyList<DashboardServiceOrderItemDto> RecentServiceOrders,
+    IReadOnlyList<DashboardServiceOrderItemDto> ReadyForDeliveryOrders);
 
 public sealed record DashboardAppointmentItemDto(
     Guid Id,

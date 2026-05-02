@@ -4,7 +4,7 @@ namespace MotorCare.App.Services;
 
 public sealed class TokenStorageService
 {
-    private const string AccessTokenKey = "motorcare.accessToken";
+    public const string AccessTokenKey = "motorcare.accessToken";
     private const string RefreshTokenKey = "motorcare.refreshToken";
 
     private readonly IJSRuntime _jsRuntime;

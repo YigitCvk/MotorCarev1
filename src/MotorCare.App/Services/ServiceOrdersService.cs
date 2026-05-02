@@ -1,9 +1,12 @@
 using System.Globalization;
+using System.Net.Http.Headers;
 using System.Text;
+using Microsoft.AspNetCore.Components.Forms;
 using MotorCare.App.Models.Common;
 using MotorCare.App.Models.Customers;
 using MotorCare.App.Models.ServiceOrders;
 using MotorCare.App.Models.Vehicles;
+using AttachmentFileRules = MotorCare.Application.ServiceOrders.ServiceOrderAttachmentFileRules;
 
 namespace MotorCare.App.Services;
 
@@ -113,6 +116,77 @@ public sealed class ServiceOrdersService
         return _apiClient.GetAsync<ServiceOrderDetail>($"/api/service-orders/{id}", authorized: true, cancellationToken);
     }
 
+    public Task<IReadOnlyList<ServiceOrderStatusHistoryItem>?> GetStatusHistoryAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderStatusHistoryItem>>(
+            $"/api/service-orders/{id}/status-history",
+            authorized: true,
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<ServiceOrderActivityFeedItem>?> GetActivityFeedAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<IReadOnlyList<ServiceOrderActivityFeedItem>>(
+            $"/api/service-orders/{id}/activity-feed",
+            authorized: true,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ServiceOrderAttachment>?> GetAttachmentsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var attachments = await _apiClient.GetAsync<IReadOnlyList<ServiceOrderAttachment>>(
+            $"/api/service-orders/{id}/attachments",
+            authorized: true,
+            cancellationToken);
+
+        if (attachments is null)
+        {
+            return null;
+        }
+
+        foreach (var attachment in attachments)
+        {
+            attachment.FileUrl = ToAttachmentProxyUrl(attachment.FileUrl);
+        }
+
+        return attachments;
+    }
+
+    public async Task<ServiceOrderAttachment?> UploadAttachmentAsync(
+        Guid id,
+        IBrowserFile file,
+        string attachmentType,
+        string? description,
+        CancellationToken cancellationToken = default)
+    {
+        await using var stream = file.OpenReadStream(AttachmentFileRules.MaxFileSizeBytes, cancellationToken);
+        using var content = new MultipartFormDataContent();
+        using var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+        content.Add(fileContent, "File", file.Name);
+        content.Add(new StringContent(attachmentType), "AttachmentType");
+        content.Add(new StringContent(description ?? string.Empty), "Description");
+
+        var attachment = await _apiClient.PostMultipartAsync<ServiceOrderAttachment>(
+            $"/api/service-orders/{id}/attachments",
+            content,
+            authorized: true,
+            cancellationToken);
+
+        if (attachment is not null)
+        {
+            attachment.FileUrl = ToAttachmentProxyUrl(attachment.FileUrl);
+        }
+
+        return attachment;
+    }
+
+    public Task DeleteAttachmentAsync(Guid id, Guid attachmentId, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync($"/api/service-orders/{id}/attachments/{attachmentId}", authorized: true, cancellationToken);
+    }
+
     public Task AddOperationAsync(Guid id, AddOperationRequest request, CancellationToken cancellationToken = default)
     {
         return _apiClient.PostAsync($"/api/service-orders/{id}/operations", request, authorized: true, cancellationToken);
@@ -149,7 +223,8 @@ public sealed class ServiceOrdersService
     {
         var payload = new
         {
-            status = ToServiceOrderStatusValue(request.Status)
+            status = ToServiceOrderStatusValue(request.Status),
+            note = request.Note
         };
 
         return _apiClient.PutAsync($"/api/service-orders/{id}/status", payload, authorized: true, cancellationToken);
@@ -173,4 +248,14 @@ public sealed class ServiceOrdersService
         "BankTransfer" => 3,
         _ => 1
     };
+
+    private static string ToAttachmentProxyUrl(string fileUrl)
+    {
+        const string apiPrefix = "/api/service-orders/";
+        const string proxyPrefix = "/attachment-proxy/service-orders/";
+
+        return fileUrl.StartsWith(apiPrefix, StringComparison.OrdinalIgnoreCase)
+            ? proxyPrefix + fileUrl[apiPrefix.Length..]
+            : fileUrl;
+    }
 }

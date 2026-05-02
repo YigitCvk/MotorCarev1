@@ -3028,6 +3028,302 @@ h1:focus { outline: none; }
     color: var(--mc-text);
 }
 
+.service-order-timeline {
+    display: grid;
+    gap: 1rem;
+}
+
+.service-order-timeline-item {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr);
+    gap: 0.85rem;
+    position: relative;
+}
+
+.service-order-timeline-item::before {
+    content: "";
+    position: absolute;
+    left: 0.45rem;
+    top: 1rem;
+    bottom: -1rem;
+    border-left: 2px solid var(--mc-border);
+}
+
+.service-order-timeline-item:last-child::before {
+    display: none;
+}
+
+.service-order-timeline-marker {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 999px;
+    background: var(--mc-primary);
+    border: 2px solid var(--mc-surface);
+    box-shadow: 0 0 0 2px var(--mc-border);
+    margin-top: 0.35rem;
+    z-index: 1;
+}
+
+.service-order-timeline-content {
+    border: 1px solid var(--mc-border);
+    border-radius: 0.85rem;
+    padding: 0.9rem;
+    background: var(--mc-surface);
+}
+
+.activity-feed-marker {
+    width: 1.8rem;
+    height: 1.8rem;
+    margin-left: -0.45rem;
+    margin-top: 0.05rem;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.activity-feed-marker-info {
+    background: var(--mc-primary);
+}
+
+.activity-feed-marker-success {
+    background: #15803d;
+}
+
+.activity-feed-marker-warning {
+    background: #b45309;
+}
+
+.activity-feed-marker-danger {
+    background: #b91c1c;
+}
+
+.activity-feed-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.activity-feed-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.activity-feed-title-row strong {
+    overflow-wrap: anywhere;
+}
+
+.activity-feed-content p {
+    margin: 0;
+    color: var(--mc-text-2);
+    overflow-wrap: anywhere;
+}
+
+.activity-feed-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    color: var(--mc-text-muted);
+    font-size: 0.82rem;
+}
+
+.activity-feed-meta strong {
+    color: var(--mc-text);
+}
+
+.activity-feed-badge-info {
+    background: #ECFEFF;
+    color: var(--mc-info);
+}
+
+.activity-feed-badge-success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.activity-feed-badge-warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.activity-feed-badge-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.service-order-attachments-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(12rem, 0.8fr);
+    gap: 1rem;
+}
+
+.service-order-attachments-form .full-span {
+    grid-column: 1 / -1;
+}
+
+.service-order-attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+}
+
+.service-order-attachment-card {
+    border: 1px solid var(--mc-border);
+    border-radius: 0.85rem;
+    background: var(--mc-surface);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.service-order-attachment-thumb {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--mc-border);
+    overflow: hidden;
+}
+
+.service-order-attachment-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.service-order-attachment-doc {
+    width: 4.25rem;
+    height: 5.4rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.45rem;
+    background: #fff;
+    color: var(--mc-primary);
+    font-weight: 900;
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.service-order-attachment-body {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.service-order-attachment-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.service-order-attachment-title-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.service-order-attachment-body p {
+    margin: 0;
+    color: var(--mc-text-2);
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.service-order-attachment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.65rem;
+    color: var(--mc-text-muted);
+    font-size: 0.78rem;
+}
+
+.service-order-attachment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.danger-action {
+    color: var(--mc-danger-text);
+    border-color: rgba(220, 38, 38, 0.28);
+}
+
+.attachment-preview-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.attachment-preview-dialog {
+    width: min(64rem, 100%);
+    max-height: min(90vh, 56rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    border-radius: 0.9rem;
+    background: #fff;
+    padding: 1rem;
+    box-shadow: var(--mc-shadow-lg);
+}
+
+.attachment-preview-dialog header,
+.attachment-preview-dialog footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.attachment-preview-dialog header div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.attachment-preview-dialog header strong {
+    overflow-wrap: anywhere;
+}
+
+.attachment-preview-dialog header span {
+    color: var(--mc-text-muted);
+    font-size: 0.85rem;
+}
+
+.attachment-preview-stage {
+    min-height: 18rem;
+    max-height: 70vh;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    border: 1px solid var(--mc-border);
+    border-radius: 0.75rem;
+    background: #0f172a;
+}
+
+.attachment-preview-stage img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    display: block;
+}
+
 @media (max-width: 640px) {
     .motorcycle-body-map-layout {
         grid-template-columns: 1fr;
@@ -3094,6 +3390,20 @@ h1:focus { outline: none; }
 
     .service-order-line-actions {
         width: 100%;
+    }
+
+    .service-order-attachments-form,
+    .service-order-attachments-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .service-order-attachment-title-row,
+    .activity-feed-title-row,
+    .activity-feed-meta,
+    .attachment-preview-dialog header,
+    .attachment-preview-dialog footer {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

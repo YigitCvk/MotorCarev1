@@ -1236,6 +1236,132 @@ namespace MotorCare.Infrastructure.Migrations
                     b.ToTable("ServiceOrders");
                 });
 
+            modelBuilder.Entity("MotorCare.Domain.ServiceOrders.ServiceOrderAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttachmentType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UploadedByUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("ServiceOrderId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ServiceOrderAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("MotorCare.Domain.ServiceOrders.ServiceOrderStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ChangedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangedByUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FromStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("ServiceOrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ServiceOrderId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ServiceOrderStatusHistories");
+                });
+
             modelBuilder.Entity("MotorCare.Domain.Services.ServiceCatalogItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1858,6 +1984,24 @@ namespace MotorCare.Infrastructure.Migrations
                     b.Navigation("Payments");
                 });
 
+            modelBuilder.Entity("MotorCare.Domain.ServiceOrders.ServiceOrderAttachment", b =>
+                {
+                    b.HasOne("MotorCare.Domain.ServiceOrders.ServiceOrder", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MotorCare.Domain.ServiceOrders.ServiceOrderStatusHistory", b =>
+                {
+                    b.HasOne("MotorCare.Domain.ServiceOrders.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MotorCare.Domain.Users.Entities.RefreshToken", b =>
                 {
                     b.HasOne("MotorCare.Domain.Users.User", null)
@@ -1976,6 +2120,11 @@ namespace MotorCare.Infrastructure.Migrations
 
                     b.Navigation("Plate")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MotorCare.Domain.ServiceOrders.ServiceOrder", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("MotorCare.Domain.Users.User", b =>

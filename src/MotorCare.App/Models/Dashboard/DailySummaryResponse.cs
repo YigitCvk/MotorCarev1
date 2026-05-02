@@ -4,13 +4,18 @@ public sealed class DailySummaryResponse
 {
     public int TodayAppointmentsCount { get; set; }
     public int ActiveServiceOrdersCount { get; set; }
+    public int OpenServiceOrdersCount { get; set; }
+    public int InProgressServiceOrdersCount { get; set; }
+    public int WaitingForPartsServiceOrdersCount { get; set; }
     public int CompletedServiceOrdersCount { get; set; }
     public int DeliveryWaitingCount { get; set; }
     public decimal DailyRevenue { get; set; }
     public decimal TotalPaymentsToday { get; set; }
+    public decimal TotalPaymentsThisMonth { get; set; }
     public decimal PendingAmount { get; set; }
     public List<DashboardAppointmentItem> TodayAppointments { get; set; } = [];
     public List<DashboardServiceOrderItem> RecentServiceOrders { get; set; } = [];
+    public List<DashboardServiceOrderItem> ReadyForDeliveryOrders { get; set; } = [];
 }
 
 public sealed class DashboardAppointmentItem

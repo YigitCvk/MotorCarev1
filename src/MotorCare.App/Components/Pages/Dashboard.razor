@@ -58,19 +58,29 @@ else
                 <div class="metric-sub">Bugün başlayan planlar</div>
             </div>
             <div class="metric-card mc-warning">
-                <div class="metric-label">Aktif İş Emirleri</div>
-                <div class="metric-value">@(_summary?.ActiveServiceOrdersCount ?? 0)</div>
-                <div class="metric-sub">Açık, işlemde veya parça bekliyor</div>
+                <div class="metric-label">Açık Servis Emirleri</div>
+                <div class="metric-value">@(_summary?.OpenServiceOrdersCount ?? 0)</div>
+                <div class="metric-sub">Kabul edilmiş, işlem bekliyor</div>
+            </div>
+            <div class="metric-card mc-primary">
+                <div class="metric-label">İşlemdeki İşler</div>
+                <div class="metric-value">@(_summary?.InProgressServiceOrdersCount ?? 0)</div>
+                <div class="metric-sub">Atölyede aktif yürüyen işler</div>
+            </div>
+            <div class="metric-card mc-warning">
+                <div class="metric-label">Parça Bekleyen</div>
+                <div class="metric-value">@(_summary?.WaitingForPartsServiceOrdersCount ?? 0)</div>
+                <div class="metric-sub">Tedarik bekleyen servisler</div>
             </div>
             <div class="metric-card mc-success">
-                <div class="metric-label">Teslim Bekleyen</div>
+                <div class="metric-label">Teslime Hazır</div>
                 <div class="metric-value">@(_summary?.DeliveryWaitingCount ?? 0)</div>
-                <div class="metric-sub">Tamamlandı ama teslim edilmedi</div>
+                <div class="metric-sub">Teslim edilmemiş tamamlanan işler</div>
             </div>
             <div class="metric-card mc-teal">
-                <div class="metric-label">Günlük Ciro</div>
-                <div class="metric-value">@((_summary?.DailyRevenue ?? 0).ToString("N0")) ₺</div>
-                <div class="metric-sub">Bugün tahsil edilen tutar</div>
+                <div class="metric-label">Bu Ay Tahsilat</div>
+                <div class="metric-value">@((_summary?.TotalPaymentsThisMonth ?? 0).ToString("N0")) ₺</div>
+                <div class="metric-sub">Ay içinde alınan ödeme</div>
             </div>
         </section>
 
@@ -174,6 +184,46 @@ else
                                         <span> · @order.VehiclePlate</span>
                                     }
                                     <span> · @order.OpenedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                    <span> · @order.GrandTotal.ToString("N0") ₺</span>
+                                </span>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="surface-card">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Teslime Hazır İşler</div>
+                        <div class="section-subtitle">Müşteriye teslim bekleyen servisler</div>
+                    </div>
+                    <a class="app-btn-secondary" href="/service-orders">Tümünü Gör</a>
+                </div>
+
+                <div class="summary-list">
+                    @if (_summary?.ReadyForDeliveryOrders.Count is not > 0)
+                    {
+                        <div class="summary-list-item">
+                            <strong>Teslime hazır iş yok</strong>
+                            <span class="text-muted">Tamamlanan servisler burada listelenecek.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var order in _summary.ReadyForDeliveryOrders)
+                        {
+                            <a class="summary-list-item summary-link" href="/service-orders/@order.Id">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <strong>@order.OrderNo</strong>
+                                    <span class="@GetStatusBadgeClass(order.Status)">@order.StatusText</span>
+                                </div>
+                                <span class="text-muted" style="font-size:0.82rem">
+                                    @order.CustomerName
+                                    @if (!string.IsNullOrWhiteSpace(order.VehiclePlate))
+                                    {
+                                        <span> · @order.VehiclePlate</span>
+                                    }
                                     <span> · @order.GrandTotal.ToString("N0") ₺</span>
                                 </span>
                             </a>

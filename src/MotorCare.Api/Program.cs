@@ -8,10 +8,12 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
 using MotorCare.Api.Configuration;
+using MotorCare.Api.Files;
 using MotorCare.Api.Logging;
 using MotorCare.Api.Middleware;
 using MotorCare.Api.Swagger;
 using MotorCare.Application;
+using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
 using MotorCare.Infrastructure.Persistence.Seed;
@@ -194,6 +196,7 @@ try
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddScoped<IServiceOrderAttachmentStorage, LocalServiceOrderAttachmentStorage>();
 
     var app = builder.Build();
 

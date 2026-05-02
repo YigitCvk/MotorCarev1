@@ -60,6 +60,7 @@ public static class EventIdStore
         public static readonly EventId MotorcycleCatalogSeeded = new(1306, nameof(MotorcycleCatalogSeeded));
         public static readonly EventId MotorcycleCatalogDuplicateSkipped = new(1307, nameof(MotorcycleCatalogDuplicateSkipped));
         public static readonly EventId MotorcycleCatalogSearchError = new(1308, nameof(MotorcycleCatalogSearchError));
+        public static readonly EventId VehicleServiceHistoryFetched = new(1309, nameof(VehicleServiceHistoryFetched));
     }
 
     // ── Appointment  1400-1499 ──────────────────────────────────────────────
@@ -109,6 +110,13 @@ public static class EventIdStore
         public static readonly EventId ConsumableAddFailed = new(1531, nameof(ConsumableAddFailed));
         public static readonly EventId ConsumablesAttachedToServiceOrder = new(1532, nameof(ConsumablesAttachedToServiceOrder));
         public static readonly EventId ServiceOrderDetailFetched = new(1533, nameof(ServiceOrderDetailFetched));
+        public static readonly EventId ServiceOrderStatusHistoryFetched = new(1534, nameof(ServiceOrderStatusHistoryFetched));
+        public static readonly EventId ServiceOrderAttachmentUploaded = new(1535, nameof(ServiceOrderAttachmentUploaded));
+        public static readonly EventId ServiceOrderAttachmentsFetched = new(1536, nameof(ServiceOrderAttachmentsFetched));
+        public static readonly EventId ServiceOrderAttachmentDeleted = new(1537, nameof(ServiceOrderAttachmentDeleted));
+        public static readonly EventId ServiceOrderAttachmentDownloaded = new(1538, nameof(ServiceOrderAttachmentDownloaded));
+        public static readonly EventId ServiceOrderActivityFeedFetched = new(1539, nameof(ServiceOrderActivityFeedFetched));
+        public static readonly EventId ServiceOrderActivityFeedFailed = new(1540, nameof(ServiceOrderActivityFeedFailed));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────
