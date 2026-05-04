@@ -4,32 +4,33 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Giris Yap - GarajPass</PageTitle>
+<PageTitle>Giriş Yap — GarajPass</PageTitle>
 
 <div class="auth-shell auth-shell-login">
     <div class="auth-panel auth-panel-brand">
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
-            <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:#FFCC00;display:grid;place-items:center;color:#1A1A1A;font-weight:800;font-size:0.95rem;letter-spacing:0">GP</div>
-            <div style="color:#f1f5f9;font-weight:700;font-size:1rem">GarajPass</div>
+            <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:linear-gradient(145deg,#f59e0b,#facc15);display:grid;place-items:center;color:#101828;font-weight:900;font-size:0.92rem;box-shadow:0 8px 20px rgba(245,158,11,0.28)">GP</div>
+            <div style="color:#f1f5f9;font-weight:800;font-size:1rem;letter-spacing:-0.02em">GarajPass</div>
         </div>
-        <div class="eyebrow" style="color:#fdba74">Servis yonetimi</div>
-        <h1 class="auth-title">GarajPass'e giris yap</h1>
+        <div class="eyebrow" style="color:#fb923c">Servis Yönetimi</div>
+        <h1 class="auth-title">GarajPass'e giriş yap</h1>
         <p class="auth-copy">
-            Servis operasyonlarini, arac kayitlarini ve ekspertiz sureclerini tek panelden yonetin.
+            Servis operasyonlarını, araç kayıtlarını ve ekspertiz süreçlerini
+            tek panelden yönetin.
         </p>
 
         <div class="auth-feature-list">
-            <div class="auth-feature-item">Hizli servis kabul ve is emri akisi</div>
-            <div class="auth-feature-item">Musteri, arac ve randevu takibi</div>
-            <div class="auth-feature-item">Tahsilat ve gunluk operasyon ozeti</div>
+            <div class="auth-feature-item">Hızlı servis kabul ve iş emri akışı</div>
+            <div class="auth-feature-item">Müşteri, araç ve randevu takibi</div>
+            <div class="auth-feature-item">Tahsilat ve günlük operasyon özeti</div>
         </div>
     </div>
 
     <div class="auth-panel auth-panel-form auth-panel-narrow">
         <div class="section-header mb-2">
             <div>
-                <div class="section-title">Giris Yap</div>
-                <div class="section-subtitle">Tenant, kullanici ve sifre ile devam edin.</div>
+                <div class="section-title">Giriş Yap</div>
+                <div class="section-subtitle">İşletme kodu, e-posta ve şifre ile devam edin.</div>
             </div>
         </div>
 
@@ -43,7 +44,7 @@
 
             <div class="form-grid auth-form-grid">
                 <div class="full-span">
-                    <label class="form-label">Isletme Kodu</label>
+                    <label class="form-label">İşletme Kodu</label>
                     <InputText class="form-control" @bind-Value="_model.TenantIdentifier" placeholder="asya-motor" autocomplete="organization" />
                 </div>
 
@@ -53,8 +54,8 @@
                 </div>
 
                 <div class="full-span">
-                    <label class="form-label">Sifre</label>
-                    <InputText class="form-control" type="password" @bind-Value="_model.Password" placeholder="********" autocomplete="current-password" />
+                    <label class="form-label">Şifre</label>
+                    <InputText class="form-control" type="password" @bind-Value="_model.Password" placeholder="••••••••" autocomplete="current-password" />
                 </div>
             </div>
 
@@ -66,19 +67,19 @@
             @if (_canResendVerification)
             {
                 <div class="alert alert-warning mt-3">
-                    <div>Dogrulama e-postasini yeniden gonderebilirsiniz.</div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" @onclick="ResendVerificationAsync" disabled="@_isSubmitting">
-                        Dogrulama e-postasini tekrar gonder
+                    <div>Doğrulama e-postasını yeniden gönderebilirsiniz.</div>
+                    <button type="button" class="app-btn-secondary mt-2" style="width:100%" @onclick="ResendVerificationAsync" disabled="@_isSubmitting">
+                        Doğrulama e-postasını tekrar gönder
                     </button>
                 </div>
             }
 
             <div class="auth-actions">
-                <button type="submit" class="btn btn-primary btn-lg" disabled="@_isSubmitting">
-                    @(_isSubmitting ? "Giris yapiliyor..." : "Giris Yap")
+                <button type="submit" class="app-btn-primary" style="width:100%;min-height:3rem" disabled="@_isSubmitting">
+                    @(_isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap")
                 </button>
-                <a class="auth-link" href="/forgot-password">Sifremi unuttum</a>
-                <a class="auth-link" href="/register">GarajPass isletme hesabi olustur -></a>
+                <a class="auth-link" href="/forgot-password">Şifremi unuttum</a>
+                <a class="auth-link" href="/register">GarajPass işletme hesabı oluştur →</a>
             </div>
         </EditForm>
     </div>
@@ -162,7 +163,7 @@
                 Email = _model.Email
             });
 
-            _info = response?.Message ?? "Dogrulama e-postasi gonderildi.";
+            _info = response?.Message ?? "Doğrulama e-postası gönderildi.";
             _canResendVerification = false;
         }
         catch (Exception ex)

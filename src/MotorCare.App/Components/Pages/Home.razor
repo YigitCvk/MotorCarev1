@@ -1,110 +1,201 @@
 @page "/"
 @layout Layout.PublicLayout
 
-<PageTitle>GarajPass</PageTitle>
+<PageTitle>GarajPass — Motosiklet Servis Yönetim Sistemi</PageTitle>
 
-<div class="gp-landing">
-    <header class="gp-nav">
-        <a class="gp-brand" href="/" aria-label="GarajPass ana sayfa">
-            <span class="gp-brand-mark">GP</span>
-            <span class="gp-brand-copy">
-                <strong>GarajPass</strong>
-                <small>Servis & Ekspertiz OS</small>
-            </span>
+<div class="lp-root">
+
+    <!-- ── NAV ─────────────────────────────────────────────────────── -->
+    <header class="lp-nav">
+        <a class="lp-brand" href="/" aria-label="GarajPass ana sayfa">
+            <div class="lp-brand-mark">GP</div>
+            <div>
+                <span class="lp-brand-name">GarajPass</span>
+                <span class="lp-brand-tag">Servis &amp; Ekspertiz OS</span>
+            </div>
         </a>
 
-        <nav class="gp-nav-links" aria-label="GarajPass">
-            <a href="#features">Ozellikler</a>
-            <a href="#vision">Vizyon</a>
-            <a href="/login">Giris Yap</a>
-            <a href="/register">Hesap Olustur</a>
+        <nav class="lp-nav-links" aria-label="Ana menü">
+            <a href="#ozellikler">Özellikler</a>
+            <a href="#akis">Nasıl Çalışır</a>
         </nav>
 
-        <a class="gp-btn gp-btn-primary" href="/register">Demo Baslat</a>
+        <div class="lp-nav-actions">
+            <a class="lp-btn lp-btn-ghost" href="/login">Giriş Yap</a>
+            <a class="lp-btn lp-btn-primary" href="/register">Ücretsiz Başla</a>
+        </div>
     </header>
 
-    <main>
-        <section class="gp-hero">
-            <div class="gp-hero-copy">
-                <div class="gp-kicker">Form follows function</div>
-                <h1>Servis, ekspertiz ve arac gecmisi tek sistemde.</h1>
+    <!-- ── HERO ─────────────────────────────────────────────────────── -->
+    <div class="lp-hero-wrap">
+        <div class="lp-hero">
+            <div class="lp-hero-copy">
+                <div class="lp-eyebrow">Motosiklet servisleri için</div>
+                <h1>Servis yönetimi, tek sistemde.</h1>
                 <p>
-                    GarajPass; servis operasyonlarini, musteri ve arac kayitlarini, ekspertiz sureclerini
-                    ve arac gecmisi raporlamasini tek platformda birlestirir.
+                    İş emirleri, randevular, müşteri ve araç kayıtları,
+                    ekspertiz raporları ve ödeme takibini tek platformda yönetin.
+                    Atölye kağıtsız çalışır, her kayıt anlık güncellenir.
                 </p>
-                <div class="gp-hero-actions">
-                    <a class="gp-btn gp-btn-primary gp-btn-large" href="/register">Hemen Basla</a>
-                    <a class="gp-btn gp-btn-secondary gp-btn-large" href="/login">Giris Yap</a>
+                <div class="lp-hero-actions">
+                    <a class="lp-btn lp-btn-primary lp-btn-lg" href="/register">Ücretsiz Başla</a>
+                    <a class="lp-btn lp-btn-ghost lp-btn-lg" href="/login">Giriş Yap</a>
                 </div>
             </div>
 
-            <div class="gp-system-board" aria-label="GarajPass operasyon kartlari">
-                <div class="gp-board-card gp-yellow gp-wide"><span>01</span><strong>Servis Emri</strong></div>
-                <div class="gp-board-card gp-blue"><span>02</span><strong>Arac Pass</strong></div>
-                <div class="gp-board-card gp-red"><span>03</span><strong>Ekspertiz Kaydi</strong></div>
-                <div class="gp-board-card gp-white"><span>04</span><strong>Randevu</strong></div>
-                <div class="gp-board-card gp-black gp-tall"><span>05</span><strong>360 derece gecmis</strong></div>
-            </div>
-        </section>
-
-        <section class="gp-section" id="features">
-            <div class="gp-section-head">
-                <span>Ozellikler</span>
-                <h2>Servis operasyonu icin net, kayitli ve olculebilir akis.</h2>
-            </div>
-
-            <div class="gp-feature-grid">
-                <article class="gp-feature-card gp-yellow">
-                    <span>01</span>
-                    <h3>Servis Yonetimi</h3>
-                    <p>Randevu, musteri, arac ve servis emirlerini tek panelden yonetin.</p>
-                </article>
-                <article class="gp-feature-card gp-blue">
-                    <span>02</span>
-                    <h3>Ekspertiz Kayitlari</h3>
-                    <p>Motosiklet ve arac ekspertiz sureclerini standart checklist yapisiyla kayit altina alin.</p>
-                </article>
-                <article class="gp-feature-card gp-red">
-                    <span>03</span>
-                    <h3>Arac Gecmisi</h3>
-                    <p>Bugunun servis kayitlarini yarinin dogrulanabilir arac gecmisi raporlarina donusturun.</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="gp-section">
-            <div class="gp-workflow">
-                <div class="gp-workflow-title">
-                    <span>Akis</span>
-                    <h2>Operasyon akisi net, kayitlar duzenli.</h2>
+            <div class="lp-preview" aria-hidden="true">
+                <div class="lp-preview-header">
+                    <span class="lp-preview-title">Günlük Operasyon</span>
+                    <span class="lp-preview-badge">Canlı</span>
                 </div>
-                <div class="gp-step-grid">
-                    <article><strong>01</strong><span>Musteri ve arac kaydi</span></article>
-                    <article><strong>02</strong><span>Servis kabul ve is emri</span></article>
-                    <article><strong>03</strong><span>Ekspertiz ve islem gecmisi</span></article>
-                    <article><strong>04</strong><span>Raporlama ve takip</span></article>
+                <div class="lp-preview-stats">
+                    <div class="lp-preview-stat">
+                        <strong>12</strong>
+                        <span>Açık Servis</span>
+                    </div>
+                    <div class="lp-preview-stat">
+                        <strong>4</strong>
+                        <span>Teslime Hazır</span>
+                    </div>
+                    <div class="lp-preview-stat">
+                        <strong>₺18.4K</strong>
+                        <span>Bu Ay</span>
+                    </div>
+                </div>
+                <div class="lp-preview-list">
+                    <div class="lp-preview-row">
+                        <div class="lp-preview-dot lp-dot-orange"></div>
+                        <span class="lp-preview-row-name">34 BK 571 — Yağ bakımı</span>
+                        <span class="lp-preview-row-meta">İşlemde</span>
+                    </div>
+                    <div class="lp-preview-row">
+                        <div class="lp-preview-dot lp-dot-green"></div>
+                        <span class="lp-preview-row-name">06 MT 212 — Zincir ayarı</span>
+                        <span class="lp-preview-row-meta">Hazır</span>
+                    </div>
+                    <div class="lp-preview-row">
+                        <div class="lp-preview-dot lp-dot-blue"></div>
+                        <span class="lp-preview-row-name">35 KA 009 — Fren kontrolü</span>
+                        <span class="lp-preview-row-meta">Bekliyor</span>
+                    </div>
+                    <div class="lp-preview-row">
+                        <div class="lp-preview-dot lp-dot-yellow"></div>
+                        <span class="lp-preview-row-name">41 DF 881 — Ekspertiz</span>
+                        <span class="lp-preview-row-meta">Parça Bekliyor</span>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section class="gp-vision" id="vision">
-            <div class="gp-vision-mark"></div>
-            <div>
-                <span>Vizyon</span>
-                <h2>Bugunun servis operasyonu, yarinin dogrulanabilir arac gecmisi.</h2>
-                <p>
-                    GarajPass, servislerin operasyonel yukunu azaltirken araclarin bakim ve ekspertiz
-                    gecmisini guvenilir kayitlarla takip edilebilir hale getirir.
-                </p>
+    <!-- ── STATS ─────────────────────────────────────────────────────── -->
+    <div class="lp-stats">
+        <div class="lp-stats-inner">
+            <div class="lp-stat">
+                <strong class="lp-stat-orange">6</strong>
+                <span>Temel operasyon modülü</span>
             </div>
-        </section>
+            <div class="lp-stat">
+                <strong>Sınırsız</strong>
+                <span>Servis ve ekspertiz kaydı</span>
+            </div>
+            <div class="lp-stat">
+                <strong>Gerçek</strong>
+                <span>Araç geçmişi, plakadan anlık</span>
+            </div>
+            <div class="lp-stat">
+                <strong>Anlık</strong>
+                <span>Tahsilat ve bakiye takibi</span>
+            </div>
+        </div>
+    </div>
 
-        <section class="gp-final-cta">
-            <h2>Garajini dijitallestir. Kayitlarini guclendir. Gecmisi gorunur kil.</h2>
-            <div class="gp-hero-actions">
-                <a class="gp-btn gp-btn-primary gp-btn-large" href="/register">GarajPass'e Basla</a>
-                <a class="gp-inline-link" href="/login">Zaten hesabin var mi? Giris yap</a>
+    <!-- ── FEATURES ──────────────────────────────────────────────────── -->
+    <section class="lp-section lp-section-bg" id="ozellikler">
+        <div class="lp-section-inner">
+            <div class="lp-section-head">
+                <span class="lp-section-tag">Özellikler</span>
+                <h2>Servis operasyonunun her adımı kapsanmış.</h2>
+                <p>Müşteri kabulünden teslime, ekspertizden tahsilata kadar tüm süreç tek ekranda.</p>
             </div>
-        </section>
-    </main>
+            <div class="lp-feature-grid">
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">01</div>
+                    <h3>Servis Emri Yönetimi</h3>
+                    <p>İş emirleri açın, işlemleri ve kullanılan parçaları kaydedin, durumu adım adım takip edin.</p>
+                </div>
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">02</div>
+                    <h3>Randevu ve Kabul</h3>
+                    <p>Günlük servis akışını görselleştirin, randevuları planlayın ve tek tıkla iş emrine dönüştürün.</p>
+                </div>
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">03</div>
+                    <h3>Ekspertiz Kayıtları</h3>
+                    <p>Standart checklist yapısıyla motosiklet ekspertizini kayıt altına alın, PDF olarak paylaşın.</p>
+                </div>
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">04</div>
+                    <h3>Müşteri ve Araç Geçmişi</h3>
+                    <p>Her araçla ilişkili tüm servis ve ekspertiz geçmişini plakadan saniyeler içinde görün.</p>
+                </div>
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">05</div>
+                    <h3>Stok ve Parça Takibi</h3>
+                    <p>Envanter yönetin, düşük stok uyarıları alın, servis emirlerine parça bağlayın.</p>
+                </div>
+                <div class="lp-feature-card">
+                    <div class="lp-feature-icon">06</div>
+                    <h3>Ödeme ve Tahsilat</h3>
+                    <p>Nakit, kredi kartı ve banka transferini kaydedin, açık bakiyeleri anlık takip edin.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── WORKFLOW ───────────────────────────────────────────────────── -->
+    <section class="lp-section" id="akis">
+        <div class="lp-section-inner">
+            <div class="lp-section-head">
+                <span class="lp-section-tag">Nasıl Çalışır</span>
+                <h2>Kabulden teslime net ve kayıtlı operasyon.</h2>
+            </div>
+            <div class="lp-workflow-grid">
+                <div class="lp-workflow-step">
+                    <div class="lp-step-num">01</div>
+                    <div class="lp-step-title">Randevu Al veya Müşteri Kabul Et</div>
+                    <div class="lp-step-copy">Telefon, online veya walk-in müşterileri sisteme kaydedin. Randevu oluşturun ya da direkt iş emri açın.</div>
+                </div>
+                <div class="lp-workflow-step">
+                    <div class="lp-step-num">02</div>
+                    <div class="lp-step-title">İş Emri Aç, Ekspertiz Kaydet</div>
+                    <div class="lp-step-copy">Motosikleti sisteme alın, hasar ve arıza tespitini ekspertiz formuyla kayıt altına alın.</div>
+                </div>
+                <div class="lp-workflow-step">
+                    <div class="lp-step-num">03</div>
+                    <div class="lp-step-title">İşçilik ve Parça Ekle</div>
+                    <div class="lp-step-copy">Yapılan işlemleri, kullanılan parçaları ve teknisyeni kaydedin. Stok otomatik düşülür.</div>
+                </div>
+                <div class="lp-workflow-step">
+                    <div class="lp-step-num">04</div>
+                    <div class="lp-step-title">Ödeme Al ve Teslim Et</div>
+                    <div class="lp-step-copy">Tahsilatı kaydedin, araç geçmişi damgalanır. Müşteri PDF ekspertiz raporu alır.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA ───────────────────────────────────────────────────────── -->
+    <section class="lp-cta">
+        <h2>Garajını dijitalleştir. Geçmişi görünür kıl.</h2>
+        <p>
+            Her servis emri, her ekspertiz raporu ve her ödeme kayıtı birikerek
+            araçların güvenilir dijital geçmişini oluşturur.
+        </p>
+        <div class="lp-cta-actions">
+            <a class="lp-btn lp-btn-primary lp-btn-lg" href="/register">GarajPass'e Başla</a>
+            <a class="lp-link-muted" href="/login">Zaten hesabın var mı? Giriş yap</a>
+        </div>
+    </section>
+
 </div>

@@ -4,32 +4,33 @@
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Kayit Ol - GarajPass</PageTitle>
+<PageTitle>Kayıt Ol — GarajPass</PageTitle>
 
 <div class="auth-shell">
     <div class="auth-panel auth-panel-brand">
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem">
-            <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:#FFCC00;display:grid;place-items:center;color:#1A1A1A;font-weight:800;font-size:0.95rem;letter-spacing:0">GP</div>
-            <div style="color:#f1f5f9;font-weight:700;font-size:1rem">GarajPass</div>
+            <div style="width:2.8rem;height:2.8rem;border-radius:14px;background:linear-gradient(145deg,#f59e0b,#facc15);display:grid;place-items:center;color:#101828;font-weight:900;font-size:0.92rem;box-shadow:0 8px 20px rgba(245,158,11,0.28)">GP</div>
+            <div style="color:#f1f5f9;font-weight:800;font-size:1rem;letter-spacing:-0.02em">GarajPass</div>
         </div>
-        <div class="eyebrow" style="color:#fdba74">B2B onboarding</div>
-        <h1 class="auth-title">GarajPass isletme hesabini olustur</h1>
+        <div class="eyebrow" style="color:#fb923c">İşletme Kaydı</div>
+        <h1 class="auth-title">GarajPass işletme hesabını oluştur</h1>
         <p class="auth-copy">
-            Servis kabul, randevu, musteri ve arac yonetimini dijitallestirmeye baslayin.
+            Servis kabul, randevu, müşteri ve araç yönetimini
+            dijitalleştirmeye başlayın.
         </p>
 
         <div class="auth-feature-list">
-            <div class="auth-feature-item">Servis islemleri ve is emri ekrani</div>
-            <div class="auth-feature-item">Musteri, arac ve randevu akisi</div>
-            <div class="auth-feature-item">Tahsilat ve gunluk ozet gorunumu</div>
+            <div class="auth-feature-item">Servis işlemleri ve iş emri ekranı</div>
+            <div class="auth-feature-item">Müşteri, araç ve randevu akışı</div>
+            <div class="auth-feature-item">Tahsilat ve günlük özet görünümü</div>
         </div>
     </div>
 
     <div class="auth-panel auth-panel-form register-card">
         <div class="section-header mb-2">
             <div>
-                <div class="section-title">GarajPass isletme kaydi</div>
-                <div class="section-subtitle">Ilk kullanici otomatik olarak Owner roluyle acilir.</div>
+                <div class="section-title">GarajPass işletme kaydı</div>
+                <div class="section-subtitle">İlk kullanıcı otomatik olarak Owner rolüyle açılır.</div>
             </div>
         </div>
 
@@ -38,19 +39,19 @@
 
             <div class="form-grid auth-form-grid two-columns register-form-grid">
                 <div class="form-field">
-                    <label class="form-label">Isletme Kodu</label>
+                    <label class="form-label">İşletme Kodu</label>
                     <InputText class="form-control" @bind-Value="_model.TenantIdentifier" placeholder="asya-motor" />
-                    <div class="form-text form-hint">Kucuk harf ve tire ile kullanilir.</div>
+                    <div class="form-text form-hint">Küçük harf ve tire ile kullanılır.</div>
                 </div>
 
                 <div class="form-field">
-                    <label class="form-label">Servis Adi</label>
+                    <label class="form-label">Servis Adı</label>
                     <InputText class="form-control" @bind-Value="_model.TenantName" placeholder="Asya Motor" />
                 </div>
 
                 <div class="form-field full-span">
                     <label class="form-label">Yetkili Ad Soyad</label>
-                    <InputText class="form-control" @bind-Value="_model.OwnerFullName" placeholder="Yigit Cevik" />
+                    <InputText class="form-control" @bind-Value="_model.OwnerFullName" placeholder="Yiğit Çevik" />
                 </div>
 
                 <div class="form-field">
@@ -59,8 +60,8 @@
                 </div>
 
                 <div class="form-field">
-                    <label class="form-label">Sifre</label>
-                    <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" placeholder="********" autocomplete="new-password" />
+                    <label class="form-label">Şifre</label>
+                    <InputText class="form-control" type="password" @bind-Value="_model.OwnerPassword" placeholder="••••••••" autocomplete="new-password" />
                 </div>
             </div>
 
@@ -75,10 +76,10 @@
             }
 
             <div class="auth-actions register-actions">
-                <button type="submit" class="btn btn-primary btn-lg submit-button" disabled="@_isSubmitting">
-                    @(_isSubmitting ? "Kayit olusturuluyor..." : "Kayit Ol")
+                <button type="submit" class="app-btn-primary submit-button" style="width:100%;min-height:3rem" disabled="@_isSubmitting">
+                    @(_isSubmitting ? "Kayıt oluşturuluyor..." : "Kayıt Ol")
                 </button>
-                <a class="auth-link register-link" href="/login">Zaten hesabin var mi? Giris yap -></a>
+                <a class="auth-link register-link" href="/login">Zaten hesabın var mı? Giriş yap →</a>
             </div>
         </EditForm>
     </div>
@@ -101,13 +102,13 @@
             var response = await AuthService.RegisterAsync(_model);
             if (response is null)
             {
-                _success = "Kayit olusturuldu. Giris yapabilirsiniz.";
+                _success = "Kayıt oluşturuldu. Giriş yapabilirsiniz.";
                 return;
             }
 
             _success = response.VerificationEmailSent
-                ? "Kayit olusturuldu. Dogrulama e-postasi gonderildi."
-                : "Kayit olusturuldu. Dogrulama e-postasi gonderilemedi; daha sonra tekrar isteyebilirsiniz.";
+                ? "Kayıt oluşturuldu. Doğrulama e-postası gönderildi."
+                : "Kayıt oluşturuldu. Doğrulama e-postası gönderilemedi; daha sonra tekrar isteyebilirsiniz.";
 
             var loginUri = QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
             {

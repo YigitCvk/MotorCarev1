@@ -52,6 +52,15 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<User>> GetAllByTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId)
+            .OrderBy(u => u.FullName)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<User?> GetByRefreshTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
     {
         return await _context.Users

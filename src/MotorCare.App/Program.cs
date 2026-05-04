@@ -56,6 +56,8 @@ builder.Services.AddScoped<AppointmentsService>();
 builder.Services.AddScoped<ServicesService>();
 builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<InspectionsService>();
+builder.Services.AddScoped<UsersService>();
+builder.Services.AddScoped<DashboardService>();
 
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
 if (string.IsNullOrWhiteSpace(dataProtectionPath))

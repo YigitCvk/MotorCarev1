@@ -99,10 +99,10 @@
 }
 
 .app-sidebar__link.active {
-  background: linear-gradient(135deg, rgba(79, 140, 255, 0.22), rgba(18, 35, 68, 0.92));
-  border-color: rgba(110, 168, 254, 0.34);
-  color: #f5f7fb;
-  box-shadow: inset 3px 0 0 #6ea8fe, 0 12px 28px rgba(8, 18, 36, 0.32);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(18, 35, 68, 0.92));
+  border-color: rgba(249, 115, 22, 0.32);
+  color: #fff7ed;
+  box-shadow: inset 3px 0 0 #f97316, 0 12px 28px rgba(8, 18, 36, 0.32);
 }
 
 .app-sidebar .icon {

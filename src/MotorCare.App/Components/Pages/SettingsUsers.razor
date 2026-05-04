@@ -1,4 +1,7 @@
 @page "/settings/users"
+@inject AuthService AuthService
+@inject UsersService UsersService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Kullanıcılar ve Roller</PageTitle>
 
@@ -7,41 +10,356 @@
         <div>
             <div class="eyebrow">Ayarlar</div>
             <h1 class="page-title">Kullanıcılar ve Roller</h1>
-            <p class="page-description">Owner, servis danışmanı ve operasyon personeli için tenant yetki yapısının başlangıç ekranı.</p>
+            <p class="page-description">Ekip üyelerini yönetin, rol atayın ve hesapları devre dışı bırakın.</p>
         </div>
         <div class="page-header-actions">
             <a class="app-btn-secondary" href="/settings">Ayarlara Dön</a>
-            <button type="button" class="app-btn-primary">Yeni Kullanıcı</button>
+            <button type="button" class="app-btn-primary" @onclick="ToggleCreateForm">
+                @(_showCreateForm ? "Formu Kapat" : "+ Yeni Kullanıcı")
+            </button>
         </div>
     </section>
 
-    <section class="admin-grid">
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Rol Yapısı</div>
-                    <div class="section-subtitle">Owner, operasyon ve finans erişim modeli</div>
-                </div>
-                <span class="status-badge badge-progress">Planlandı</span>
-            </div>
-            <p class="admin-card-copy">Rol bazlı yetkilendirme altyapısı hazır; bu ekran tenant yönetimi için gelecek adımı temsil eder.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakında</button>
-            </div>
-        </article>
+    @if (_showCreateForm)
+    {
+        <section class="app-card mb-4">
+            <div class="section-title mb-3">Yeni Kullanıcı Ekle</div>
 
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Ekip Üyeleri</div>
-                    <div class="section-subtitle">Aktif kullanıcılar ve davet akışı</div>
+            @if (!string.IsNullOrWhiteSpace(_createError))
+            {
+                <div class="alert-error mb-3">@_createError</div>
+            }
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Ad Soyad <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" @bind="_createFullName" placeholder="Ad Soyad" />
                 </div>
-                <span class="status-badge status-info">Yakında</span>
+                <div class="form-group">
+                    <label class="form-label">E-posta <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" @bind="_createEmail" placeholder="ornek@sirket.com" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Şifre <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" @bind="_createPassword" placeholder="En az 8 karakter" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rol <span class="text-danger">*</span></label>
+                    <select class="form-select" @bind="_createRole">
+                        <option value="">Rol Seçin</option>
+                        <option value="Admin">Yönetici</option>
+                        <option value="Receptionist">Danışman</option>
+                        <option value="Technician">Teknisyen</option>
+                        <option value="Manager">Müdür</option>
+                    </select>
+                </div>
             </div>
-            <p class="admin-card-copy">Personel daveti, kullanıcı durumu ve erişim revizyonları bu modülde toplanacak.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakında</button>
+
+            <div class="form-actions mt-3">
+                <button type="button" class="app-btn-primary" @onclick="CreateUserAsync" disabled="@_isCreating">
+                    @(_isCreating ? "Kaydediliyor..." : "Kullanıcı Ekle")
+                </button>
+                <button type="button" class="app-btn-secondary" @onclick="ToggleCreateForm" disabled="@_isCreating">
+                    Vazgeç
+                </button>
             </div>
-        </article>
-    </section>
+        </section>
+    }
+
+    @if (_isLoading)
+    {
+        <section class="loading-state">
+            <strong>Kullanıcılar yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>Kullanıcılar alınamadı</strong>
+            <p>@_error</p>
+            <button type="button" class="app-btn-secondary mt-2" @onclick="LoadUsersAsync">Tekrar Dene</button>
+        </section>
+    }
+
+    @if (!_isLoading && string.IsNullOrWhiteSpace(_error) && _users.Count == 0)
+    {
+        <section class="empty-state">
+            <strong>Henüz kullanıcı yok</strong>
+            <p>Yeni kullanıcı eklemek için "Yeni Kullanıcı" butonunu kullanın.</p>
+        </section>
+    }
+
+    @if (_users.Count > 0)
+    {
+        <section class="surface-card mt-3 desktop-only">
+            <div class="responsive-table">
+                <table class="table modern-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>E-posta</th>
+                            <th>Rol</th>
+                            <th>Durum</th>
+                            <th>Son Giriş</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in _users)
+                        {
+                            var isOwner = user.Role == "Owner";
+                            <tr>
+                                <td class="fw-semibold">@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>
+                                    @if (isOwner)
+                                    {
+                                        <span class="status-badge badge-open">@user.RoleText</span>
+                                    }
+                                    else
+                                    {
+                                        <select class="form-select form-select-sm"
+                                                value="@user.Role"
+                                                disabled="@(!user.IsActive)"
+                                                @onchange="(e) => ChangeRoleAsync(user.Id, e.Value?.ToString())">
+                                            <option value="Admin" selected="@(user.Role == "Admin")">Yönetici</option>
+                                            <option value="Receptionist" selected="@(user.Role == "Receptionist")">Danışman</option>
+                                            <option value="Technician" selected="@(user.Role == "Technician")">Teknisyen</option>
+                                            <option value="Manager" selected="@(user.Role == "Manager")">Müdür</option>
+                                        </select>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="status-badge badge-open">Aktif</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge badge-cancelled">Pasif</span>
+                                    }
+                                    @if (!user.IsEmailVerified)
+                                    {
+                                        <span class="status-badge status-info ms-1">E-posta Doğrulanmadı</span>
+                                    }
+                                </td>
+                                <td class="text-muted small">
+                                    @(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.LocalDateTime.ToString("dd.MM.yyyy HH:mm") : "-")
+                                </td>
+                                <td>
+                                    @if (!isOwner && user.IsActive)
+                                    {
+                                        <button type="button"
+                                                class="app-btn-secondary btn-sm"
+                                                @onclick="() => DeactivateUserAsync(user.Id, user.FullName)">
+                                            Devre Dışı Bırak
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="mobile-card-list mobile-only">
+            @foreach (var user in _users)
+            {
+                var isOwner = user.Role == "Owner";
+                <article class="app-card">
+                    <div class="fw-semibold">@user.FullName</div>
+                    <div class="text-muted small">@user.Email</div>
+                    <div class="mt-1">
+                        <span class="status-badge @(user.IsActive ? "badge-open" : "badge-cancelled")">
+                            @(user.IsActive ? "Aktif" : "Pasif")
+                        </span>
+                        <span class="status-badge status-info ms-1">@user.RoleText</span>
+                    </div>
+                    @if (!isOwner && user.IsActive)
+                    {
+                        <div class="mt-2">
+                            <button type="button"
+                                    class="app-btn-secondary btn-sm"
+                                    @onclick="() => DeactivateUserAsync(user.Id, user.FullName)">
+                                Devre Dışı Bırak
+                            </button>
+                        </div>
+                    }
+                </article>
+            }
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_actionMessage))
+    {
+        <div class="alert-success mt-3">@_actionMessage</div>
+    }
 </div>
+
+@code {
+    private readonly List<UserListItem> _users = [];
+    private bool _isLoading;
+    private string? _error;
+    private string? _actionMessage;
+
+    private bool _showCreateForm;
+    private bool _isCreating;
+    private string? _createError;
+    private string _createFullName = string.Empty;
+    private string _createEmail = string.Empty;
+    private string _createPassword = string.Empty;
+    private string _createRole = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _error = null;
+            _users.Clear();
+            await InvokeAsync(StateHasChanged);
+
+            var result = await UsersService.GetUsersAsync();
+            if (result is not null)
+                _users.AddRange(result);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreateForm = !_showCreateForm;
+        _createError = null;
+        if (!_showCreateForm)
+        {
+            _createFullName = string.Empty;
+            _createEmail = string.Empty;
+            _createPassword = string.Empty;
+            _createRole = string.Empty;
+        }
+    }
+
+    private async Task CreateUserAsync()
+    {
+        _createError = null;
+
+        if (string.IsNullOrWhiteSpace(_createFullName))
+        {
+            _createError = "Ad Soyad alanı zorunludur.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_createEmail))
+        {
+            _createError = "E-posta alanı zorunludur.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_createPassword) || _createPassword.Length < 8)
+        {
+            _createError = "Şifre en az 8 karakter olmalıdır.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_createRole))
+        {
+            _createError = "Lütfen bir rol seçin.";
+            return;
+        }
+
+        try
+        {
+            _isCreating = true;
+            await InvokeAsync(StateHasChanged);
+
+            var request = new CreateUserRequest
+            {
+                FullName = _createFullName,
+                Email = _createEmail,
+                Password = _createPassword,
+                Role = _createRole
+            };
+
+            await UsersService.CreateUserAsync(request);
+
+            _showCreateForm = false;
+            _createFullName = string.Empty;
+            _createEmail = string.Empty;
+            _createPassword = string.Empty;
+            _createRole = string.Empty;
+            _actionMessage = "Kullanıcı başarıyla eklendi.";
+
+            await LoadUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            _createError = ex.Message;
+        }
+        finally
+        {
+            _isCreating = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ChangeRoleAsync(Guid userId, string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role)) return;
+
+        try
+        {
+            await UsersService.UpdateRoleAsync(userId, role);
+            _actionMessage = "Kullanıcı rolü güncellendi.";
+            await LoadUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DeactivateUserAsync(Guid userId, string fullName)
+    {
+        try
+        {
+            await UsersService.DeactivateAsync(userId);
+            _actionMessage = $"{fullName} hesabı devre dışı bırakıldı.";
+            await LoadUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+}

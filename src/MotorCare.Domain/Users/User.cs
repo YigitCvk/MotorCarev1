@@ -44,6 +44,11 @@ public class User : AggregateRoot, ITenantEntity
         IsEmailVerified = false;
     }
 
+    public void UpdateRole(UserRole role)
+    {
+        Role = role;
+    }
+
     public void Deactivate()
     {
         IsActive = false;

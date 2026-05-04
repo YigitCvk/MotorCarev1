@@ -49,6 +49,16 @@ public sealed class ApiClient
         return SendAsync<object>(HttpMethod.Delete, uri, null, authorized, cancellationToken);
     }
 
+    public Task PatchAsync<TRequest>(string uri, TRequest request, bool authorized = true, CancellationToken cancellationToken = default)
+    {
+        return SendAsync<object>(HttpMethod.Patch, uri, request, authorized, cancellationToken);
+    }
+
+    public Task<TResponse?> PatchAsync<TRequest, TResponse>(string uri, TRequest request, bool authorized = true, CancellationToken cancellationToken = default)
+    {
+        return SendAsync<TResponse>(HttpMethod.Patch, uri, request, authorized, cancellationToken);
+    }
+
     public Task<TResponse?> PostMultipartAsync<TResponse>(
         string uri,
         MultipartFormDataContent content,

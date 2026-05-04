@@ -10,6 +10,7 @@ public interface IUserRepository
     Task<User?> GetByIdWithRefreshTokensAsync(Guid id, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailAsync(string tenantId, string normalizedEmail, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<User>> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<User>> GetAllByTenantAsync(string tenantId, CancellationToken cancellationToken = default);
     Task<User?> GetByRefreshTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
     Task<UserSecurityToken?> GetActiveSecurityTokenByHashAsync(string tokenHash, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default);
     Task<UserSecurityToken?> GetLatestSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default);

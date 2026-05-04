@@ -158,4 +158,12 @@ public static class EventIdStore
         public static readonly EventId RecentOrdersDataSourceFailed = new(1902, nameof(RecentOrdersDataSourceFailed));
         public static readonly EventId PartialFallbackApplied = new(1903, nameof(PartialFallbackApplied));
     }
+
+    // ── User  2000-2099 ─────────────────────────────────────────────────────
+    public static class User
+    {
+        public static readonly EventId UserCreated     = new(2000, nameof(UserCreated));
+        public static readonly EventId UserRoleUpdated = new(2001, nameof(UserRoleUpdated));
+        public static readonly EventId UserDeactivated = new(2002, nameof(UserDeactivated));
+    }
 }
