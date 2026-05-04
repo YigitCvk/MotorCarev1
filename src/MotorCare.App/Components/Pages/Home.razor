@@ -18,6 +18,7 @@
         <nav class="lp-nav-links" aria-label="Ana menü">
             <a href="#ozellikler">Özellikler</a>
             <a href="#akis">Nasıl Çalışır</a>
+            <a href="#yorumlar">Yorumlar</a>
         </nav>
 
         <div class="lp-nav-actions">
@@ -41,47 +42,126 @@
                     <a class="lp-btn lp-btn-primary lp-btn-lg" href="/register">Ücretsiz Başla</a>
                     <a class="lp-btn lp-btn-ghost lp-btn-lg" href="/login">Giriş Yap</a>
                 </div>
+                <div class="lp-trust-strip">
+                    <span class="lp-trust-item">Ücretsiz 14 gün</span>
+                    <span class="lp-trust-item">Kurulum gerektirmez</span>
+                    <span class="lp-trust-item">Destek dahil</span>
+                </div>
             </div>
 
-            <div class="lp-preview" aria-hidden="true">
-                <div class="lp-preview-header">
-                    <span class="lp-preview-title">Günlük Operasyon</span>
-                    <span class="lp-preview-badge">Canlı</span>
+            <div class="lp-hero-right" aria-hidden="true">
+                <!-- Motorcycle visual -->
+                <div class="lp-moto-wrap">
+                    <svg class="lp-moto-svg" viewBox="0 0 380 162" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <filter id="moto-glow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                        <!-- Speed lines -->
+                        <line x1="2" y1="118" x2="52" y2="118" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
+                        <line x1="12" y1="131" x2="56" y2="131" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" opacity="0.28"/>
+                        <line x1="6" y1="106" x2="42" y2="106" stroke="#f97316" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+                        <!-- Back wheel -->
+                        <circle cx="95" cy="128" r="34" stroke="#f97316" stroke-width="2.8" filter="url(#moto-glow)"/>
+                        <circle cx="95" cy="128" r="21" stroke="rgba(249,115,22,0.3)" stroke-width="1.5"/>
+                        <line x1="95" y1="94" x2="95" y2="162" stroke="rgba(249,115,22,0.16)" stroke-width="1"/>
+                        <line x1="61" y1="128" x2="129" y2="128" stroke="rgba(249,115,22,0.16)" stroke-width="1"/>
+                        <line x1="71" y1="104" x2="119" y2="152" stroke="rgba(249,115,22,0.1)" stroke-width="1"/>
+                        <line x1="71" y1="152" x2="119" y2="104" stroke="rgba(249,115,22,0.1)" stroke-width="1"/>
+                        <circle cx="95" cy="128" r="5.5" fill="#f97316"/>
+                        <!-- Front wheel -->
+                        <circle cx="300" cy="128" r="33" stroke="#f97316" stroke-width="2.8" filter="url(#moto-glow)"/>
+                        <circle cx="300" cy="128" r="20" stroke="rgba(249,115,22,0.3)" stroke-width="1.5"/>
+                        <line x1="300" y1="95" x2="300" y2="161" stroke="rgba(249,115,22,0.16)" stroke-width="1"/>
+                        <line x1="267" y1="128" x2="333" y2="128" stroke="rgba(249,115,22,0.16)" stroke-width="1"/>
+                        <circle cx="300" cy="128" r="5.5" fill="#f97316"/>
+                        <!-- Swingarm -->
+                        <path d="M95 94 L128 78 L150 56" stroke="#e2e8f0" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <!-- Main top tube -->
+                        <path d="M150 56 L192 42 L232 44 L266 66 L300 94" stroke="#e2e8f0" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <!-- Down tube / cradle -->
+                        <path d="M150 56 L158 94 L228 94 L232 44" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <!-- Engine block -->
+                        <rect x="154" y="72" width="72" height="36" rx="7" fill="rgba(249,115,22,0.07)" stroke="rgba(249,115,22,0.32)" stroke-width="1.5"/>
+                        <!-- Cylinder heads -->
+                        <rect x="172" y="64" width="18" height="11" rx="3" fill="rgba(249,115,22,0.06)" stroke="rgba(249,115,22,0.24)" stroke-width="1"/>
+                        <rect x="197" y="64" width="18" height="11" rx="3" fill="rgba(249,115,22,0.06)" stroke="rgba(249,115,22,0.24)" stroke-width="1"/>
+                        <!-- Tank/fairing -->
+                        <path d="M148 56 L172 40 L228 42 L232 50 L232 70 L148 70 Z" fill="rgba(226,232,240,0.1)" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round"/>
+                        <!-- Seat hump -->
+                        <path d="M128 68 L150 56 L150 70 L116 80 Z" fill="rgba(148,163,184,0.1)" stroke="#64748b" stroke-width="1.5" stroke-linejoin="round"/>
+                        <!-- Fork legs -->
+                        <path d="M266 46 L282 100 L300 94" stroke="#e2e8f0" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="268" y1="58" x2="285" y2="68" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- Handlebars -->
+                        <path d="M244 36 L266 28 L284 32" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M266 28 L266 46" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+                        <rect x="239" y="33" width="8" height="5" rx="2.5" fill="#94a3b8"/>
+                        <rect x="282" y="29" width="8" height="5" rx="2.5" fill="#94a3b8"/>
+                        <!-- Headlight -->
+                        <ellipse cx="290" cy="80" rx="10" ry="8" fill="rgba(250,204,21,0.28)" stroke="#facc15" stroke-width="1.5"/>
+                        <line x1="300" y1="76" x2="318" y2="70" stroke="rgba(250,204,21,0.45)" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="300" y1="82" x2="318" y2="82" stroke="rgba(250,204,21,0.28)" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- Exhaust -->
+                        <path d="M154 102 L120 110 L95 116" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+                        <ellipse cx="95" cy="116" rx="4" ry="3" fill="rgba(71,85,105,0.4)" stroke="#475569" stroke-width="1"/>
+                        <!-- Rear light -->
+                        <rect x="112" y="76" width="6" height="4" rx="1.5" fill="rgba(239,68,68,0.5)" stroke="#ef4444" stroke-width="1"/>
+                        <!-- Rider -->
+                        <circle cx="184" cy="28" r="10" fill="rgba(148,163,184,0.42)" stroke="#94a3b8" stroke-width="1.5"/>
+                        <path d="M184 38 L170 66 L200 66 L192 38 Z" fill="rgba(148,163,184,0.28)" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round"/>
+                        <path d="M192 48 L244 36 L266 28" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M177 26 Q184 18 192 26" stroke="#94a3b8" stroke-width="1" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <div class="lp-moto-label">
+                        <span class="lp-moto-label-text">Motosiklet Servis Yönetimi</span>
+                        <span class="lp-moto-label-badge">Canlı</span>
+                    </div>
                 </div>
-                <div class="lp-preview-stats">
-                    <div class="lp-preview-stat">
-                        <strong>12</strong>
-                        <span>Açık Servis</span>
+
+                <!-- Dashboard preview -->
+                <div class="lp-preview">
+                    <div class="lp-preview-header">
+                        <span class="lp-preview-title">Günlük Operasyon</span>
+                        <span class="lp-preview-badge">Anlık</span>
                     </div>
-                    <div class="lp-preview-stat">
-                        <strong>4</strong>
-                        <span>Teslime Hazır</span>
+                    <div class="lp-preview-stats">
+                        <div class="lp-preview-stat">
+                            <strong>12</strong>
+                            <span>Açık Servis</span>
+                        </div>
+                        <div class="lp-preview-stat">
+                            <strong>4</strong>
+                            <span>Teslime Hazır</span>
+                        </div>
+                        <div class="lp-preview-stat">
+                            <strong>₺18.4K</strong>
+                            <span>Bu Ay</span>
+                        </div>
                     </div>
-                    <div class="lp-preview-stat">
-                        <strong>₺18.4K</strong>
-                        <span>Bu Ay</span>
-                    </div>
-                </div>
-                <div class="lp-preview-list">
-                    <div class="lp-preview-row">
-                        <div class="lp-preview-dot lp-dot-orange"></div>
-                        <span class="lp-preview-row-name">34 BK 571 — Yağ bakımı</span>
-                        <span class="lp-preview-row-meta">İşlemde</span>
-                    </div>
-                    <div class="lp-preview-row">
-                        <div class="lp-preview-dot lp-dot-green"></div>
-                        <span class="lp-preview-row-name">06 MT 212 — Zincir ayarı</span>
-                        <span class="lp-preview-row-meta">Hazır</span>
-                    </div>
-                    <div class="lp-preview-row">
-                        <div class="lp-preview-dot lp-dot-blue"></div>
-                        <span class="lp-preview-row-name">35 KA 009 — Fren kontrolü</span>
-                        <span class="lp-preview-row-meta">Bekliyor</span>
-                    </div>
-                    <div class="lp-preview-row">
-                        <div class="lp-preview-dot lp-dot-yellow"></div>
-                        <span class="lp-preview-row-name">41 DF 881 — Ekspertiz</span>
-                        <span class="lp-preview-row-meta">Parça Bekliyor</span>
+                    <div class="lp-preview-list">
+                        <div class="lp-preview-row">
+                            <div class="lp-preview-dot lp-dot-orange"></div>
+                            <span class="lp-preview-row-name">34 BK 571 — Yağ bakımı</span>
+                            <span class="lp-preview-row-meta">İşlemde</span>
+                        </div>
+                        <div class="lp-preview-row">
+                            <div class="lp-preview-dot lp-dot-green"></div>
+                            <span class="lp-preview-row-name">06 MT 212 — Zincir ayarı</span>
+                            <span class="lp-preview-row-meta">Hazır</span>
+                        </div>
+                        <div class="lp-preview-row">
+                            <div class="lp-preview-dot lp-dot-blue"></div>
+                            <span class="lp-preview-row-name">35 KA 009 — Fren kontrolü</span>
+                            <span class="lp-preview-row-meta">Bekliyor</span>
+                        </div>
+                        <div class="lp-preview-row">
+                            <div class="lp-preview-dot lp-dot-yellow"></div>
+                            <span class="lp-preview-row-name">41 DF 881 — Ekspertiz</span>
+                            <span class="lp-preview-row-meta">Parça Bekliyor</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,32 +200,44 @@
             </div>
             <div class="lp-feature-grid">
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">01</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
                     <h3>Servis Emri Yönetimi</h3>
                     <p>İş emirleri açın, işlemleri ve kullanılan parçaları kaydedin, durumu adım adım takip edin.</p>
                 </div>
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">02</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
                     <h3>Randevu ve Kabul</h3>
                     <p>Günlük servis akışını görselleştirin, randevuları planlayın ve tek tıkla iş emrine dönüştürün.</p>
                 </div>
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">03</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    </div>
                     <h3>Ekspertiz Kayıtları</h3>
                     <p>Standart checklist yapısıyla motosiklet ekspertizini kayıt altına alın, PDF olarak paylaşın.</p>
                 </div>
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">04</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
                     <h3>Müşteri ve Araç Geçmişi</h3>
                     <p>Her araçla ilişkili tüm servis ve ekspertiz geçmişini plakadan saniyeler içinde görün.</p>
                 </div>
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">05</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
                     <h3>Stok ve Parça Takibi</h3>
                     <p>Envanter yönetin, düşük stok uyarıları alın, servis emirlerine parça bağlayın.</p>
                 </div>
                 <div class="lp-feature-card">
-                    <div class="lp-feature-icon">06</div>
+                    <div class="lp-feature-icon">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </div>
                     <h3>Ödeme ve Tahsilat</h3>
                     <p>Nakit, kredi kartı ve banka transferini kaydedin, açık bakiyeleri anlık takip edin.</p>
                 </div>
@@ -185,6 +277,57 @@
         </div>
     </section>
 
+    <!-- ── TESTIMONIALS ───────────────────────────────────────────────── -->
+    <section class="lp-section lp-section-bg" id="yorumlar">
+        <div class="lp-section-inner">
+            <div class="lp-section-head">
+                <span class="lp-section-tag">Yorumlar</span>
+                <h2>Servisler GarajPass ile nasıl çalışıyor?</h2>
+            </div>
+            <div class="lp-testimonial-grid">
+                <div class="lp-testimonial-card">
+                    <div class="lp-testimonial-quote">"</div>
+                    <p class="lp-testimonial-text">
+                        Kağıt iş emri yazmayı tamamen bıraktık. Servis kabulünden teslimata kadar her şey sistemde, plakadan araç geçmişine anında bakıyoruz.
+                    </p>
+                    <div class="lp-testimonial-author">
+                        <div class="lp-testimonial-avatar">AK</div>
+                        <div>
+                            <div class="lp-testimonial-name">Ali K.</div>
+                            <div class="lp-testimonial-role">Sahip — İstanbul Moto Servis</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lp-testimonial-card">
+                    <div class="lp-testimonial-quote">"</div>
+                    <p class="lp-testimonial-text">
+                        Ekspertiz formunu PDF olarak müşteriye göndermek güven sağlıyor. Müşteriler artık araçlarının durumunu belgeyle görüyor.
+                    </p>
+                    <div class="lp-testimonial-author">
+                        <div class="lp-testimonial-avatar">MY</div>
+                        <div>
+                            <div class="lp-testimonial-name">Murat Y.</div>
+                            <div class="lp-testimonial-role">Usta — Ankara Motorsport</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lp-testimonial-card">
+                    <div class="lp-testimonial-quote">"</div>
+                    <p class="lp-testimonial-text">
+                        Tahsilat takibi çok kolaylaştı. Kim ne kadar borçlu, kim ödedi — dashboard'dan bakıp günü kapatıyoruz.
+                    </p>
+                    <div class="lp-testimonial-author">
+                        <div class="lp-testimonial-avatar">SÇ</div>
+                        <div>
+                            <div class="lp-testimonial-name">Serdar Ç.</div>
+                            <div class="lp-testimonial-role">İşletmeci — Bursa Moto Bakım</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ── CTA ───────────────────────────────────────────────────────── -->
     <section class="lp-cta">
         <h2>Garajını dijitalleştir. Geçmişi görünür kıl.</h2>
@@ -197,5 +340,20 @@
             <a class="lp-link-muted" href="/login">Zaten hesabın var mı? Giriş yap</a>
         </div>
     </section>
+
+    <!-- ── FOOTER ────────────────────────────────────────────────────── -->
+    <footer class="lp-footer">
+        <div class="lp-footer-inner">
+            <div class="lp-footer-brand">
+                <div class="lp-brand-mark" style="width:1.9rem;height:1.9rem;font-size:0.72rem">GP</div>
+                <span>GarajPass</span>
+            </div>
+            <span class="lp-footer-copy">© 2026 GarajPass. Tüm hakları saklıdır.</span>
+            <div class="lp-footer-links">
+                <a href="/login">Giriş Yap</a>
+                <a href="/register">Kayıt Ol</a>
+            </div>
+        </div>
+    </footer>
 
 </div>
