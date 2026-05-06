@@ -26,8 +26,8 @@ services:
     container_name: motorcare-staging-api
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       ASPNETCORE_URLS: http://0.0.0.0:8080
@@ -99,12 +99,12 @@ services:
       - motorcare-staging
 
   migrator:
-    profiles: ["tools"]
     image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/motorcare-migrator:staging}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile.migrator
     pull_policy: always
+    container_name: motorcare-staging-migrator
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
