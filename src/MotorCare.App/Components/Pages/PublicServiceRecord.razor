@@ -1,0 +1,137 @@
+@page "/public/service-record/{Slug}"
+@layout Layout.PublicLayout
+@using System.Net
+@using MotorCare.App.Models.PublicRecords
+@inject PublicRecordsService PublicRecordsService
+
+<PageTitle>GarajPass dijital servis kaydı</PageTitle>
+
+<main class="public-record-page">
+    <section class="public-record-shell">
+        <header class="public-record-header">
+            <a class="public-record-brand" href="/">
+                <span>GP</span>
+                <strong>GarajPass</strong>
+            </a>
+            <div class="public-record-badge">Dijital kayıt doğrulaması</div>
+        </header>
+
+        @if (_loading)
+        {
+            <section class="public-record-state">
+                <strong>Kayıt kontrol ediliyor</strong>
+                <p>Lütfen bekleyin.</p>
+            </section>
+        }
+        else if (_record is null)
+        {
+            <section class="public-record-state public-record-state--error">
+                <strong>Kayıt bulunamadı</strong>
+                <p>Bu dijital servis kaydı mevcut değil veya public erişim aktif değil.</p>
+            </section>
+        }
+        else
+        {
+            <article class="public-record-card">
+                <div class="public-record-verify">
+                    <span class="public-record-check">OK</span>
+                    <div>
+                        <p>Kayıt doğrulandı</p>
+                        <h1>GarajPass dijital servis kaydı</h1>
+                    </div>
+                </div>
+
+                <dl class="public-record-details">
+                    <div>
+                        <dt>Servis kayıt no</dt>
+                        <dd>@_record.OrderNo</dd>
+                    </div>
+                    <div>
+                        <dt>Tarih</dt>
+                        <dd>@_record.Date.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                    </div>
+                    <div>
+                        <dt>Araç</dt>
+                        <dd>@VehicleText</dd>
+                    </div>
+                    <div>
+                        <dt>Plaka</dt>
+                        <dd>@(_record.VehiclePlate ?? "-")</dd>
+                    </div>
+                    <div>
+                        <dt>Durum</dt>
+                        <dd>@GetStatusText(_record.Status)</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_record.BusinessName))
+                    {
+                        <div>
+                            <dt>İşletme</dt>
+                            <dd>@_record.BusinessName</dd>
+                        </div>
+                    }
+                </dl>
+
+                <section class="public-record-summary">
+                    <h2>Kısa servis özeti</h2>
+                    <p>@_record.ServiceSummary</p>
+                </section>
+
+                <footer class="public-record-footer">
+                    <strong>Bu kayıt GarajPass üzerinden doğrulanmıştır.</strong>
+                    <span>Detaylı kayıt erişimi yakında.</span>
+                </footer>
+            </article>
+        }
+    </section>
+</main>
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private PublicServiceRecordPreview? _record;
+    private bool _loading = true;
+
+    private string VehicleText
+    {
+        get
+        {
+            var parts = new[] { _record?.VehicleBrand, _record?.VehicleModel }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var text = string.Join(" ", parts);
+            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Slug))
+        {
+            _loading = false;
+            return;
+        }
+
+        try
+        {
+            _record = await PublicRecordsService.GetServiceRecordPreviewAsync(Slug);
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _record = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string GetStatusText(string status) => status switch
+    {
+        "Open" => "Açık",
+        "InProgress" => "İşlemde",
+        "WaitingForParts" => "Parça bekliyor",
+        "Completed" => "Tamamlandı",
+        "Delivered" => "Teslim edildi",
+        "Cancelled" => "İptal",
+        _ => status
+    };
+}

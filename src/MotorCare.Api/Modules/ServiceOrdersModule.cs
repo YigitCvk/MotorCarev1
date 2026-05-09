@@ -3,7 +3,9 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MotorCare.Api.Authorization;
 using MotorCare.Api.Files;
+using MotorCare.Application.Common.Interfaces;
 using MotorCare.Application.Common.Models;
+using MotorCare.Application.PublicRecords;
 using MotorCare.Application.ServiceOrders.Commands.DeleteServiceOrderAttachment;
 using MotorCare.Application.ServiceOrders.Commands.AddOperationToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddPartToOrder;
@@ -68,6 +70,28 @@ public sealed class ServiceOrdersModule : ICarterModule
         .WithName("GetServiceOrderStatusHistory")
         .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
         .Produces<IReadOnlyList<ServiceOrderStatusHistoryDto>>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/{id:guid}/public-access", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.GetOrCreateForServiceOrderAsync(id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .WithName("GetOrCreateServiceOrderPublicAccess")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);

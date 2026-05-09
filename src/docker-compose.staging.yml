@@ -85,6 +85,7 @@ services:
       MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
       MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
       ApiBaseUrl: ${APP_INTERNAL_API_BASE_URL:-http://api:8080}
+      PublicReports__BaseUrl: ${PublicReports__BaseUrl:-https://staging.bakimsuite.com}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
     volumes:
       - app_dataprotection:/var/lib/motorcare/dataprotection

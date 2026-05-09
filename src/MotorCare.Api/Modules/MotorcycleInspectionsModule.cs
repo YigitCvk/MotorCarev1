@@ -10,6 +10,7 @@ using MotorCare.Application.Inspections.Commands.UpdateMotorcycleInspection;
 using MotorCare.Application.Inspections.Commands.UpdateMotorcycleInspectionItem;
 using MotorCare.Application.Inspections.Queries.GetMotorcycleInspectionById;
 using MotorCare.Application.Inspections.Queries.GetMotorcycleInspections;
+using MotorCare.Application.PublicRecords;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
 using MotorCare.Application.Common.Interfaces;
@@ -63,6 +64,26 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .Produces<MotorcycleInspectionDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/{id:guid}/public-access", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.GetOrCreateForInspectionAsync(id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);

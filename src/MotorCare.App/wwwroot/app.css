@@ -3301,6 +3301,209 @@ h1:focus { outline: none; }
     background: #f8fafc;
 }
 
+.public-record-page {
+    min-height: 100vh;
+    background: #eef2f7;
+    color: #111827;
+    padding: 2rem 1rem;
+}
+
+.public-record-page--inspection {
+    background: #edf7f4;
+}
+
+.public-record-shell {
+    width: min(100%, 760px);
+    margin: 0 auto;
+}
+
+.public-record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.public-record-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.public-record-brand span {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #111827;
+    color: #fff;
+    font-weight: 900;
+}
+
+.public-record-brand strong {
+    font-size: 1.05rem;
+}
+
+.public-record-badge {
+    padding: 0.4rem 0.65rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #fff;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.public-record-card,
+.public-record-state {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.public-record-card {
+    padding: 1.25rem;
+}
+
+.public-record-state {
+    padding: 2rem;
+    text-align: center;
+}
+
+.public-record-state strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 1.2rem;
+}
+
+.public-record-state p {
+    margin: 0;
+    color: #64748b;
+}
+
+.public-record-state--error {
+    border-color: #fecaca;
+}
+
+.public-record-verify {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.public-record-check {
+    width: 3rem;
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.public-record-verify p {
+    margin: 0 0 0.25rem;
+    color: #16a34a;
+    font-weight: 800;
+}
+
+.public-record-verify h1 {
+    margin: 0;
+    font-size: 1.65rem;
+    line-height: 1.15;
+}
+
+.public-record-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0;
+}
+
+.public-record-details div {
+    padding: 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.public-record-details dt {
+    margin-bottom: 0.25rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.public-record-details dd {
+    margin: 0;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.public-record-summary {
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.public-record-summary h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.public-record-summary p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.55;
+}
+
+.public-record-mini-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.public-record-mini-stat strong {
+    font-size: 1.1rem;
+}
+
+.public-record-mini-stat span {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.public-record-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.public-record-footer strong {
+    color: #111827;
+}
+
 .print-page-shell {
     max-width: 1120px;
     margin: 0 auto;
@@ -3357,6 +3560,57 @@ h1:focus { outline: none; }
     align-items: flex-end;
     gap: 0.35rem;
     color: var(--mc-text-2);
+}
+
+.print-qr-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 9rem);
+    align-items: center;
+    gap: 0.55rem;
+    max-width: 17rem;
+    margin-top: 0.35rem;
+    padding: 0.55rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 8px;
+    background: #fff;
+    break-inside: avoid;
+    text-align: left;
+}
+
+.print-qr-code {
+    width: 6.25rem;
+    height: 6.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.print-qr-code svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.print-qr-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.print-qr-copy strong {
+    color: var(--mc-text);
+    font-size: 0.76rem;
+    line-height: 1.25;
+}
+
+.print-qr-copy span,
+.print-qr-copy small {
+    color: var(--mc-text-muted);
+    font-size: 0.7rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
 }
 
 .print-grid {
@@ -3780,6 +4034,28 @@ h1:focus { outline: none; }
 }
 
 @media (max-width: 640px) {
+    .public-record-page {
+        padding: 1rem;
+    }
+
+    .public-record-header,
+    .public-record-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .public-record-details {
+        grid-template-columns: 1fr;
+    }
+
+    .public-record-verify {
+        align-items: flex-start;
+    }
+
+    .public-record-verify h1 {
+        font-size: 1.35rem;
+    }
+
     .print-page-shell {
         padding: 1rem;
     }
@@ -3799,6 +4075,11 @@ h1:focus { outline: none; }
 
     .print-header-meta {
         align-items: flex-start;
+    }
+
+    .print-qr-box {
+        grid-template-columns: auto minmax(0, 1fr);
+        max-width: none;
     }
 
     .print-signature-row {
@@ -3889,6 +4170,23 @@ h1:focus { outline: none; }
     .print-body-map-list-no {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+
+    .print-qr-box {
+        max-width: 58mm;
+        border-color: #111827 !important;
+        break-inside: avoid;
+    }
+
+    .print-qr-code {
+        width: 24mm;
+        height: 24mm;
+    }
+
+    .print-qr-copy strong,
+    .print-qr-copy span,
+    .print-qr-copy small {
+        color: #111827 !important;
     }
 
     .print-items-row.row-damaged {

@@ -9,6 +9,7 @@ using MotorCare.Domain.ServiceOrders.Entities;
 using MotorCare.Domain.Services;
 using MotorCare.Domain.Inventory;
 using MotorCare.Domain.Inspections;
+using MotorCare.Domain.PublicRecords;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
@@ -53,6 +54,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<MotorcycleInspection> MotorcycleInspections => Set<MotorcycleInspection>();
+    public DbSet<PublicRecordAccess> PublicRecordAccesses => Set<PublicRecordAccess>();
     public DbSet<ServiceOrderNumberCounter> ServiceOrderNumberCounters => Set<ServiceOrderNumberCounter>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();

@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<ISecurityTokenFactory, SecurityTokenFactory>();
         services.AddScoped<IAuthLinkBuilder, AuthLinkBuilder>();
+        services.AddScoped<IPublicRecordAccessService, PublicRecordAccessService>();
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<LoggingEmailSender>();
         services.AddScoped<IEmailSender>(sp =>

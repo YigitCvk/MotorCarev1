@@ -1,9 +1,15 @@
 @page "/inspections/{Id:guid}/print"
 @layout MotorCare.App.Components.Layout.PrintLayout
+@using Microsoft.Extensions.Options
 @using System.Net
+@using MotorCare.App.Configuration
 @using MotorCare.App.Models.Inspections
+@using MotorCare.App.Models.PublicRecords
 @inject AuthService AuthService
 @inject InspectionsService InspectionsService
+@inject PublicRecordsService PublicRecordsService
+@inject QrCodeSvgService QrCodeSvgService
+@inject IOptions<PublicReportOptions> PublicReportOptions
 @inject NavigationManager NavigationManager
 
 <PageTitle>@(_inspection?.InspectionNo ?? "Ekspertiz Raporu")</PageTitle>
@@ -42,6 +48,17 @@
                     <strong class="print-doc-no">@_inspection.InspectionNo</strong>
                     <span>@_inspection.PackageTypeText</span>
                     <span class="status-badge @GetStatusBadgeClass(_inspection.Status)">@_inspection.StatusText</span>
+                    @if (!string.IsNullOrWhiteSpace(_qrSvg))
+                    {
+                        <section class="print-qr-box">
+                            <div class="print-qr-code">@((MarkupString)_qrSvg)</div>
+                            <div class="print-qr-copy">
+                                <strong>Dijital kayıt doğrulaması için QR'ı okutun.</strong>
+                                <span>GarajPass ile doğrulanabilir kayıt</span>
+                                <small>@_publicPath</small>
+                            </div>
+                        </section>
+                    }
                 </div>
             </header>
 
@@ -296,6 +313,10 @@
 
     private MotorcycleInspectionDetail? _inspection;
     private CurrentUserResponse? _currentUser;
+    private PublicRecordAccessResponse? _publicAccess;
+    private string? _publicUrl;
+    private string? _publicPath;
+    private string? _qrSvg;
     private bool _loading = true;
     private string? _error;
 
@@ -379,6 +400,10 @@
             _error = null;
             await InvokeAsync(StateHasChanged);
             _inspection = await InspectionsService.GetByIdAsync(Id);
+            if (_inspection is not null)
+            {
+                await LoadPublicQrAsync();
+            }
             if (_inspection is null)
                 _error = "Ekspertiz raporu bulunamadı.";
         }
@@ -484,4 +509,42 @@
         MotorcyclePartDefinition Definition,
         MotorcycleInspectionItem Item,
         MotorcyclePartStatus Status);
+
+    private async Task LoadPublicQrAsync()
+    {
+        try
+        {
+            _publicAccess = await PublicRecordsService.GetOrCreateForInspectionAsync(Id);
+            if (_publicAccess is null || !_publicAccess.IsActive || string.IsNullOrWhiteSpace(_publicAccess.Slug))
+            {
+                return;
+            }
+
+            _publicPath = $"/public/inspection-report/{_publicAccess.Slug}";
+            _publicUrl = BuildPublicUrl(_publicPath);
+            _qrSvg = QrCodeSvgService.GenerateSvg(_publicUrl);
+        }
+        catch
+        {
+            _publicAccess = null;
+            _publicUrl = null;
+            _publicPath = null;
+            _qrSvg = null;
+        }
+    }
+
+    private string BuildPublicUrl(string path)
+    {
+        var configuredBaseUrl = PublicReportOptions.Value.BaseUrl;
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? NavigationManager.BaseUri
+            : configuredBaseUrl.Trim();
+
+        if (!baseUrl.EndsWith("/", StringComparison.Ordinal))
+        {
+            baseUrl += "/";
+        }
+
+        return new Uri(new Uri(baseUrl), path.TrimStart('/')).ToString();
+    }
 }

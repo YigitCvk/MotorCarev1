@@ -1,0 +1,134 @@
+@page "/public/inspection-report/{Slug}"
+@layout Layout.PublicLayout
+@using System.Net
+@using MotorCare.App.Models.PublicRecords
+@inject PublicRecordsService PublicRecordsService
+
+<PageTitle>GarajPass dijital ekspertiz kaydı</PageTitle>
+
+<main class="public-record-page public-record-page--inspection">
+    <section class="public-record-shell">
+        <header class="public-record-header">
+            <a class="public-record-brand" href="/">
+                <span>GP</span>
+                <strong>GarajPass</strong>
+            </a>
+            <div class="public-record-badge">Dijital kayıt doğrulaması</div>
+        </header>
+
+        @if (_loading)
+        {
+            <section class="public-record-state">
+                <strong>Rapor kontrol ediliyor</strong>
+                <p>Lütfen bekleyin.</p>
+            </section>
+        }
+        else if (_report is null)
+        {
+            <section class="public-record-state public-record-state--error">
+                <strong>Rapor bulunamadı</strong>
+                <p>Bu dijital ekspertiz kaydı mevcut değil veya public erişim aktif değil.</p>
+            </section>
+        }
+        else
+        {
+            <article class="public-record-card">
+                <div class="public-record-verify">
+                    <span class="public-record-check">OK</span>
+                    <div>
+                        <p>Kayıt doğrulandı</p>
+                        <h1>GarajPass dijital ekspertiz kaydı</h1>
+                    </div>
+                </div>
+
+                <dl class="public-record-details">
+                    <div>
+                        <dt>Ekspertiz no</dt>
+                        <dd>@_report.InspectionNo</dd>
+                    </div>
+                    <div>
+                        <dt>Ekspertiz tarihi</dt>
+                        <dd>@_report.Date.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                    </div>
+                    <div>
+                        <dt>Araç</dt>
+                        <dd>@VehicleText</dd>
+                    </div>
+                    <div>
+                        <dt>Plaka</dt>
+                        <dd>@_report.VehiclePlate</dd>
+                    </div>
+                    <div>
+                        <dt>Paket</dt>
+                        <dd>@_report.PackageType</dd>
+                    </div>
+                    <div>
+                        <dt>Durum</dt>
+                        <dd>@_report.Status</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_report.BusinessName))
+                    {
+                        <div>
+                            <dt>İşletme</dt>
+                            <dd>@_report.BusinessName</dd>
+                        </div>
+                    }
+                </dl>
+
+                <section class="public-record-summary">
+                    <h2>Sonuç / özet</h2>
+                    <p>@_report.ResultSummary</p>
+                    <div class="public-record-mini-stat">
+                        <strong>@_report.CriticalFindingCount</strong>
+                        <span>Sınırlı public kritik bulgu sayısı</span>
+                    </div>
+                </section>
+
+                <footer class="public-record-footer">
+                    <strong>Bu rapor GarajPass üzerinden doğrulanmıştır.</strong>
+                    <span>Tam ekspertiz raporu erişimi yakında.</span>
+                </footer>
+            </article>
+        }
+    </section>
+</main>
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private PublicInspectionReportPreview? _report;
+    private bool _loading = true;
+
+    private string VehicleText
+    {
+        get
+        {
+            var parts = new[] { _report?.VehicleBrand, _report?.VehicleModel }
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            var text = string.Join(" ", parts);
+            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Slug))
+        {
+            _loading = false;
+            return;
+        }
+
+        try
+        {
+            _report = await PublicRecordsService.GetInspectionReportPreviewAsync(Slug);
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _report = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

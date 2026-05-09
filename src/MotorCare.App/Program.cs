@@ -25,6 +25,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
+builder.Services.Configure<PublicReportOptions>(builder.Configuration.GetSection(PublicReportOptions.SectionName));
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7278";
 
@@ -58,6 +59,8 @@ builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<InspectionsService>();
 builder.Services.AddScoped<UsersService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<PublicRecordsService>();
+builder.Services.AddScoped<QrCodeSvgService>();
 
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
 if (string.IsNullOrWhiteSpace(dataProtectionPath))
