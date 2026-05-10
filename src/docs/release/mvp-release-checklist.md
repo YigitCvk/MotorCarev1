@@ -4,27 +4,27 @@ Bu checklist staging ve production aday deploy'larında kullanılacak kısa kont
 
 ## 1. Deploy Commit
 
-- Deploy edilecek commit kaydedildi:
+- [x] Deploy edilecek commit kaydedildi:
   - `git log -1 --oneline`
-- API version endpoint'i commit bilgisini aynı commit ile gösteriyor:
+- [x] API version endpoint'i commit bilgisini aynı commit ile gösteriyor:
   - `curl -i http://127.0.0.1:5102/api/version`
-- Staging son bilinen MVP adayı:
-  - `f55c12b6f27d071b76907e1f2a3665413b6b175a`
+- [x] Staging son bilinen MVP adayı:
+  - `ed558ca` (main branch, 2026-05-10)
 
 ## 2. Migration Kontrolü
 
-- Repo'daki son migration doğrulandı:
+- [x] Repo'daki son migration doğrulandı:
   - `ls MotorCare.Infrastructure/Migrations`
-- Migrator sadece uygulama migration'ı için çalıştırıldı:
+- [x] Migrator sadece uygulama migration'ı için çalıştırıldı:
   - `docker compose --env-file .env.staging -p motorcare-stack-src -f docker-compose.staging.yml run --rm migrator`
-- `/api/version` içindeki `latestAppliedMigration` repo'daki son migration ile eşleşiyor.
-- MVP QR/Public Report Phase 1 son migration:
+- [x] `/api/version` içindeki `latestAppliedMigration` repo'daki son migration ile eşleşiyor.
+- [x] MVP QR/Public Report Phase 1 son migration:
   - `20260509201214_AddPublicRecordAccesses`
 
 ## 3. Container Kontrolü
 
-- Postgres container stop/remove/recreate edilmedi.
-- Sadece API ve App recreate edildiğinde beklenen durum:
+- [x] Postgres container stop/remove/recreate edilmedi.
+- [x] Sadece API ve App recreate edildiğinde beklenen durum:
   - `motorcare-staging-api` healthy, `127.0.0.1:5102->8080`
   - `motorcare-staging-app` healthy, `127.0.0.1:5101->8080`
   - `motorcare-staging-postgres` healthy, StartedAt değişmedi
@@ -33,44 +33,45 @@ Bu checklist staging ve production aday deploy'larında kullanılacak kısa kont
 
 ## 4. Health Check
 
-- API health:
+- [x] API health:
   - `curl -i http://127.0.0.1:5102/health`
-- API version:
+- [x] API version:
   - `curl -i http://127.0.0.1:5102/api/version`
-- App route:
+- [x] App route:
   - `curl -I http://127.0.0.1:5101/`
 
 ## 5. Backup
 
-- Deploy öncesi staging veya production DB backup alındı.
-- Backup dosyası tarihli, erişimi sınırlı bir dizinde saklandı.
-- Backup restore edilebilirliği mümkünse ayrı restore-check DB üzerinde doğrulandı.
+- [x] Deploy öncesi staging veya production DB backup alındı.
+  - `/opt/motorcare-backups/motorcare-staging-20260510T140327Z.dump` (123K)
+- [x] Backup dosyası tarihli, erişimi sınırlı bir dizinde saklandı.
+- [ ] Backup restore edilebilirliği mümkünse ayrı restore-check DB üzerinde doğrulandı. *(tatbikat bekliyor)*
 - Detaylı prosedür: `docs/ops/backup-restore.md`
 
 ## 6. Smoke Checklist
 
-- Auth: register, email verification, login, forgot/reset password.
-- Dashboard: boş state ve veri sonrası widget'lar.
-- Customers: oluşturma, liste, detay, arama.
-- Vehicles: oluşturma, model seçimi, müşteri ilişkisi, servis emri auto-fill.
-- Service Catalog: hizmet/fiyat oluşturma, düzenleme, negatif fiyat validation.
-- Appointments: haftalık plan, farklı gün/saat, liste ve detay.
-- Service Order: oluşturma, operasyon/parça/sarf/tahsilat, detay, print/PDF.
-- Inspection: oluşturma, checklist/body map, detay, print/PDF.
-- QR/Public Report: service record ve inspection public preview auth olmadan açılıyor.
-- Roles: Owner, Admin, Receptionist, Technician minimum yetki smoke'u.
+- [x] Auth: register, email verification, login, forgot/reset password.
+- [ ] Dashboard: boş state ve veri sonrası widget'lar. *(manuel doğrulama bekliyor)*
+- [x] Customers: oluşturma, liste, detay, arama. *(API üzerinden doğrulandı)*
+- [x] Vehicles: oluşturma, model seçimi, müşteri ilişkisi, servis emri auto-fill.
+- [x] Service Catalog: hizmet/fiyat oluşturma, düzenleme, negatif fiyat validation.
+- [x] Appointments: haftalık plan, farklı gün/saat, liste ve detay.
+- [x] Service Order: oluşturma, operasyon/parça/sarf/tahsilat, detay, print/PDF.
+- [x] Inspection: oluşturma, checklist/body map, detay, print/PDF.
+- [x] QR/Public Report: service record ve inspection public preview auth olmadan açılıyor.
+- [ ] Roles: Owner, Admin, Receptionist, Technician minimum yetki smoke'u. *(ek kullanıcı gerekiyor)*
 
 ## 7. Log ve Güvenlik Kontrolü
 
-- API log:
+- [x] API log:
   - `docker logs motorcare-staging-api --tail 500`
-- App log:
+- [x] App log:
   - `docker logs motorcare-staging-app --tail 300`
-- Aranacak riskler:
+- [x] Aranacak riskler:
   - unexpected `exception`, `error`, `500`, unexpected `401`
   - `ObjectDisposedException`, `JSDisconnectedException`
   - secret, token, password, code
-  - public QR slug veya public full link
+  - public QR slug veya public full link → `RequestPathRedactionEnricher` aktif, slug'lar logda `{slug}` olarak görünüyor
 
 ## 8. Rollback Planı
 
@@ -94,8 +95,10 @@ Bu checklist staging ve production aday deploy'larında kullanılacak kısa kont
 
 ## 10. Production Öncesi
 
-- Production domain ve TLS doğrulandı.
-- `PublicReports__BaseUrl` production domain'e çekildi.
-- SMTP production ayarları secret sızdırmadan doğrulandı.
-- Backup saklama politikası ve restore tatbikatı tamamlandı.
-- Rollback sorumlusu, deploy sorumlusu ve smoke sorumlusu netleştirildi.
+- [ ] Production domain ve TLS doğrulandı.
+- [ ] `PublicReports__BaseUrl` production domain'e çekildi.
+- [ ] SMTP production sender domain, SPF/DKIM/DMARC kayıtları doğrulandı.
+- [ ] Production env secrets güvenli ortamda hazırlandı (JWT, DB, SMTP).
+- [ ] KVKK / gizlilik politikası / kullanım koşulları metinleri hazırlandı.
+- [ ] Backup saklama politikası ve restore tatbikatı tamamlandı.
+- [ ] Rollback sorumlusu, deploy sorumlusu ve smoke sorumlusu netleştirildi.
