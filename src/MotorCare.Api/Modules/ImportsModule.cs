@@ -19,7 +19,7 @@ public sealed class ImportsModule : ICarterModule
 
         group.MapGet("/", async (IImportService importService, ICurrentUserProvider user, CancellationToken ct) =>
         {
-            var tenantId = user.GetTenantId() ?? string.Empty;
+            var tenantId = user.GetTenantIdentifier() ?? string.Empty;
             var batches = await importService.GetBatchesAsync(tenantId, ct);
             return Results.Ok(batches);
         })
@@ -33,7 +33,7 @@ public sealed class ImportsModule : ICarterModule
             ICurrentUserProvider user,
             CancellationToken ct) =>
         {
-            var tenantId = user.GetTenantId() ?? string.Empty;
+            var tenantId = user.GetTenantIdentifier() ?? string.Empty;
             var batch = await importService.GetBatchAsync(batchId, tenantId, previewRows > 0 ? previewRows : 50, ct);
             return batch is null ? Results.NotFound() : Results.Ok(batch);
         })
@@ -49,7 +49,7 @@ public sealed class ImportsModule : ICarterModule
             ICurrentUserProvider user,
             CancellationToken ct) =>
         {
-            var tenantId = user.GetTenantId() ?? string.Empty;
+            var tenantId = user.GetTenantIdentifier() ?? string.Empty;
             ImportRowStatus? rowStatus = null;
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<ImportRowStatus>(status, ignoreCase: true, out var parsed))
                 rowStatus = parsed;
@@ -77,7 +77,7 @@ public sealed class ImportsModule : ICarterModule
             if (file is null || file.Length == 0)
                 return Results.BadRequest("No file provided.");
 
-            var tenantId = user.GetTenantId() ?? string.Empty;
+            var tenantId = user.GetTenantIdentifier() ?? string.Empty;
             var userId = user.GetUserId();
 
             await using var stream = file.OpenReadStream();
@@ -104,7 +104,7 @@ public sealed class ImportsModule : ICarterModule
             ICurrentUserProvider user,
             CancellationToken ct) =>
         {
-            var tenantId = user.GetTenantId() ?? string.Empty;
+            var tenantId = user.GetTenantIdentifier() ?? string.Empty;
             try
             {
                 var batch = await importService.CommitAsync(batchId, tenantId, ct);
