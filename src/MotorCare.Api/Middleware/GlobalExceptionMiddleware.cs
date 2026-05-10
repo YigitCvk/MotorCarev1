@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
+using MotorCare.Api.Logging;
 using MotorCare.Domain.Common;
 
 namespace MotorCare.Api.Middleware;
@@ -30,7 +31,7 @@ public sealed class GlobalExceptionMiddleware
             _logger.LogDebug(
                 EventIdStore.Common.ExpectedRequestFailure,
                 "Request canceled by client. Path={Path} CorrelationId={CorrelationId}",
-                httpContext.Request.Path,
+                RequestPathRedactor.Redact(httpContext.Request.Path),
                 httpContext.TraceIdentifier);
         }
         catch (Exception exception)
@@ -57,7 +58,7 @@ public sealed class GlobalExceptionMiddleware
             "Request failed. StatusCode={StatusCode} Title={Title} Path={Path} CorrelationId={CorrelationId}",
             statusCode,
             title,
-            httpContext.Request.Path,
+            RequestPathRedactor.Redact(httpContext.Request.Path),
             httpContext.TraceIdentifier);
 
         httpContext.Response.StatusCode = statusCode;

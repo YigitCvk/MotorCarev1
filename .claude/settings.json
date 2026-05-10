@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh -o StrictHostKeyChecking=no root@46.225.166.254 \"cd /opt/motorcare-stack-src/src && MOTORCARE_COMMIT_SHA=9ae7b5e MOTORCARE_BUILD_TIME=$\\(date -u +%Y-%m-%dT%H:%M:%SZ\\) docker compose -f docker-compose.staging.yml --env-file .env.staging up -d --pull never 2>&1\")",
+      "Bash(ssh -o StrictHostKeyChecking=no root@46.225.166.254 'until docker inspect motorcare-staging-app --format \"{{.State.Health.Status}}\" | grep -q healthy; do sleep 3; done && docker ps --filter \"name=motorcare-staging\" --format \"table {{.Names}}\\\\t{{.Status}}\"')",
+      "WebSearch",
+      "WebFetch(domain:www.svgrepo.com)",
+      "WebFetch(domain:svgsilh.com)",
+      "WebFetch(domain:freesvg.org)",
+      "WebFetch(domain:fontawesomeicons.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(xargs ls -lt)",
+      "Bash(ls -lt \"c:\\\\Users\\\\yigit\\\\Desktop\\\\\" 2>/dev/null | head -20; ls -lt \"c:\\\\Users\\\\yigit\\\\Downloads\\\\\" 2>/dev/null | head -20; ls -lt \"c:\\\\Users\\\\yigit\\\\AppData\\\\Local\\\\Temp\\\\\" 2>/dev/null | grep -i \"png\\\\|jpg\\\\|jpeg\\\\|webp\" | head -10)",
+      "Read(//c/Users/yigit/Desktop\" 2>/dev/**)",
+      "Read(//c/Users/yigit/AppData/Local/Temp\" 2>/dev/**)",
+      "Bash(find /c/Users/yigit -name \"*.png\" -newer \"/c/Users/yigit/Downloads/Motorcylerigthview.png\" 2>/dev/null | grep -v node_modules | grep -v \".git\" | head -20)",
+      "Read(//c/Users/yigit/**)"
+    ]
+  }
+}

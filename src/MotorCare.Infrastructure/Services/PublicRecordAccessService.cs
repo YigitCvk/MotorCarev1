@@ -22,6 +22,14 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         _context = context;
     }
 
+    private sealed record ServiceRecordPreviewProjection(
+        string OrderNo,
+        DateTimeOffset OpenedAt,
+        Guid VehicleId,
+        string? WorkDescription,
+        ServiceOrderStatus Status,
+        List<string> OperationDescriptions);
+
     public Task<PublicRecordAccessDto?> GetOrCreateForServiceOrderAsync(
         Guid serviceOrderId,
         string tenantId,
@@ -93,10 +101,15 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             .IgnoreQueryFilters()
             .AsSplitQuery()
             .AsNoTracking()
-            .Include(x => x.Operations)
-            .FirstOrDefaultAsync(
-                x => x.Id == access.RecordId && x.TenantId == access.TenantId,
-                cancellationToken);
+            .Where(x => x.Id == access.RecordId && x.TenantId == access.TenantId)
+            .Select(x => new ServiceRecordPreviewProjection(
+                x.OrderNo,
+                x.OpenedAt,
+                x.VehicleId,
+                x.WorkDescription,
+                x.Status,
+                x.Operations.Select(operation => operation.Description).ToList()))
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (order is null)
         {
@@ -124,7 +137,7 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             vehicle?.Plate.OriginalValue,
             vehicle?.Brand,
             vehicle?.Model,
-            BuildServiceSummary(order.WorkDescription, order.Operations.Select(x => x.Description)),
+            BuildServiceSummary(order.WorkDescription, order.OperationDescriptions),
             order.Status.ToString(),
             tenantName,
             VerificationText);

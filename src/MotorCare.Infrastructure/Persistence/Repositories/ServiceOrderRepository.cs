@@ -39,6 +39,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
     public async Task<List<ServiceOrder>> GetAllAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         return await _context.ServiceOrders
+            .AsSplitQuery()
             .Where(o => o.TenantId == tenantId)
             .OrderByDescending(o => o.OpenedAt)
             .ToListAsync(cancellationToken);
@@ -261,6 +262,7 @@ public class ServiceOrderRepository : IServiceOrderRepository
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
+            .AsSplitQuery()
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

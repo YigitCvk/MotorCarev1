@@ -66,6 +66,7 @@ try
             .Enrich.WithProperty("ApplicationName", "MotorCare.Api")
             .Enrich.WithProperty("Environment", env.EnvironmentName)
             .Enrich.With(new EventNameEnricher())
+            .Enrich.With(new RequestPathRedactionEnricher())
             .WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{EventId.Name}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
@@ -226,6 +227,7 @@ try
 
         options.EnrichDiagnosticContext = static (diag, ctx) =>
         {
+            diag.Set("RequestPath", RequestPathRedactor.Redact(ctx.Request.Path));
             diag.Set("RequestHost", ctx.Request.Host.Value);
             diag.Set("RequestScheme", ctx.Request.Scheme);
             diag.Set("RequestId", ctx.TraceIdentifier);

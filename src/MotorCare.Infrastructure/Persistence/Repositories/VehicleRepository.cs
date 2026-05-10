@@ -25,6 +25,7 @@ public class VehicleRepository : IVehicleRepository
     public async Task<Vehicle?> GetByPlateAsync(string tenantId, string normalizedPlate, CancellationToken cancellationToken = default)
     {
         return await _context.Vehicles
+            .AsSplitQuery()
             .FirstOrDefaultAsync(v => v.TenantId == tenantId && v.Plate.NormalizedValue == normalizedPlate, cancellationToken);
     }
 
@@ -32,6 +33,7 @@ public class VehicleRepository : IVehicleRepository
     {
         return await _context.Vehicles
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(v => v.TenantId == tenantId && v.CurrentCustomerId == customerId)
             .OrderBy(v => v.Brand)
             .ThenBy(v => v.Model)
@@ -44,6 +46,7 @@ public class VehicleRepository : IVehicleRepository
         var idList = ids.Distinct().ToList();
         return await _context.Vehicles
             .AsNoTracking()
+            .AsSplitQuery()
             .Where(v => v.TenantId == tenantId && idList.Contains(v.Id))
             .ToDictionaryAsync(v => v.Id, cancellationToken);
     }
