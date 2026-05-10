@@ -166,4 +166,18 @@ public static class EventIdStore
         public static readonly EventId UserRoleUpdated = new(2001, nameof(UserRoleUpdated));
         public static readonly EventId UserDeactivated = new(2002, nameof(UserDeactivated));
     }
+
+    // ── Import  2100-2199 ───────────────────────────────────────────────────
+    public static class Import
+    {
+        public static readonly EventId ImportUploaded        = new(2100, nameof(ImportUploaded));
+        public static readonly EventId ImportParsed          = new(2101, nameof(ImportParsed));
+        public static readonly EventId ImportValidationDone  = new(2102, nameof(ImportValidationDone));
+        public static readonly EventId ImportCommitted       = new(2103, nameof(ImportCommitted));
+        public static readonly EventId ImportCommitFailed    = new(2104, nameof(ImportCommitFailed));
+        public static readonly EventId ImportRowSkipped      = new(2105, nameof(ImportRowSkipped));
+        public static readonly EventId ImportRowError        = new(2106, nameof(ImportRowError));
+        public static readonly EventId ImportFileTooLarge    = new(2107, nameof(ImportFileTooLarge));
+        public static readonly EventId ImportParseError      = new(2108, nameof(ImportParseError));
+    }
 }

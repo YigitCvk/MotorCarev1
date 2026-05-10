@@ -9,4 +9,5 @@ public static class AuthorizationPolicies
     public const string ServiceOrderWrite = nameof(ServiceOrderWrite);
     public const string ServiceOrderPayments = nameof(ServiceOrderPayments);
     public const string DashboardRead = nameof(DashboardRead);
+    public const string ImportOperations = nameof(ImportOperations);
 }

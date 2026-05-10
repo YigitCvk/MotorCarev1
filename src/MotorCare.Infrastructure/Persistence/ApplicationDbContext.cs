@@ -9,6 +9,7 @@ using MotorCare.Domain.ServiceOrders.Entities;
 using MotorCare.Domain.Services;
 using MotorCare.Domain.Inventory;
 using MotorCare.Domain.Inspections;
+using MotorCare.Domain.Imports;
 using MotorCare.Domain.PublicRecords;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
@@ -58,6 +59,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceOrderNumberCounter> ServiceOrderNumberCounters => Set<ServiceOrderNumberCounter>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
+    public DbSet<ImportBatchRow> ImportBatchRows => Set<ImportBatchRow>();
     public DbSet<UserSecurityToken> UserSecurityTokens => Set<UserSecurityToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -79,6 +82,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<InventoryItem>().HasQueryFilter(i => i.TenantId == CurrentTenantId);
         modelBuilder.Entity<MotorcycleInspection>().HasQueryFilter(i => i.TenantId == CurrentTenantId);
         modelBuilder.Entity<User>().HasQueryFilter(u => u.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ImportBatch>().HasQueryFilter(b => b.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ImportBatchRow>().HasQueryFilter(r => r.TenantId == CurrentTenantId);
     }
     
     public override int SaveChanges()

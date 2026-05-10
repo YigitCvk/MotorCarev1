@@ -193,6 +193,11 @@ try
                 UserRole.Owner.ToString(),
                 UserRole.Admin.ToString(),
                 UserRole.Receptionist.ToString()));
+
+        options.AddPolicy(AuthorizationPolicies.ImportOperations, policy =>
+            policy.RequireRole(
+                UserRole.Owner.ToString(),
+                UserRole.Admin.ToString()));
     });
 
     builder.Services.AddApplication();

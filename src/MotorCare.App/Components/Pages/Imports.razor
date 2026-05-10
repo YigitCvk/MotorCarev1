@@ -1,0 +1,325 @@
+@page "/imports"
+@using Microsoft.AspNetCore.Components.Forms
+@using MotorCare.App.Models.Imports
+@inject ImportsService ImportsService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Veri Aktarımı</PageTitle>
+
+<div class="page-shell">
+    <section class="page-header">
+        <div>
+            <h1 class="page-title">Veri Aktarım Merkezi</h1>
+            <p class="page-description">Müşteri, araç ve servis geçmişi verilerinizi CSV veya Excel dosyasıyla sisteme aktarın.</p>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_globalError))
+    {
+        <section class="error-state">
+            <strong>Hata</strong>
+            <p>@_globalError</p>
+        </section>
+    }
+
+    @* ── Step 1: Type selection + template download ── *@
+    @if (_batch is null)
+    {
+        <section class="surface-card" style="max-width:680px;">
+            <h2 class="section-title" style="margin-bottom:1.25rem;">1. Aktarım Türünü Seçin</h2>
+
+            <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.5rem;">
+                @foreach (var type in Enum.GetValues<ImportType>())
+                {
+                    <label class="@($"import-type-card{(_selectedType == type ? " selected" : "")}")" @onclick="() => _selectedType = type" style="cursor:pointer;padding:1rem 1.25rem;border:1.5px solid var(--border-color);border-radius:8px;display:flex;align-items:center;gap:1rem;">
+                        <input type="radio" name="importType" value="@type" checked="@(_selectedType == type)" @onchange="() => _selectedType = type" style="accent-color:var(--color-primary);" />
+                        <div>
+                            <strong>@GetTypeLabel(type)</strong>
+                            <div style="font-size:.85rem;color:var(--text-muted);">@GetTypeDescription(type)</div>
+                        </div>
+                    </label>
+                }
+            </div>
+
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <a class="app-btn-secondary" href="@ImportsService.GetTemplateUrl(_selectedType)" target="_blank" download>
+                    Şablon İndir (.csv)
+                </a>
+                <span style="font-size:.85rem;color:var(--text-muted);">Dosyayı doldurarak aşağıdan yükleyin</span>
+            </div>
+
+            <hr style="margin:1.5rem 0;" />
+
+            <h2 class="section-title" style="margin-bottom:1rem;">2. Dosyayı Yükleyin</h2>
+
+            <InputFile OnChange="OnFileSelectedAsync" accept=".csv,.xlsx,.xls" style="display:block;margin-bottom:1rem;" />
+
+            @if (_uploading)
+            {
+                <p style="color:var(--text-muted);">Dosya yükleniyor ve doğrulanıyor…</p>
+            }
+            else if (!string.IsNullOrWhiteSpace(_uploadError))
+            {
+                <p style="color:var(--color-danger);">@_uploadError</p>
+            }
+
+            <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem;">Maksimum 5 MB, 10.000 satır. CSV veya Excel (.xlsx/.xls) formatı.</p>
+        </section>
+
+        @* History ── last batches *@
+        @if (_history.Count > 0)
+        {
+            <section class="surface-card" style="margin-top:1.5rem;">
+                <h2 class="section-title" style="margin-bottom:1rem;">Önceki Aktarımlar</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Tür</th>
+                            <th>Dosya</th>
+                            <th>Durum</th>
+                            <th>Toplam</th>
+                            <th>Aktarılan</th>
+                            <th>Tarih</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in _history)
+                        {
+                            <tr>
+                                <td>@b.ImportTypeDisplay</td>
+                                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@b.OriginalFileName</td>
+                                <td><span class="@GetStatusBadgeClass(b.Status)">@b.StatusDisplay</span></td>
+                                <td>@b.TotalRows</td>
+                                <td>@b.ImportedRows</td>
+                                <td>@b.CreatedAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    @if (b.Status == ImportBatchStatus.Validated && b.CanCommit)
+                                    {
+                                        <button class="app-btn-primary btn-sm" @onclick="() => LoadBatchAsync(b.Id)">Devam Et</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="app-btn-ghost btn-sm" @onclick="() => LoadBatchAsync(b.Id)">Detay</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+        }
+    }
+    else
+    {
+        @* ── Step 2: Preview + commit ── *@
+        <section class="surface-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+                <div>
+                    <h2 class="section-title" style="margin-bottom:.25rem;">@_batch.ImportTypeDisplay Önizleme</h2>
+                    <p style="font-size:.88rem;color:var(--text-muted);">@_batch.OriginalFileName · <span class="@GetStatusBadgeClass(_batch.Status)">@_batch.StatusDisplay</span></p>
+                </div>
+                <button class="app-btn-ghost" @onclick="ResetAsync">← Yeni Aktarım</button>
+            </div>
+
+            <div class="import-stats" style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+                <div class="stat-chip"><span class="stat-label">Toplam</span><span class="stat-value">@_batch.TotalRows</span></div>
+                <div class="stat-chip stat-chip--success"><span class="stat-label">Geçerli</span><span class="stat-value">@_batch.ValidRows</span></div>
+                @if (_batch.WarningRows > 0)
+                {
+                    <div class="stat-chip stat-chip--warning"><span class="stat-label">Uyarı</span><span class="stat-value">@_batch.WarningRows</span></div>
+                }
+                @if (_batch.ErrorRows > 0)
+                {
+                    <div class="stat-chip stat-chip--danger"><span class="stat-label">Hata</span><span class="stat-value">@_batch.ErrorRows</span></div>
+                }
+                @if (_batch.ImportedRows > 0)
+                {
+                    <div class="stat-chip stat-chip--imported"><span class="stat-label">Aktarıldı</span><span class="stat-value">@_batch.ImportedRows</span></div>
+                }
+            </div>
+
+            @if (_batch.Status == ImportBatchStatus.Imported)
+            {
+                <div class="alert alert-success" style="margin-bottom:1rem;">
+                    Aktarım tamamlandı. @_batch.ImportedRows kayıt başarıyla aktarıldı, @_batch.SkippedRows kayıt atlandı.
+                </div>
+            }
+            else if (_batch.CanCommit)
+            {
+                <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <button class="app-btn-primary" disabled="@_committing" @onclick="CommitAsync">
+                        @(_committing ? "Aktarılıyor…" : $"{_batch.ValidRows + _batch.WarningRows} Kaydı Sisteme Aktar")
+                    </button>
+                    @if (!string.IsNullOrWhiteSpace(_commitError))
+                    {
+                        <span style="color:var(--color-danger);">@_commitError</span>
+                    }
+                </div>
+            }
+
+            @if (_batch.PreviewRows.Count > 0)
+            {
+                <div style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Satır</th>
+                                <th>Durum</th>
+                                <th>Mesaj</th>
+                                <th>Veri (ham)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _batch.PreviewRows)
+                            {
+                                <tr>
+                                    <td>@row.RowNumber</td>
+                                    <td><span class="@GetRowStatusBadgeClass(row.Status)">@row.StatusDisplay</span></td>
+                                    <td style="max-width:260px;font-size:.82rem;">
+                                        @if (!string.IsNullOrWhiteSpace(row.ErrorMessage))
+                                        {
+                                            <span style="color:var(--color-danger);">@row.ErrorMessage</span>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(row.WarningMessage))
+                                        {
+                                            <span style="color:var(--color-warning);">@row.WarningMessage</span>
+                                        }
+                                    </td>
+                                    <td style="max-width:320px;font-size:.78rem;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@row.RawJson</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (_batch.TotalRows > _batch.PreviewRows.Count)
+                {
+                    <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem;">İlk @_batch.PreviewRows.Count satır gösteriliyor. Toplam @_batch.TotalRows satır.</p>
+                }
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private ImportType _selectedType = ImportType.Customers;
+    private ImportBatch? _batch;
+    private List<ImportBatch> _history = [];
+    private bool _uploading;
+    private bool _committing;
+    private string? _uploadError;
+    private string? _commitError;
+    private string? _globalError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var history = await ImportsService.GetBatchesAsync();
+            _history = history ?? [];
+        }
+        catch { /* history load is best-effort */ }
+    }
+
+    private async Task OnFileSelectedAsync(InputFileChangeEventArgs e)
+    {
+        _uploadError = null;
+        _uploading = true;
+        StateHasChanged();
+
+        try
+        {
+            _batch = await ImportsService.UploadAsync(e.File, _selectedType);
+            if (_batch is not null)
+            {
+                var fresh = await ImportsService.GetBatchesAsync();
+                _history = fresh ?? [];
+            }
+        }
+        catch (Exception ex)
+        {
+            _uploadError = ex.Message;
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task CommitAsync()
+    {
+        if (_batch is null) return;
+        _commitError = null;
+        _committing = true;
+        StateHasChanged();
+
+        try
+        {
+            _batch = await ImportsService.CommitAsync(_batch.Id);
+            var fresh = await ImportsService.GetBatchesAsync();
+            _history = fresh ?? [];
+        }
+        catch (Exception ex)
+        {
+            _commitError = ex.Message;
+        }
+        finally
+        {
+            _committing = false;
+        }
+    }
+
+    private async Task LoadBatchAsync(Guid batchId)
+    {
+        try
+        {
+            _batch = await ImportsService.GetBatchAsync(batchId, previewRows: 100);
+        }
+        catch (Exception ex)
+        {
+            _globalError = ex.Message;
+        }
+    }
+
+    private Task ResetAsync()
+    {
+        _batch = null;
+        _uploadError = null;
+        _commitError = null;
+        return Task.CompletedTask;
+    }
+
+    private static string GetTypeLabel(ImportType type) => type switch
+    {
+        ImportType.Customers => "Müşteriler",
+        ImportType.Vehicles => "Araçlar",
+        ImportType.ServiceHistory => "Servis Geçmişi",
+        _ => type.ToString()
+    };
+
+    private static string GetTypeDescription(ImportType type) => type switch
+    {
+        ImportType.Customers => "Ad, telefon, e-posta ve adres bilgileri",
+        ImportType.Vehicles => "Plaka, marka, model, yıl ve müşteri eşleştirmesi",
+        ImportType.ServiceHistory => "Araç bazında geçmiş servis kayıtları ve ödeme bilgileri",
+        _ => string.Empty
+    };
+
+    private static string GetStatusBadgeClass(ImportBatchStatus status) => status switch
+    {
+        ImportBatchStatus.Imported => "badge badge--success",
+        ImportBatchStatus.Validated => "badge badge--info",
+        ImportBatchStatus.Failed => "badge badge--danger",
+        _ => "badge badge--secondary"
+    };
+
+    private static string GetRowStatusBadgeClass(ImportRowStatus status) => status switch
+    {
+        ImportRowStatus.Valid => "badge badge--success",
+        ImportRowStatus.Warning => "badge badge--warning",
+        ImportRowStatus.Error => "badge badge--danger",
+        ImportRowStatus.Imported => "badge badge--success",
+        ImportRowStatus.Skipped => "badge badge--secondary",
+        _ => "badge"
+    };
+}

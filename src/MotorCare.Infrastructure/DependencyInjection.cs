@@ -79,6 +79,7 @@ public static class DependencyInjection
             return sp.GetRequiredService<LoggingEmailSender>();
         });
         services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+        services.AddScoped<IImportService, ImportService>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
