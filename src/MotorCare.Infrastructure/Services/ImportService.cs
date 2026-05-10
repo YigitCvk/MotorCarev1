@@ -210,6 +210,7 @@ public sealed class ImportService : IImportService
             var existingRows = await _context.ImportBatchRows
                 .AsNoTracking()
                 .Where(r => r.ImportBatchId == batchId)
+                .OrderBy(r => r.RowNumber)
                 .Take(PreviewDefaultRows)
                 .ToListAsync(cancellationToken);
             return ToDtoWithRows(batch, existingRows);
@@ -227,6 +228,10 @@ public sealed class ImportService : IImportService
             .ToListAsync(cancellationToken);
 
         int imported = 0, skipped = 0;
+
+        // Count rows already marked Skipped during validation (duplicates detected pre-commit)
+        skipped += await _context.ImportBatchRows
+            .CountAsync(r => r.ImportBatchId == batchId && r.Status == ImportRowStatus.Skipped, cancellationToken);
 
         foreach (var row in rows)
         {
