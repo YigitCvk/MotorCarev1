@@ -9,7 +9,7 @@ namespace MotorCare.Application.Auth.Commands.ForgotPassword;
 
 public sealed class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, AuthActionMessageDto>
 {
-    private const string GenericMessage = "Eger bu e-posta ile kayitli bir hesap varsa 6 haneli sifre sifirlama kodu gonderildi.";
+    private const string GenericMessage = "Eğer bu e-posta ile kayıtlı bir hesap varsa 6 haneli şifre sıfırlama kodu gönderildi.";
 
     private readonly IUserRepository _userRepository;
     private readonly IEmailSender _emailSender;

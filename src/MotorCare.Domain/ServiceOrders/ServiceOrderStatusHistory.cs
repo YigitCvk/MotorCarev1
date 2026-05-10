@@ -30,7 +30,7 @@ public class ServiceOrderStatusHistory : BaseEntity, ITenantEntity
     {
         if (string.IsNullOrWhiteSpace(tenantId)) throw new DomainException("Tenant ID is required.");
         if (serviceOrderId == Guid.Empty) throw new DomainException("Service order ID is required.");
-        if (note?.Length > 500) throw new DomainException("Status note cannot exceed 500 characters.");
+        if (note?.Length > 500) throw new DomainException("Status note cannot exceed 500 charaçters.");
 
         Id = Guid.NewGuid();
         TenantId = tenantId;

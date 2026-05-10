@@ -26,7 +26,7 @@ public sealed class ConfirmEnableTwoFactorEmailCommandHandler : IRequestHandler<
         var user = await GetCurrentUserAsync(cancellationToken);
         if (user.TwoFactorEnabled)
         {
-            return new AuthActionMessageDto("Iki asamali dogrulama zaten etkin.");
+            return new AuthActionMessageDto("İki aşamalı doğrulama zaten etkin.");
         }
 
         var codeHash = _securityTokenFactory.Hash(request.Code);
@@ -41,7 +41,7 @@ public sealed class ConfirmEnableTwoFactorEmailCommandHandler : IRequestHandler<
                 await _userRepository.SaveChangesAsync(cancellationToken);
             }
 
-            throw new UnauthorizedAccessException("Dogrulama kodu gecersiz.");
+            throw new UnauthorizedAccessException("Doğrulama kodu geçersiz.");
         }
 
         user.ConsumeSecurityToken(codeHash, DateTimeOffset.UtcNow);
@@ -49,7 +49,7 @@ public sealed class ConfirmEnableTwoFactorEmailCommandHandler : IRequestHandler<
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        return new AuthActionMessageDto("Iki asamali dogrulama etkinlestirildi.");
+        return new AuthActionMessageDto("İki aşamalı doğrulama etkinleştirildi.");
     }
 
     private async Task<Domain.Users.User> GetCurrentUserAsync(CancellationToken cancellationToken)

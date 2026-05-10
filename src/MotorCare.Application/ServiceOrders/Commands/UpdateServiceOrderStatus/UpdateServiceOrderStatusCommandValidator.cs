@@ -11,7 +11,7 @@ public class UpdateServiceOrderStatusCommandValidator : AbstractValidator<Update
         RuleFor(x => x.Status)
             .IsInEnum()
             .Must(status => status != ServiceOrderStatus.Open)
-            .WithMessage("Gecersiz servis emri durumu. Acik durumuna geri donus desteklenmiyor.");
+            .WithMessage("Geçersiz servis emri durumu. Acik durumuna geri dönüş desteklenmiyor.");
 
         RuleFor(x => x.Note)
             .MaximumLength(500)

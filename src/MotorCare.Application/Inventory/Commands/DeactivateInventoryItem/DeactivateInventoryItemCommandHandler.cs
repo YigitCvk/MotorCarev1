@@ -29,7 +29,7 @@ public sealed class DeactivateInventoryItemCommandHandler : IRequestHandler<Deac
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var item = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
-            ?? throw new NotFoundException("Parca bulunamadi.");
+            ?? throw new NotFoundException("Parça bulunamadı.");
 
         item.Deactivate();
         _repository.Update(item);

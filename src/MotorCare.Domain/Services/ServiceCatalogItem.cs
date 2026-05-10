@@ -82,7 +82,7 @@ public class ServiceCatalogItem : AggregateRoot, ITenantEntity
 
         if (defaultDurationMinutes <= 0)
         {
-            throw new DomainException("Varsayilan sure sifirdan buyuk olmalidir.");
+            throw new DomainException("Varsayılan süre sıfırdan büyük olmalıdır.");
         }
 
         if (price < 0)

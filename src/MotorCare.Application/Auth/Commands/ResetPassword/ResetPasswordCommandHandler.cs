@@ -7,7 +7,7 @@ namespace MotorCare.Application.Auth.Commands.ResetPassword;
 
 public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, AuthActionMessageDto>
 {
-    private const string InvalidCodeMessage = "Sifre sifirlama kodu gecersiz veya suresi dolmus.";
+    private const string InvalidCodeMessage = "Şifre sıfırlama kodu geçersiz veya süresi dolmuş.";
 
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
@@ -50,7 +50,7 @@ public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordC
 
             if (_passwordHasher.Verify(user.PasswordHash, request.NewPassword))
             {
-                throw new InvalidOperationException("Yeni sifre eski sifrenizle ayni olamaz.");
+                throw new InvalidOperationException("Yeni şifre eski şifrenizle aynı olamaz.");
             }
 
             user.ChangePasswordHash(_passwordHasher.Hash(request.NewPassword));
@@ -61,7 +61,7 @@ public sealed class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordC
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync(cancellationToken);
 
-            return new AuthActionMessageDto("Sifreniz guncellendi.");
+            return new AuthActionMessageDto("Şifreniz başarıyla güncellendi.");
         }
 
         throw new UnauthorizedAccessException(InvalidCodeMessage);

@@ -21,7 +21,7 @@
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
             }
         </section>
     }
@@ -43,7 +43,7 @@
                 </p>
             </div>
             <div class="action-bar">
-                <a href="/appointments" class="app-btn-secondary">Listeye Don</a>
+                <a href="/appointments" class="app-btn-secondary">Listeye Dön</a>
                 @if (_appointment.ServiceOrderId.HasValue)
                 {
                     <a href="@($"/service-orders/{_appointment.ServiceOrderId}")" class="app-btn-primary">İş Emrini Aç</a>

@@ -10,10 +10,10 @@ public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPassw
         RuleFor(x => x.Code)
             .NotEmpty()
             .Matches("^\\d{6}$")
-            .WithMessage("Kod 6 haneli olmali.");
+            .WithMessage("Kod 6 haneli olmalı.");
         RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(8);
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.NewPassword)
-            .WithMessage("Sifreler eslesmeli.");
+            .WithMessage("Şifreler eşleşmeli.");
     }
 }

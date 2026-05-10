@@ -20,19 +20,19 @@
     <section class="page-header">
         <div>
             <h1 class="page-title">Yeni Servis Kaydi</h1>
-            <p class="page-description">Musteri secin, araci otomatik doldurun ve kullanilan sarf malzemelerini onerilerle birlikte kaydedin.</p>
+            <p class="page-description">Müşteri seçin, araçı otomatik doldürün ve kullanilan sarf malzemelerini önerilerle birlikte kaydedin.</p>
         </div>
-        <a href="/service-orders" class="app-btn-secondary">Listeye Don</a>
+        <a href="/service-orders" class="app-btn-secondary">Listeye Dön</a>
     </section>
 
     @if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
-            <strong>Servis emri olusturulamadi</strong>
+            <strong>Servis emri oluşturulamadi</strong>
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
             }
         </section>
     }
@@ -40,7 +40,7 @@
     @if (!string.IsNullOrWhiteSpace(_successMessage))
     {
         <section class="loading-state">
-            <strong>Islem basarili</strong>
+            <strong>Islem başarılı</strong>
             <p>@_successMessage</p>
             @if (_createdServiceOrderId.HasValue)
             {
@@ -55,7 +55,7 @@
     {
         <section class="loading-state">
             <strong>Servis kaydi hazirlaniyor</strong>
-            <p>Musteri, arac, hizmet ve sarf onerileri yukleniyor.</p>
+            <p>Müşteri, araç, hizmet ve sarf önerileri yükleniyor.</p>
         </section>
     }
 
@@ -74,10 +74,10 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">1. Musteri Secimi</div>
-                        <div class="section-subtitle">Ad veya telefon ile musteri arayin.</div>
+                        <div class="section-title">1. Müşteri Seçimi</div>
+                        <div class="section-subtitle">Ad veya telefon ile müşteri arayin.</div>
                     </div>
-                    <a href="/customers/create" class="app-btn-secondary">+ Yeni Musteri</a>
+                    <a href="/customers/create" class="app-btn-secondary">+ Yeni Müşteri</a>
                 </div>
 
                 <div class="d-flex flex-column gap-3">
@@ -106,7 +106,7 @@
                                         <strong>@customer.FullName</strong>
                                         <div class="small text-muted">@customer.Phone</div>
                                     </div>
-                                    <span class="type-badge">Sec</span>
+                                    <span class="type-badge">Seç</span>
                                 </button>
                             }
                         </div>
@@ -128,27 +128,27 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">2. Musteriye Kayitli Araclar</div>
-                        <div class="section-subtitle">Secilen musteriye ait araclar listelenir ve secildiginde form otomatik dolar.</div>
+                        <div class="section-title">2. Müşteriye Kayıtlı Araçlar</div>
+                        <div class="section-subtitle">Seçilen müşteriye ait araçlar listelenir ve seçildiginde form otomatik dolar.</div>
                     </div>
                     @if (_selectedCustomer is not null)
                     {
-                        <a href="@($"/vehicles/create?customerId={_selectedCustomer.Id}")" class="app-btn-secondary">+ Bu Musteriye Arac Ekle</a>
+                        <a href="@($"/vehicles/create?customerId={_selectedCustomer.Id}")" class="app-btn-secondary">+ Bu Müşteriye Araç Ekle</a>
                     }
                 </div>
 
                 @if (_selectedCustomer is null)
                 {
                     <section class="empty-state">
-                        <strong>Once musteri secin</strong>
-                        <p>Secili musteriye bagli araclar burada listelenecek.</p>
+                        <strong>Önce müşteri seçin</strong>
+                        <p>Seçili müşteriye bağlı araçlar burada listelenecek.</p>
                     </section>
                 }
                 else if (_customerVehiclesLoading)
                 {
                     <section class="loading-state">
-                        <strong>Araclar yukleniyor</strong>
-                        <p>Musteri araclari getiriliyor.</p>
+                        <strong>Araçlar yükleniyor</strong>
+                        <p>Müşteri araçları getiriliyor.</p>
                     </section>
                 }
                 else if (!string.IsNullOrWhiteSpace(_customerVehiclesMessage))
@@ -167,9 +167,9 @@
                                 <div>
                                     <strong>@vehicle.PlateOriginal</strong>
                                     <div class="small text-muted">@vehicle.Brand @vehicle.Model (@vehicle.Year)</div>
-                                    <div class="small text-muted">Sase: @(string.IsNullOrWhiteSpace(vehicle.ChassisNumber) ? "-" : vehicle.ChassisNumber)</div>
+                                    <div class="small text-muted">Şasi: @(string.IsNullOrWhiteSpace(vehicle.ChassisNumber) ? "-" : vehicle.ChassisNumber)</div>
                                 </div>
-                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Secildi" : "Sec")</span>
+                                <span class="type-badge">@(vehicle.Id == _selectedVehicle?.Id ? "Seçildi" : "Seç")</span>
                             </button>
                         }
                     </div>
@@ -181,8 +181,8 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">3. Plaka ile Arac Bul / Yeni Arac Ekle</div>
-                        <div class="section-subtitle">Plaka ile arayin veya secili musteriye yeni arac ekleyin.</div>
+                        <div class="section-title">3. Plaka ile Araç Bul / Yeni Araç Ekle</div>
+                        <div class="section-subtitle">Plaka ile arayin veya seçili müşteriye yeni araç ekleyin.</div>
                     </div>
                 </div>
 
@@ -231,7 +231,7 @@
                             <InputNumber class="form-control" @bind-Value="_newVehicle.Year" />
                         </div>
                         <div>
-                            <label class="form-label">Sase No</label>
+                            <label class="form-label">Şasi No</label>
                             <InputText class="form-control" @bind-Value="_newVehicle.ChassisNumber" />
                         </div>
                         <div>
@@ -239,14 +239,14 @@
                             <InputText class="form-control" @bind-Value="_newVehicle.EngineNumber" />
                         </div>
                         <div>
-                            <label class="form-label">Kayitli KM</label>
+                            <label class="form-label">Kayıtlı KM</label>
                             <InputNumber class="form-control" @bind-Value="_newVehicle.CurrentKm" />
                         </div>
                     </div>
 
                     <div class="action-bar justify-content-end">
                         <button type="button" class="app-btn-secondary" @onclick="CreateVehicleForSelectedCustomerAsync" disabled="@(_vehicleCreateLoading || _selectedCustomer is null)">
-                            @(_vehicleCreateLoading ? "Kaydediliyor..." : "Secili Musteriye Arac Olarak Ekle")
+                            @(_vehicleCreateLoading ? "Kaydediliyor..." : "Seçili Müşteriye Araç Olarak Ekle")
                         </button>
                     </div>
                 </div>
@@ -255,22 +255,22 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">4. Hizmet Secimi</div>
-                        <div class="section-subtitle">Ilk operasyonu hizli baslatmak icin bir hizmet secin.</div>
+                        <div class="section-title">4. Hizmet Seçimi</div>
+                        <div class="section-subtitle">Ilk operasyonu hizli baslatmak icin bir hizmet seçin.</div>
                     </div>
                 </div>
 
                 @if (_servicesLoading)
                 {
                     <section class="loading-state">
-                        <strong>Hizmetler yukleniyor</strong>
+                        <strong>Hizmetler yükleniyor</strong>
                         <p>Tanimli hizmetler getiriliyor.</p>
                     </section>
                 }
                 else if (_activeServices.Count == 0)
                 {
                     <section class="empty-state">
-                        <strong>Henuz hizmet tanimlanmamis</strong>
+                        <strong>Henüz hizmet tanimlanmamis</strong>
                         <p>Hizmetler ekranindan ekleyebilirsiniz.</p>
                     </section>
                 }
@@ -285,7 +285,7 @@
                                     <div class="small text-muted">@service.CategoryText</div>
                                     <div class="small text-muted">Tahmini Sure: @service.DefaultDurationMinutes dk - Fiyat: @FormatServicePrice(service)</div>
                                 </div>
-                                <span class="type-badge">@(service.Id == _selectedService?.Id ? "Secildi" : "Sec")</span>
+                                <span class="type-badge">@(service.Id == _selectedService?.Id ? "Seçildi" : "Seç")</span>
                             </button>
                         }
                     </div>
@@ -298,13 +298,13 @@
                 <div class="section-header">
                     <div>
                         <div class="section-title">5. Servis Bilgileri</div>
-                        <div class="section-subtitle">Secilen araci kontrol edin, kilometre ve sikayet bilgisini tamamlayin.</div>
+                        <div class="section-subtitle">Seçilen araçı kontrol edin, kilometre ve şikayet bilgisini tamamlayin.</div>
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <div>
-                        <label class="form-label">Secilen Plaka</label>
+                        <label class="form-label">Seçilen Plaka</label>
                         <input class="form-control" value="@(_selectedVehicle?.PlateOriginal ?? _plate ?? "-")" disabled />
                     </div>
                     <div>
@@ -316,7 +316,7 @@
                         <input class="form-control" value="@GetSelectedVehicleYearText()" disabled />
                     </div>
                     <div>
-                        <label class="form-label">Sase No</label>
+                        <label class="form-label">Şasi No</label>
                         <input class="form-control" value="@GetSelectedVehicleChassisText()" disabled />
                     </div>
                     <div>
@@ -324,11 +324,11 @@
                         <input class="form-control" value="@GetSelectedVehicleEngineText()" disabled />
                     </div>
                     <div>
-                        <label class="form-label">Arac KM *</label>
+                        <label class="form-label">Araç KM *</label>
                         <InputNumber class="form-control" @bind-Value="_vehicleKm" />
                     </div>
                     <div>
-                        <label class="form-label">Varsayilan Fiyat</label>
+                        <label class="form-label">Varsayılan Fiyat</label>
                         <input class="form-control" value="@GetSelectedServicePriceText()" disabled />
                     </div>
                     <div>
@@ -336,7 +336,7 @@
                         <input class="form-control" value="@GetSelectedServiceDurationText()" disabled />
                     </div>
                     <div class="full-span">
-                        <label class="form-label">Sikayet / Aciklama</label>
+                        <label class="form-label">Şikayet / Aciklama</label>
                         <InputTextArea class="form-control" @bind-Value="_complaint" rows="4" />
                     </div>
                 </div>
@@ -347,8 +347,8 @@
             <section class="surface-card">
                 <div class="section-header">
                     <div>
-                        <div class="section-title">6. Sarf / Kullanilan Urunler</div>
-                        <div class="section-subtitle">Yeni girdiginiz marka ve urunler sonraki servis kayitlarinda onerilir.</div>
+                        <div class="section-title">6. Sarf / Kullanilan Ürünler</div>
+                        <div class="section-subtitle">Yeni girdiginiz marka ve ürünler sonraki servis kayıtlarında önerilir.</div>
                     </div>
                 </div>
 
@@ -459,7 +459,7 @@
 
         <div class="action-bar sticky-mobile-action justify-content-end mt-4">
             <button type="button" class="app-btn-primary" @onclick="CreateServiceOrderAsync" disabled="@_isSaving">
-                @(_isSaving ? "Kaydediliyor..." : "Servis Emrini Olustur")
+                @(_isSaving ? "Kaydediliyor..." : "Servis Emrini Oluştur")
             </button>
         </div>
     </section>
@@ -677,7 +677,7 @@
 
         _prefilledRecommendations.AddRange(parsed);
 
-        var recommendationBlock = "Servis Onerileri:" + Environment.NewLine +
+        var recommendationBlock = "Servis Önerileri:" + Environment.NewLine +
                                   string.Join(Environment.NewLine, _prefilledRecommendations.Select(x => $"- {x}"));
 
         if (string.IsNullOrWhiteSpace(_complaint))
@@ -686,7 +686,7 @@
             return;
         }
 
-        if (!_complaint.Contains("Servis Onerileri:", StringComparison.OrdinalIgnoreCase))
+        if (!_complaint.Contains("Servis Önerileri:", StringComparison.OrdinalIgnoreCase))
         {
             _complaint = _complaint.Trim() + Environment.NewLine + Environment.NewLine + recommendationBlock;
         }
@@ -736,7 +736,7 @@
 
             if (string.IsNullOrWhiteSpace(_customerSearchText))
             {
-                _customerSearchMessage = "Arama yapmak icin musteri adi veya telefon girin.";
+                _customerSearchMessage = "Arama yapmak icin müşteri adi veya telefon girin.";
                 return;
             }
 
@@ -753,7 +753,7 @@
 
             if (_customerResults.Count == 0)
             {
-                _customerSearchMessage = "Eslesen musteri bulunamadi.";
+                _customerSearchMessage = "Eşleşen müşteri bulunamadı.";
             }
         }
         catch (OperationCanceledException) when (IsInactive(cancellationToken))
@@ -804,7 +804,7 @@
         _selectedCustomer = customer;
         _customerSearchText = customer.FullName;
         _customerResults.Clear();
-        _customerSearchMessage = "Musteri secildi.";
+        _customerSearchMessage = "Müşteri seçildi.";
 
         Logger.LogInformation(
             EventIdStore.ServiceOrder.ServiceOrderCreateCustomerSelected,
@@ -817,7 +817,7 @@
             previousCustomerId != customer.Id)
         {
             ClearVehicleSelection();
-            _vehicleLookupMessage = "Secili arac farkli bir musteriye bagli oldugu icin temizlendi.";
+            _vehicleLookupMessage = "Seçili araç farkli bir müşteriye bağlı oldugu icin temizlendi.";
         }
 
         await LoadCustomerVehiclesAsync(customer.Id, cancellationToken);
@@ -832,7 +832,7 @@
         _selectedCustomer = null;
         _customerSearchText = null;
         _customerResults.Clear();
-        _customerSearchMessage = "Musteri secimi temizlendi.";
+        _customerSearchMessage = "Müşteri seçimi temizlendi.";
         _customerVehicles.Clear();
         _customerVehiclesMessage = null;
         ClearVehicleSelection();
@@ -860,7 +860,7 @@
             }
 
             _customerVehiclesMessage = _customerVehicles.Count == 0
-                ? "Bu musterinin kayitli araci yok. Asagidan plaka ile arayabilir veya yeni arac ekleyebilirsiniz."
+                ? "Bu müşterinin kayıtlı araçı yok. Asagidan plaka ile arayabilir veya yeni araç ekleyebilirsiniz."
                 : null;
         }
         catch (OperationCanceledException) when (IsInactive(cancellationToken))
@@ -900,7 +900,7 @@
         _selectedVehicle = vehicle;
         _plate = vehicle.PlateOriginal;
         _vehicleLookupPlate = vehicle.PlateOriginal;
-        _vehicleLookupMessage = "Arac secildi ve alanlar otomatik dolduruldu.";
+        _vehicleLookupMessage = "Araç seçildi ve alanlar otomatik dolduruldu.";
         _newVehicle.Brand = vehicle.Brand;
         _newVehicle.Model = vehicle.Model;
         _newVehicle.Year = vehicle.Year;
@@ -951,7 +951,7 @@
             {
                 _selectedVehicle = null;
                 _plate = _vehicleLookupPlate;
-                _vehicleLookupMessage = "Bu plakayla arac bulunamadi. Secili musteriye arac olarak ekleyebilirsiniz.";
+                _vehicleLookupMessage = "Bu plakayla araç bulunamadı. Seçili müşteriye araç olarak ekleyebilirsiniz.";
                 return;
             }
 
@@ -959,7 +959,7 @@
                 _selectedCustomer is not null &&
                 vehicle.CustomerId.Value != _selectedCustomer.Id)
             {
-                _vehicleLookupMessage = "Bulunan arac baska bir musteriye bagli. Musteri secimi arac sahibine gore guncellendi.";
+                _vehicleLookupMessage = "Bulunan araç başka bir müşteriye bağlı. Müşteri seçimi araç sahibine gore güncellendi.";
             }
 
             if (vehicle.CustomerId.HasValue)
@@ -1017,13 +1017,13 @@
 
             if (_selectedCustomer is null)
             {
-                _vehicleLookupMessage = "Musteri secmelisiniz.";
+                _vehicleLookupMessage = "Müşteri seçmelisiniz.";
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(_plate))
             {
-                _vehicleLookupMessage = "Arac eklemek icin plaka girin.";
+                _vehicleLookupMessage = "Araç eklemek icin plaka girin.";
                 return;
             }
 
@@ -1042,7 +1042,7 @@
             {
                 await LoadCustomerVehiclesAsync(_selectedCustomer.Id, cancellationToken);
                 SelectVehicle(vehicle);
-                _vehicleLookupMessage = "Arac secili musteriye eklendi ve secildi.";
+                _vehicleLookupMessage = "Araç seçili müşteriye eklendi ve seçildi.";
             }
         }
         catch (OperationCanceledException) when (IsInactive(cancellationToken))
@@ -1116,19 +1116,19 @@
 
             if (_selectedCustomer is null)
             {
-                _error = "Musteri secmelisiniz.";
+                _error = "Müşteri seçmelisiniz.";
                 return;
             }
 
             if (_selectedVehicle is null)
             {
-                _error = "Arac secmelisiniz.";
+                _error = "Araç seçmelisiniz.";
                 return;
             }
 
             if (_vehicleKm < 0)
             {
-                _error = "Arac KM bilgisi gecersiz.";
+                _error = "Araç KM bilgisi geçersiz.";
                 return;
             }
 
@@ -1177,13 +1177,13 @@
                 }
                 catch (ApiException ex)
                 {
-                    _successMessage = $"Servis emri olusturuldu ancak secilen hizmet operasyon olarak eklenemedi: {ex.Message}";
+                    _successMessage = $"Servis emri oluşturuldu ancak seçilen hizmet operasyon olarak eklenemedi: {ex.Message}";
                     _errorEndpoint = ex.Endpoint;
                     return;
                 }
                 catch (Exception ex)
                 {
-                    _successMessage = $"Servis emri olusturuldu ancak secilen hizmet operasyon olarak eklenemedi: {ex.Message}";
+                    _successMessage = $"Servis emri oluşturuldu ancak seçilen hizmet operasyon olarak eklenemedi: {ex.Message}";
                     return;
                 }
             }
@@ -1209,14 +1209,14 @@
                     }
                     catch (ApiException ex)
                     {
-                        _successMessage = $"Servis emri olusturuldu ancak bazi ekspertiz onerileri operasyon olarak eklenemedi: {ex.Message}";
+                        _successMessage = $"Servis emri oluşturuldu ancak bazi ekspertiz önerileri operasyon olarak eklenemedi: {ex.Message}";
                         _errorEndpoint = ex.Endpoint;
                         TryNavigateTo($"/service-orders/{id}");
                         return;
                     }
                     catch (Exception ex)
                     {
-                        _successMessage = $"Servis emri olusturuldu ancak bazi ekspertiz onerileri operasyon olarak eklenemedi: {ex.Message}";
+                        _successMessage = $"Servis emri oluşturuldu ancak bazi ekspertiz önerileri operasyon olarak eklenemedi: {ex.Message}";
                         TryNavigateTo($"/service-orders/{id}");
                         return;
                     }
@@ -1225,7 +1225,7 @@
 
             await TrackConsumableSuggestionsAsync(cancellationToken);
 
-            _successMessage = "Servis emri olusturuldu.";
+            _successMessage = "Servis emri oluşturuldu.";
             TryNavigateTo($"/service-orders/{id}");
         }
         catch (OperationCanceledException) when (IsInactive(cancellationToken))
@@ -1313,7 +1313,7 @@
                 _currentConsumableDraft.Category,
                 query);
 
-            _consumableSearchMessage = "Oneriler getiriliyor...";
+            _consumableSearchMessage = "Öneriler getiriliyor...";
 
             await Task.Delay(300, token);
 
@@ -1331,7 +1331,7 @@
             _consumableSuggestions = results?.ToList() ?? [];
             _isConsumableSuggestionOpen = _consumableSuggestions.Count > 0;
             _consumableSearchMessage = _consumableSuggestions.Count == 0 && !string.IsNullOrWhiteSpace(query)
-                ? "Eslesen katalog onerisi bulunamadi. Yeni urun olarak ekleyebilirsiniz."
+                ? "Eşleşen katalog önerisi bulunamadı. Yeni ürün olarak ekleyebilirsiniz."
                 : null;
 
             Logger.LogInformation(
@@ -1355,7 +1355,7 @@
 
             _consumableSuggestions.Clear();
             _isConsumableSuggestionOpen = false;
-            _consumableSearchMessage = "Katalog onerileri alinamadi.";
+            _consumableSearchMessage = "Katalog önerileri alınamadı.";
 
             Logger.LogWarning(
                 EventIdStore.ServiceOrder.ConsumableAddFailed,
@@ -1375,7 +1375,7 @@
 
             _consumableSuggestions.Clear();
             _isConsumableSuggestionOpen = false;
-            _consumableSearchMessage = "Katalog onerileri alinamadi.";
+            _consumableSearchMessage = "Katalog önerileri alınamadı.";
 
             Logger.LogWarning(
                 EventIdStore.ServiceOrder.ConsumableAddFailed,
@@ -1429,7 +1429,7 @@
 
             if (string.IsNullOrWhiteSpace(_currentConsumableDraft.Category))
             {
-                _consumableValidationMessage = "Kategori secmelisiniz.";
+                _consumableValidationMessage = "Kategori seçmelisiniz.";
 
                 Logger.LogInformation(
                     EventIdStore.ServiceOrder.ConsumableAddValidationFailed,
@@ -1439,7 +1439,7 @@
 
             if (string.IsNullOrWhiteSpace(_currentConsumableDraft.ProductName))
             {
-                _consumableValidationMessage = "Urun adi girmelisiniz.";
+                _consumableValidationMessage = "Ürün adi girmelisiniz.";
 
                 Logger.LogInformation(
                     EventIdStore.ServiceOrder.ConsumableAddValidationFailed,
@@ -1478,7 +1478,7 @@
         }
         catch (Exception ex)
         {
-            _consumableValidationMessage = "Urun listeye eklenemedi. Alanlari kontrol edip tekrar deneyin.";
+            _consumableValidationMessage = "Ürün listeye eklenemedi. Alanlari kontrol edip tekrar deneyin.";
 
             Logger.LogWarning(
                 EventIdStore.ServiceOrder.ConsumableAddFailed,
@@ -1596,7 +1596,7 @@
 
     private string GetSelectedVehicleEngineText()
         => !string.IsNullOrWhiteSpace(_selectedVehicle?.EngineNumber) ? _selectedVehicle.EngineNumber! :
-           !string.IsNullOrWhiteSpace(_newVehicle.EngineNumber) ? _newVehicle.EngineNumber! : "Arac kaydinda yok";
+           !string.IsNullOrWhiteSpace(_newVehicle.EngineNumber) ? _newVehicle.EngineNumber! : "Araç kaydinda yok";
 
     private string GetSelectedServicePriceText()
         => _selectedService is null ? "-" : FormatServicePrice(_selectedService);

@@ -12,21 +12,21 @@
     @if (_loading)
     {
         <section class="loading-state">
-            <strong>Ekspertiz kaydi yukleniyor</strong>
+            <strong>Ekspertiz kaydı yükleniyor</strong>
             <p>Lutfen bekleyin.</p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
-            <strong>Ekspertiz kaydi acilamadi</strong>
+            <strong>Ekspertiz kaydı acilamadi</strong>
             <p>@_error</p>
         </section>
     }
     else if (_inspection is null)
     {
         <section class="empty-state">
-            <strong>Ekspertiz kaydi bulunamadi.</strong>
+            <strong>Ekspertiz kaydı bulunamadı.</strong>
             <p>Listeye donup tekrar deneyin.</p>
         </section>
     }
@@ -35,10 +35,10 @@
         <section class="inspection-form-header">
             <div>
                 <h1 class="inspection-form-title">Motosiklet Ekspertiz Formu</h1>
-                <p class="inspection-form-subtitle">Ekspertizi adim adim ilerleyin. Her adim bir form bolumu gibi davranir ve sadece aktif icerik gorunur.</p>
+                <p class="inspection-form-subtitle">Ekspertizi adim adim ilerleyin. Her adim bir form bolumu gibi davranir ve sadece aktif icerik görünür.</p>
             </div>
             <div class="page-header-actions">
-                <a class="app-btn-secondary" href="/inspections">Listeye Don</a>
+                <a class="app-btn-secondary" href="/inspections">Listeye Dön</a>
                 <a class="app-btn-secondary" href="@($"/inspections/{Id}/print")">Yazdir / PDF Al</a>
             </div>
         </section>
@@ -54,7 +54,7 @@
         @if (!string.IsNullOrWhiteSpace(_stepMessage))
         {
             <section class="success-state">
-                <strong>Kayit guncellendi</strong>
+                <strong>Kayıt güncellendi</strong>
                 <p>@_stepMessage</p>
             </section>
         }
@@ -97,7 +97,7 @@
                         <section class="inspection-data-sheet">
                             <div class="inspection-data-grid">
                                 <div class="inspection-data-field">
-                                <label class="form-label">Musteri</label>
+                                <label class="form-label">Müşteri</label>
                                 <input class="form-control" value="@_inspection.CustomerName" disabled />
                                 </div>
                                 <div class="inspection-data-field">
@@ -129,7 +129,7 @@
                                 <InputNumber class="form-control" @bind-Value="_inspection.Mileage" />
                                 </div>
                                 <div class="inspection-data-field">
-                                <label class="form-label">Sasi No</label>
+                                <label class="form-label">Şasi No</label>
                                 <InputText class="form-control" @bind-Value="_inspection.ChassisNumber" />
                                 </div>
                                 <div class="inspection-data-field">
@@ -181,7 +181,7 @@
                                 <div class="inspection-form-subsection-header">
                                     <div>
                                         <div class="section-title">Durum Ozeti</div>
-                                        <div class="section-subtitle">Checklist sonucunda olusan genel durum dagilimi.</div>
+                                        <div class="section-subtitle">Checklist sonuçunda olusan genel durum dagilimi.</div>
                                     </div>
                                 </div>
 
@@ -209,7 +209,7 @@
                                 <div class="inspection-form-subsection-header">
                                     <div>
                                         <div class="section-title">Kritik Bulgular</div>
-                                        <div class="section-subtitle">Hasarli, degisen veya kotu durumda isaretlenen kalemler once listelenir.</div>
+                                        <div class="section-subtitle">Hasarli, degisen veya kotu durumda isaretlenen kalemler önce listelenir.</div>
                                     </div>
                                 </div>
 
@@ -247,7 +247,7 @@
                                 <div class="inspection-form-subsection-header">
                                     <div>
                                         <div class="section-title">Kaporta Ozeti</div>
-                                        <div class="section-subtitle">Harita veya kaporta adiminda isaretlenen parcalar.</div>
+                                        <div class="section-subtitle">Harita veya kaporta adiminda isaretlenen parçalar.</div>
                                     </div>
                                 </div>
 
@@ -278,7 +278,7 @@
                             <div class="inspection-form-subsection-header">
                                 <div>
                                     <div class="section-title">Test Surusu ve Genel Aciklama</div>
-                                    <div class="section-subtitle">Formun sonundaki ortak not alanlarini doldurun.</div>
+                                    <div class="section-subtitle">Formun sonundaki ortak not alanlarini doldürün.</div>
                                 </div>
                             </div>
 
@@ -398,7 +398,7 @@
 
     private InspectionChecklistResponse BodyChecklistResponse => BuildChecklistResponse(
         "Karenaj, Kaporta ve Aksesuar Kontrolleri",
-        "Aksesuar, kaporta ve harita disindaki genel karenaj kalemlerini checklist mantigiyla doldurun.",
+        "Aksesuar, kaporta ve harita disindaki genel karenaj kalemlerini checklist mantigiyla doldürün.",
         MotorcycleInspectionCategory.BodyAndFairing,
         BodyChecklistItems);
 
@@ -458,7 +458,7 @@
     {
         if (Id == Guid.Empty)
         {
-            _error = "Gecersiz ekspertiz kaydi.";
+            _error = "Geçersiz ekspertiz kaydı.";
             _loading = false;
             await SafeStateHasChangedAsync();
             return;
@@ -500,7 +500,7 @@
 
             if (_inspection is null)
             {
-                _error = "Ekspertiz kaydi bulunamadi.";
+                _error = "Ekspertiz kaydı bulunamadı.";
                 return;
             }
 
@@ -524,7 +524,7 @@
         {
             if (!IsInactive(cancellationToken))
             {
-                _error = $"Istek basarisiz oldu ({(int)ex.StatusCode}) - {ex.Message}";
+                _error = $"İstek başarısız oldu ({(int)ex.StatusCode}) - {ex.Message}";
             }
         }
         catch (Exception ex) when (!IsInactive(cancellationToken))
@@ -550,8 +550,8 @@
         _steps.Add(new InspectionWizardStep
         {
             StepType = InspectionWizardStepType.VehicleInfo,
-            Title = "Arac Bilgileri / Paket",
-            Subtitle = "Musteri, arac ve paket ozetini kontrol edin."
+            Title = "Araç Bilgileri / Paket",
+            Subtitle = "Müşteri, araç ve paket ozetini kontrol edin."
         });
 
         if (_inspection.PackageType is MotorcycleInspectionPackageType.MechanicalAndRunningGear or MotorcycleInspectionPackageType.Full)
@@ -597,7 +597,7 @@
         {
             <section class="empty-state compact">
                 <strong>Bu adim icin checklist kalemi bulunmuyor.</strong>
-                <p>Secili pakette bu bolume ait bir kontrol listesi uretilmemis olabilir.</p>
+                <p>Seçili pakette bu bolume ait bir kontrol listesi uretilmemis olabilir.</p>
             </section>
         }
         else
@@ -772,7 +772,7 @@
         MotorcycleInspectionResult.Good => "Iyi",
         MotorcycleInspectionResult.Medium => "Orta",
         MotorcycleInspectionResult.Bad => "Kotu",
-        MotorcycleInspectionResult.NotChecked => "Secilmedi",
+        MotorcycleInspectionResult.NotChecked => "Seçilmedi",
         MotorcycleInspectionResult.Original => "Orijinal",
         MotorcycleInspectionResult.Painted => "Boyali",
         MotorcycleInspectionResult.Changed => "Degisen",
@@ -884,7 +884,7 @@
         }
         catch (ApiException ex)
         {
-            _stepError = $"Istek basarisiz oldu ({(int)ex.StatusCode}) - {ex.Message}";
+            _stepError = $"İstek başarısız oldu ({(int)ex.StatusCode}) - {ex.Message}";
             return false;
         }
         catch (Exception ex) when (!IsInactive(_lifetimeCts.Token))
@@ -989,7 +989,7 @@
         }
         catch (ApiException ex)
         {
-            _stepError = $"Kaporta kaydi basarisiz oldu ({(int)ex.StatusCode}) - {ex.Message}";
+            _stepError = $"Kaporta kaydı başarısız oldu ({(int)ex.StatusCode}) - {ex.Message}";
         }
         catch (Exception ex) when (!IsInactive(_lifetimeCts.Token))
         {
@@ -1012,7 +1012,7 @@
 
         if (!CanEdit)
         {
-            _stepError = "Bu ekspertiz kaydi artik duzenlenemiyor.";
+            _stepError = "Bu ekspertiz kaydı artik düzenlenemiyor.";
             await SafeStateHasChangedAsync();
             return;
         }
@@ -1037,7 +1037,7 @@
         }
         catch (ApiException ex)
         {
-            _stepError = $"Tamamlama basarisiz oldu ({(int)ex.StatusCode}) - {ex.Message}";
+            _stepError = $"Tamamlama başarısız oldu ({(int)ex.StatusCode}) - {ex.Message}";
         }
         catch (Exception ex) when (!IsInactive(_lifetimeCts.Token))
         {

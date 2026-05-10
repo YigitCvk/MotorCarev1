@@ -34,7 +34,7 @@ public sealed class UpdateServiceCatalogItemCommandHandler : IRequestHandler<Upd
         var existing = await _repository.GetByNameAsync(tenantId, request.Name, cancellationToken);
         if (existing is not null && existing.Id != request.Id)
         {
-            throw new ConflictException("Bu isimle bir hizmet zaten kayitli.");
+            throw new ConflictException("Bu isimle bir hizmet zaten kayıtlı.");
         }
 
         item.Update(

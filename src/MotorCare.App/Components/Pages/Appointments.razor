@@ -11,7 +11,7 @@
     <section class="page-header">
         <div>
             <h1 class="page-title">Randevular</h1>
-            <p class="page-description">Haftalik servis planini, randevu akisini ve is emrine donusum surecini tek ekrandan yonetin.</p>
+            <p class="page-description">Haftalik servis planini, randevu akisini ve is emrine dönüşum surecini tek ekrandan yönetin.</p>
         </div>
         <div class="page-header-actions">
             <a href="/appointments/create" class="app-btn-primary">+ Yeni Randevu</a>
@@ -20,7 +20,7 @@
 
     <section class="surface-card appointments-plan-toolbar">
         <div class="week-nav">
-            <button type="button" class="app-btn-secondary" @onclick="@(() => MoveWeekAsync(-1))">Onceki hafta</button>
+            <button type="button" class="app-btn-secondary" @onclick="@(() => MoveWeekAsync(-1))">Önceki hafta</button>
             <button type="button" class="app-btn-secondary" @onclick="GoToThisWeekAsync">Bu hafta</button>
             <button type="button" class="app-btn-secondary" @onclick="@(() => MoveWeekAsync(1))">Sonraki hafta</button>
         </div>
@@ -75,7 +75,7 @@
 
             <div class="full-span">
                 <label class="form-label">Ara</label>
-                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Musteri adi, telefon veya plaka ile ara" />
+                <InputText class="form-control" @bind-Value="_searchText" @bind:event="oninput" @bind:after="ResetAndLoadAsync" placeholder="Müşteri adi, telefon veya plaka ile ara" />
             </div>
 
             @if (_view == ListView)
@@ -95,18 +95,18 @@
     @if (_loading)
     {
         <section class="loading-state">
-            <strong>Randevular yukleniyor</strong>
+            <strong>Randevular yükleniyor</strong>
             <p>Lutfen bekleyin.</p>
         </section>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
-            <strong>Randevular alinamadi</strong>
+            <strong>Randevular alınamadı</strong>
             <p>@_error</p>
             @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">Istek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
             }
         </section>
     }
@@ -116,8 +116,8 @@
         {
             <section class="empty-state appointment-week-empty">
                 <strong>Bu hafta icin randevu bulunmuyor.</strong>
-                <p>Haftalik plan bos. Yeni randevu olusturarak servis akisini planlayin.</p>
-                <a href="/appointments/create" class="app-btn-primary">Yeni Randevu Olustur</a>
+                <p>Haftalik plan bos. Yeni randevu oluşturarak servis akisini planlayin.</p>
+                <a href="/appointments/create" class="app-btn-primary">Yeni Randevu Oluştur</a>
             </section>
         }
 
@@ -178,8 +178,8 @@
     else if (_items.Count == 0)
     {
         <section class="empty-state">
-            <strong>Randevu bulunamadi</strong>
-            <p>Filtreleri temizleyin veya yeni bir randevu olusturun.</p>
+            <strong>Randevu bulunamadı</strong>
+            <p>Filtreleri temizleyin veya yeni bir randevu olustürün.</p>
         </section>
     }
     else
@@ -189,7 +189,7 @@
                 <table class="table modern-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Musteri</th>
+                            <th>Müşteri</th>
                             <th>Plaka</th>
                             <th>Tur</th>
                             <th>Baslangic</th>
@@ -245,10 +245,10 @@
     {
         <div class="pagination-bar">
             <div class="pagination-info">
-                Toplam kayit: <strong>@_totalCount</strong> &nbsp;-&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
+                Toplam kayıt: <strong>@_totalCount</strong> &nbsp;-&nbsp; Sayfa <strong>@_pageNumber</strong> / <strong>@_totalPages</strong>
             </div>
             <div class="pagination-actions">
-                <button type="button" class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Onceki</button>
+                <button type="button" class="app-btn-secondary" @onclick="PrevPageAsync" disabled="@(!_hasPreviousPage || _loading)">Önceki</button>
                 <button type="button" class="app-btn-secondary" @onclick="NextPageAsync" disabled="@(!_hasNextPage || _loading)">Sonraki</button>
             </div>
         </div>
@@ -461,7 +461,7 @@
     }
 
     private static string GetVehicleLine(AppointmentDto item)
-        => string.IsNullOrWhiteSpace(item.Plate) ? "Arac bilgisi yok" : item.Plate;
+        => string.IsNullOrWhiteSpace(item.Plate) ? "Araç bilgisi yok" : item.Plate;
 
     private static string GetServiceLine(AppointmentDto item)
     {
@@ -517,7 +517,7 @@
         AppointmentStatus.Scheduled => "Planlandi",
         AppointmentStatus.Confirmed => "Onaylandi",
         AppointmentStatus.CheckedIn => "Geldi",
-        AppointmentStatus.ConvertedToOrder => "Is Emrine Donustu",
+        AppointmentStatus.ConvertedToOrder => "Is Emrine Dönustu",
         AppointmentStatus.Cancelled => "Iptal",
         AppointmentStatus.NoShow => "Gelmedi",
         AppointmentStatus.Completed => "Tamamlandi",

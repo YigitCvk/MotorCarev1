@@ -31,10 +31,10 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
     {
         var ticketHash = _securityTokenFactory.Hash(request.Ticket);
         var challenge = await _userRepository.GetActiveSecurityTokenByHashAsync(ticketHash, UserSecurityTokenPurpose.TwoFactorChallenge, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Dogrulama oturumu gecersiz veya suresi dolmus.");
+            ?? throw new UnauthorizedAccessException("Doğrulama oturumu geçersiz veya süresi dolmuş.");
 
         var user = await _userRepository.GetByIdAsync(challenge.UserId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Dogrulama oturumu gecersiz veya suresi dolmus.");
+            ?? throw new UnauthorizedAccessException("Doğrulama oturumu geçersiz veya süresi dolmuş.");
 
         var otpHash = _securityTokenFactory.Hash(request.Code);
         var otp = await _userRepository.GetActiveSecurityTokenByHashAsync(otpHash, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
@@ -48,11 +48,11 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
                 await _userRepository.SaveChangesAsync(cancellationToken);
             }
 
-            throw new UnauthorizedAccessException("Dogrulama kodu gecersiz.");
+            throw new UnauthorizedAccessException("Doğrulama kodu geçersiz.");
         }
 
         var tenant = await _tenantRepository.GetByIdentifierAsync(user.TenantId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Isletme bulunamadi.");
+            ?? throw new UnauthorizedAccessException("İşletme bulunamadı.");
 
         var now = DateTimeOffset.UtcNow;
         user.ConsumeSecurityToken(ticketHash, now);

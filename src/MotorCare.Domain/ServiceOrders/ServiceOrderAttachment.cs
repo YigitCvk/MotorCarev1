@@ -47,7 +47,7 @@ public class ServiceOrderAttachment : BaseEntity, ITenantEntity
         if (string.IsNullOrWhiteSpace(contentType)) throw new DomainException("Content type is required.");
         if (fileSize <= 0) throw new DomainException("File size must be greater than zero.");
         if (!Enum.IsDefined(attachmentType)) throw new DomainException("Attachment type is invalid.");
-        if (description?.Length > 500) throw new DomainException("Attachment description cannot exceed 500 characters.");
+        if (description?.Length > 500) throw new DomainException("Attachment description cannot exceed 500 charaçters.");
 
         Id = Guid.NewGuid();
         TenantId = tenantId.Trim();

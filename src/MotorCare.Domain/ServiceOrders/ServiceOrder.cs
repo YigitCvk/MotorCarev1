@@ -132,7 +132,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         if (amount <= 0) throw new DomainException("Payment amount must be greater than zero.");
         if (PaidTotal + amount > GrandTotal)
         {
-            throw new DomainException("Bu odeme eklenemez. Alinan odeme toplam tutari asiyor.");
+            throw new DomainException("Bu ödeme eklenemez. Alinan ödeme toplam tutari asiyor.");
         }
 
         _payments.Add(new ServicePayment(amount, method, paymentDate));
@@ -243,7 +243,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (PaidTotal > projectedGrandTotal)
         {
-            throw new DomainException("Bu islem silinemez. Alinan odeme toplam tutardan fazla kaliyor. Once odemeyi duzenleyin veya iade islemi olusturun.");
+            throw new DomainException("Bu islem silinemez. Alinan ödeme toplam tutardan fazla kaliyor. Önce ödemeyi düzenleyin veya iade islemi olustürün.");
         }
     }
 

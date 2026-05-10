@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MotorCare.Application.Common.Interfaces;
@@ -45,14 +47,17 @@ public sealed class SmtpEmailSender : IEmailSender
             From = new MailAddress(_options.FromEmail, _options.FromName),
             Subject = message.Subject,
             Body = message.HtmlBody,
-            IsBodyHtml = true
+            IsBodyHtml = true,
+            SubjectEncoding = Encoding.UTF8,
+            BodyEncoding = Encoding.UTF8,
+            HeadersEncoding = Encoding.UTF8
         };
 
         mail.To.Add(new MailAddress(message.ToEmail, message.ToName));
 
         if (!string.IsNullOrWhiteSpace(message.TextBody))
         {
-            mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message.TextBody, null, "text/plain"));
+            mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message.TextBody, Encoding.UTF8, MediaTypeNames.Text.Plain));
         }
 
         try

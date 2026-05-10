@@ -69,7 +69,7 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
             {
                 throw new AppValidationException(
                 [
-                    new ValidationFailure(nameof(request.CurrentCustomerId), "Secilen musteri bu isletme altinda bulunamadi.")
+                    new ValidationFailure(nameof(request.CurrentCustomerId), "Seçilen müşteri bu işletme altinda bulunamadı.")
                 ]);
             }
 

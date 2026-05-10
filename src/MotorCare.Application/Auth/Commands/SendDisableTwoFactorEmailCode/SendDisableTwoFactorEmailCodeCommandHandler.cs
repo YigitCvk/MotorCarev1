@@ -34,14 +34,14 @@ public sealed class SendDisableTwoFactorEmailCodeCommandHandler : IRequestHandle
         var user = await GetCurrentUserAsync(cancellationToken);
         if (!user.TwoFactorEnabled)
         {
-            return new AuthActionMessageDto("Iki asamali dogrulama zaten devre disi.");
+            return new AuthActionMessageDto("İki aşamalı doğrulama zaten devre dışı.");
         }
 
         var now = DateTimeOffset.UtcNow;
         var latestOtp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorDisableEmailOtp, cancellationToken);
         if (latestOtp is not null && latestOtp.CreatedAt >= now.AddMinutes(-1))
         {
-            return new AuthActionMessageDto("Lutfen yeni kod istemeden once kisa sure bekleyin.");
+            return new AuthActionMessageDto("Lutfen yeni kod istemeden önce kisa sure bekleyin.");
         }
 
         user.RevokeSecurityTokens(UserSecurityTokenPurpose.TwoFactorDisableEmailOtp, now);
@@ -81,7 +81,7 @@ public sealed class SendDisableTwoFactorEmailCodeCommandHandler : IRequestHandle
                 otp.ExpiresAt);
         }
 
-        return new AuthActionMessageDto("Dogrulama kodu e-posta adresinize gonderildi.");
+        return new AuthActionMessageDto("Doğrulama kodu e-posta adresinize gönderildi.");
     }
 
     private async Task<Domain.Users.User> GetCurrentUserAsync(CancellationToken cancellationToken)
