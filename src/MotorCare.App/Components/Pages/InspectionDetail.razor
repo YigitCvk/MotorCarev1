@@ -1031,7 +1031,7 @@
             await SafeStateHasChangedAsync();
             await InspectionsService.CompleteAsync(_inspection.Id, _lifetimeCts.Token);
             _inspection.Status = MotorcycleInspectionStatus.Completed;
-            _inspection.StatusText = "Tamamlandi";
+            _inspection.StatusText = "Tamamlandı";
             _inspection.CompletedAt = DateTimeOffset.UtcNow;
             _stepMessage = "Ekspertiz tamamlandi.";
         }

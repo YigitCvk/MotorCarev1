@@ -503,10 +503,10 @@
 
     private static string GetTypeText(AppointmentType type) => type switch
     {
-        AppointmentType.Maintenance => "Bakim",
-        AppointmentType.Repair => "Onarim",
+        AppointmentType.Maintenance => "Bakım",
+        AppointmentType.Repair => "Onarım",
         AppointmentType.Cleaning => "Temizlik",
-        AppointmentType.Washing => "Yikama",
+        AppointmentType.Washing => "Yıkama",
         AppointmentType.Inspection => "Kontrol",
         AppointmentType.TireChange => "Lastik Degisimi",
         _ => "Diger"
@@ -514,13 +514,13 @@
 
     private static string GetStatusText(AppointmentStatus status) => status switch
     {
-        AppointmentStatus.Scheduled => "Planlandi",
-        AppointmentStatus.Confirmed => "Onaylandi",
+        AppointmentStatus.Scheduled => "Planlandı",
+        AppointmentStatus.Confirmed => "Onaylandı",
         AppointmentStatus.CheckedIn => "Geldi",
         AppointmentStatus.ConvertedToOrder => "Is Emrine Dönustu",
         AppointmentStatus.Cancelled => "Iptal",
         AppointmentStatus.NoShow => "Gelmedi",
-        AppointmentStatus.Completed => "Tamamlandi",
+        AppointmentStatus.Completed => "Tamamlandı",
         _ => status.ToString()
     };
 }
