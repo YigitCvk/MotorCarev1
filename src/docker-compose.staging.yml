@@ -86,6 +86,10 @@ services:
       MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
       ApiBaseUrl: ${APP_INTERNAL_API_BASE_URL:-http://api:8080}
       PublicReports__BaseUrl: ${PublicReports__BaseUrl:-https://staging.bakimsuite.com}
+      Seo__SiteName: ${Seo__SiteName:-GarajPass}
+      Seo__SiteBaseUrl: ${Seo__SiteBaseUrl:-http://46.225.166.254}
+      Seo__RobotsIndexEnabled: ${Seo__RobotsIndexEnabled:-false}
+      Seo__OgImageUrl: ${Seo__OgImageUrl:-/images/og-garajpass.svg}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
     volumes:
       - app_dataprotection:/var/lib/motorcare/dataprotection

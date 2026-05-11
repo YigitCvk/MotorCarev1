@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">GarajPass</title>
+  <desc id="desc">Servis, ekspertiz ve arac gecmisi yonetim platformu sosyal paylasim gorseli.</desc>
+  <rect width="1200" height="630" fill="#111827"/>
+  <rect x="70" y="70" width="1060" height="490" rx="28" fill="#f8fafc"/>
+  <circle cx="168" cy="165" r="56" fill="#f59e0b"/>
+  <text x="168" y="181" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="#111827">GP</text>
+  <text x="250" y="156" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#111827">GarajPass</text>
+  <text x="250" y="208" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#4b5563">Servis, ekspertiz ve arac gecmisi tek sistemde.</text>
+  <rect x="250" y="272" width="245" height="66" rx="14" fill="#e0f2fe"/>
+  <text x="372" y="314" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#075985">Servis emri</text>
+  <rect x="525" y="272" width="245" height="66" rx="14" fill="#fef3c7"/>
+  <text x="648" y="314" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#92400e">Ekspertiz</text>
+  <rect x="800" y="272" width="245" height="66" rx="14" fill="#dcfce7"/>
+  <text x="922" y="314" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#166534">Arac gecmisi</text>
+  <path d="M250 425h700" stroke="#111827" stroke-width="10" stroke-linecap="round"/>
+  <path d="M250 425c98-92 202-92 310 0s214 92 318 0" fill="none" stroke="#f59e0b" stroke-width="16" stroke-linecap="round"/>
+  <text x="250" y="496" font-family="Arial, sans-serif" font-size="25" fill="#374151">Modern oto ve motosiklet servis yazilimi</text>
+</svg>

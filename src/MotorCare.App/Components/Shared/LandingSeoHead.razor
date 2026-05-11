@@ -1,0 +1,72 @@
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using MotorCare.App.Configuration
+@inject IOptions<SeoOptions> SeoOptionsAccessor
+
+<HeadContent>
+    <meta name="description" content="@Seo.DefaultDescription" />
+    <meta name="keywords" content="servis yönetim sistemi, oto servis yazılımı, motosiklet servis yazılımı, ekspertiz yazılımı, araç geçmişi, servis emri takip, randevu yönetimi" />
+    <meta name="robots" content="@Robots" />
+    <link rel="canonical" href="@LandingUrl" />
+    <meta property="og:title" content="GarajPass | Servis ve Ekspertiz Yönetim Platformu" />
+    <meta property="og:description" content="Servis operasyonlarını, araç kayıtlarını, randevuları, servis emirlerini ve ekspertiz süreçlerini tek panelden yönetin." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@LandingUrl" />
+    @if (!string.IsNullOrWhiteSpace(OgImageUrl))
+    {
+        <meta property="og:image" content="@OgImageUrl" />
+        <meta name="twitter:image" content="@OgImageUrl" />
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GarajPass | Servis ve Ekspertiz Yönetim Platformu" />
+    <meta name="twitter:description" content="Servis operasyonlarını, araç kayıtlarını, randevuları, servis emirlerini ve ekspertiz süreçlerini tek panelden yönetin." />
+    <script type="application/ld+json">@((MarkupString)SoftwareApplicationJsonLd)</script>
+    <script type="application/ld+json">@((MarkupString)OrganizationJsonLd)</script>
+</HeadContent>
+
+@code {
+    private SeoOptions Seo => SeoOptionsAccessor.Value;
+    private string Robots => Seo.RobotsIndexEnabled ? "index,follow" : "noindex,nofollow";
+    private string LandingUrl => AbsoluteUrl("/");
+    private string OgImageUrl => AbsoluteUrl(Seo.OgImageUrl);
+
+    private string SoftwareApplicationJsonLd => JsonSerializer.Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "SoftwareApplication",
+        ["name"] = Seo.SiteName,
+        ["applicationCategory"] = "BusinessApplication",
+        ["operatingSystem"] = "Web",
+        ["url"] = AbsoluteUrl("/"),
+        ["description"] = Seo.DefaultDescription
+    });
+
+    private string OrganizationJsonLd => JsonSerializer.Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Organization",
+        ["name"] = Seo.SiteName,
+        ["url"] = AbsoluteUrl("/"),
+        ["logo"] = OgImageUrl
+    });
+
+    private string AbsoluteUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(path, UriKind.Absolute, out var absolute))
+        {
+            return absolute.ToString();
+        }
+
+        var baseUrl = string.IsNullOrWhiteSpace(Seo.SiteBaseUrl)
+            ? "http://46.225.166.254"
+            : Seo.SiteBaseUrl.Trim().TrimEnd('/');
+        var normalizedPath = path.StartsWith('/') ? path : "/" + path;
+
+        return baseUrl + normalizedPath;
+    }
+}

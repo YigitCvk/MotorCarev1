@@ -76,6 +76,17 @@ Hazırlayan: demo-garajpass tenant
 - http://46.225.166.254:5101 adresini aç.
 - Hero bölümündeki "Hemen Başla" butonuna tıkla.
 - Trust strip, feature grid, testimonials, footer'ı göster.
+- SEO hazırlığını anlat:
+  - Ana sayfada GarajPass title/meta/canonical/OpenGraph/JSON-LD hazır.
+  - Sitemap yalnızca public marketing sayfalarını içerir.
+  - Authenticated SaaS panel sayfaları indexlenmez.
+
+### 1.1 SEO ve Public QR Privacy
+
+- `/robots.txt` dosyasının private route'ları disallow ettiğini anlat.
+- `/sitemap.xml` içinde dashboard, müşteri, araç, servis emri veya public report slug olmadığını belirt.
+- Public QR sayfalarının Google'da indexlenmediğini, ancak link/QR ile auth olmadan açıldığını vurgula.
+- OG/social metadata içinde plaka, telefon, e-posta veya müşteri adı gibi hassas veri paylaşılmadığını belirt.
 
 ### 2. Giriş
 
@@ -124,6 +135,8 @@ Hazırlayan: demo-garajpass tenant
 - Tarayıcıda gizli sekme (auth yok) aç:  
   http://46.225.166.254:5101/public/service-record/JwRMqUYzPRXoLHFtl50Apl9UX_2MFwgk
 - Müşterinin göreceği public önizlemeyi göster.
+- Bu sayfanın QR ile erişilebilir olduğunu ama SEO tarafında `noindex,nofollow` kaldığını anlat.
+- Paylaşım önizlemelerinde servis kaydı içeriği, plaka veya müşteri bilgisinin meta tag'e taşınmadığını belirt.
 
 ### 9. Ekspertiz
 
@@ -138,6 +151,8 @@ Hazırlayan: demo-garajpass tenant
   http://46.225.166.254:5101/public/inspection-report/V2iiab25xMQqQGl0idXoUdaMwa642e5Q
 - Public ekspertiz özetini göster.
 - "Bu kayıt GarajPass üzerinden doğrulanmıştır." metni.
+- Bu sayfanın da `noindex,nofollow` olduğunu ve sitemap'e eklenmediğini anlat.
+- QR akışının authenticated tenant panelinden bağımsız public doğrulama için kullanıldığını vurgula.
 
 ### 11. Şifremi Unuttum
 
@@ -158,6 +173,12 @@ Mevcut tahsilat kaydı MVP kapsamında. E-fatura entegrasyonu Faz 2.
 
 **QR kodu disable etme?**  
 Faz 2. Şu anda tüm servis kayıtları varsayılan aktif.
+
+**QR sayfaları Google'da çıkar mı?**
+Hayır. Public servis ve ekspertiz kayıtları QR/link ile açılır, ancak SEO tarafında `noindex,nofollow` kullanılır ve sitemap'e eklenmez.
+
+**Sosyal paylaşımda müşteri veya araç bilgisi görünür mü?**
+Hayır. Public report meta/OpenGraph bilgileri generic GarajPass metni kullanır; plaka, telefon, e-posta veya müşteri adı meta tag'lere taşınmaz.
 
 **Çoklu kullanıcı/rol?**  
 Owner, Admin, Receptionist, Technician rolleri hazır. Kullanıcı davet akışı mevcut.

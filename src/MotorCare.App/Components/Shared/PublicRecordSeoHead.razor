@@ -1,0 +1,46 @@
+@using Microsoft.Extensions.Options
+@using MotorCare.App.Configuration
+@inject IOptions<SeoOptions> SeoOptionsAccessor
+
+<HeadContent>
+    <meta name="description" content="Bu kayıt GarajPass üzerinden doğrulanabilir dijital kayıt olarak oluşturulmuştur." />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta property="og:title" content="@Title" />
+    <meta property="og:description" content="Bu kayıt GarajPass üzerinden doğrulanabilir dijital kayıt olarak oluşturulmuştur." />
+    <meta property="og:type" content="article" />
+    @if (!string.IsNullOrWhiteSpace(OgImageUrl))
+    {
+        <meta property="og:image" content="@OgImageUrl" />
+        <meta name="twitter:image" content="@OgImageUrl" />
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@Title" />
+    <meta name="twitter:description" content="Bu kayıt GarajPass üzerinden doğrulanabilir dijital kayıt olarak oluşturulmuştur." />
+</HeadContent>
+
+@code {
+    [Parameter] public string Title { get; set; } = "GarajPass Dijital Kayıt";
+
+    private SeoOptions Seo => SeoOptionsAccessor.Value;
+    private string OgImageUrl => AbsoluteUrl(Seo.OgImageUrl);
+
+    private string AbsoluteUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(path, UriKind.Absolute, out var absolute))
+        {
+            return absolute.ToString();
+        }
+
+        var baseUrl = string.IsNullOrWhiteSpace(Seo.SiteBaseUrl)
+            ? "http://46.225.166.254"
+            : Seo.SiteBaseUrl.Trim().TrimEnd('/');
+        var normalizedPath = path.StartsWith('/') ? path : "/" + path;
+
+        return baseUrl + normalizedPath;
+    }
+}

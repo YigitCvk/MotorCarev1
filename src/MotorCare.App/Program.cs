@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
+using System.Text;
 using MotorCare.App.Configuration;
 using MotorCare.App.Components;
 using MotorCare.App.Services;
@@ -24,8 +26,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
 builder.Services.Configure<PublicReportOptions>(builder.Configuration.GetSection(PublicReportOptions.SectionName));
+builder.Services.Configure<SeoOptions>(builder.Configuration.GetSection(SeoOptions.SectionName));
 
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7278";
 
@@ -92,6 +96,61 @@ if (Directory.Exists(app.Environment.WebRootPath))
     app.UseStaticFiles();
 }
 
+app.MapGet("/robots.txt", (IOptions<SeoOptions> seoOptions) =>
+{
+    var seo = seoOptions.Value;
+    var builder = new StringBuilder();
+    builder.AppendLine("User-agent: *");
+
+    if (seo.RobotsIndexEnabled)
+    {
+        builder.AppendLine("Allow: /");
+    }
+    else
+    {
+        builder.AppendLine("Disallow: /");
+        builder.AppendLine("# Staging/default: indexing is disabled until production domain and HTTPS are ready.");
+    }
+
+    builder.AppendLine("Disallow: /dashboard");
+    builder.AppendLine("Disallow: /customers");
+    builder.AppendLine("Disallow: /vehicles");
+    builder.AppendLine("Disallow: /appointments");
+    builder.AppendLine("Disallow: /service-orders");
+    builder.AppendLine("Disallow: /inspections");
+    builder.AppendLine("Disallow: /imports");
+    builder.AppendLine("Disallow: /settings");
+    builder.AppendLine("Disallow: /login");
+    builder.AppendLine("Disallow: /register");
+    builder.AppendLine("Disallow: /forgot-password");
+    builder.AppendLine("Disallow: /reset-password");
+    builder.AppendLine("Disallow: /two-factor");
+    builder.AppendLine("Disallow: /api/");
+    builder.AppendLine("Disallow: /public/service-record/");
+    builder.AppendLine("Disallow: /public/inspection-report/");
+    builder.AppendLine($"Sitemap: {ToAbsoluteSeoUrl(seo, "/sitemap.xml")}");
+
+    return Results.Text(builder.ToString(), "text/plain; charset=utf-8");
+});
+
+app.MapGet("/sitemap.xml", (IOptions<SeoOptions> seoOptions) =>
+{
+    var seo = seoOptions.Value;
+    var landingUrl = ToAbsoluteSeoUrl(seo, "/");
+    var xml = $"""
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          <url>
+            <loc>{System.Security.SecurityElement.Escape(landingUrl)}</loc>
+            <changefreq>weekly</changefreq>
+            <priority>1.0</priority>
+          </url>
+        </urlset>
+        """;
+
+    return Results.Text(xml, "application/xml; charset=utf-8");
+});
+
 app.MapGet("/attachment-proxy/service-orders/{id:guid}/attachments/{attachmentId:guid}/download", async (
     Guid id,
     Guid attachmentId,
@@ -133,3 +192,20 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+static string ToAbsoluteSeoUrl(SeoOptions seo, string path)
+{
+    if (Uri.TryCreate(path, UriKind.Absolute, out var absolute))
+    {
+        return absolute.ToString();
+    }
+
+    var baseUrl = string.IsNullOrWhiteSpace(seo.SiteBaseUrl)
+        ? "http://46.225.166.254"
+        : seo.SiteBaseUrl.Trim().TrimEnd('/');
+    var normalizedPath = string.IsNullOrWhiteSpace(path)
+        ? "/"
+        : path.StartsWith('/') ? path : "/" + path;
+
+    return baseUrl + normalizedPath;
+}

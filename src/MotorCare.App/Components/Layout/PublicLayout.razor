@@ -1,5 +1,25 @@
 @inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+@if (!IsLandingPage)
+{
+    <HeadContent>
+        <meta name="robots" content="noindex,nofollow" />
+    </HeadContent>
+}
 
 <div class="public-layout">
     @Body
 </div>
+
+@code {
+    private bool IsLandingPage
+    {
+        get
+        {
+            var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            relative = relative.Split('?', '#')[0].Trim('/');
+            return string.IsNullOrWhiteSpace(relative);
+        }
+    }
+}
