@@ -2,9 +2,11 @@
 @using System.Globalization
 @using System.Net
 @using MotorCare.Application.ServiceOrders
+@using MotorCare.App.Models.PublicRecords
 @using ServiceOrderDetailModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
+@inject PublicRecordsService PublicRecordsService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
@@ -65,6 +67,7 @@
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("parts-section"))">Parça</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("consumables-section"))">Sarf Ürün</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("attachments-section"))">Dosyalar</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("public-access-section"))">Dijital QR</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
                 <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
             </div>
@@ -202,6 +205,18 @@
                 </div>
             </section>
         </section>
+
+        <PublicRecordAccessCard Title="Dijital Kayıt / QR"
+                                Subtitle="Servis kaydı public doğrulama bağlantısı ve QR çıktısı"
+                                RecordTypeLabel="Dijital Servis Kaydı"
+                                PublicPathPrefix="/public/service-record"
+                                PrintHref="@($"/service-orders/{Id}/qr-print")"
+                                Plate="@_order.VehiclePlate"
+                                Vehicle="@_order.VehicleDisplay"
+                                RecordDate="@_order.OpenedAt"
+                                LoadAccess="@LoadServiceOrderPublicAccessAsync"
+                                EnableAccess="@EnableServiceOrderPublicAccessAsync"
+                                DisableAccess="@DisableServiceOrderPublicAccessAsync" />
 
         <section class="app-card service-order-attachments-card" id="attachments-section">
             <div class="section-header">
@@ -819,6 +834,15 @@
             "Servis durumu güncellendi.");
         _statusRequest.Note = null;
     }
+
+    private Task<PublicRecordAccessResponse?> LoadServiceOrderPublicAccessAsync()
+        => PublicRecordsService.GetForServiceOrderAsync(Id);
+
+    private Task<PublicRecordAccessResponse?> EnableServiceOrderPublicAccessAsync()
+        => PublicRecordsService.EnableForServiceOrderAsync(Id);
+
+    private Task DisableServiceOrderPublicAccessAsync()
+        => PublicRecordsService.DisableForServiceOrderAsync(Id);
 
     private async Task LoadActivityFeedAsync()
     {

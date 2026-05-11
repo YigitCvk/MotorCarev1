@@ -1,8 +1,10 @@
 @page "/inspections/{Id:guid}"
 @using System.Net
 @using MotorCare.App.Models.Inspections
+@using MotorCare.App.Models.PublicRecords
 @inject AuthService AuthService
 @inject InspectionsService InspectionsService
+@inject PublicRecordsService PublicRecordsService
 @inject NavigationManager NavigationManager
 @inject ILogger<InspectionDetail> Logger
 
@@ -40,6 +42,7 @@
             <div class="page-header-actions">
                 <a class="app-btn-secondary" href="/inspections">Listeye Dön</a>
                 <a class="app-btn-secondary" href="@($"/inspections/{Id}/print")">Yazdir / PDF Al</a>
+                <a class="app-btn-secondary" href="@($"/inspections/{Id}/qr-print")">QR Kartı</a>
             </div>
         </section>
 
@@ -58,6 +61,18 @@
                 <p>@_stepMessage</p>
             </section>
         }
+
+        <PublicRecordAccessCard Title="Dijital Ekspertiz / QR"
+                                Subtitle="Ekspertiz kaydı public doğrulama bağlantısı ve QR çıktısı"
+                                RecordTypeLabel="Dijital Ekspertiz Kaydı"
+                                PublicPathPrefix="/public/inspection-report"
+                                PrintHref="@($"/inspections/{Id}/qr-print")"
+                                Plate="@_inspection.Plate"
+                                Vehicle="@VehicleDisplay"
+                                RecordDate="@(_inspection.CompletedAt ?? _inspection.CreatedAt)"
+                                LoadAccess="@LoadInspectionPublicAccessAsync"
+                                EnableAccess="@EnableInspectionPublicAccessAsync"
+                                DisableAccess="@DisableInspectionPublicAccessAsync" />
 
         <section class="inspection-form-shell">
             <nav class="inspection-stepper" aria-label="Ekspertiz adimlari">
@@ -389,6 +404,15 @@
     }
 
     private bool CanEdit => _inspection?.Status is MotorcycleInspectionStatus.Draft or MotorcycleInspectionStatus.InProgress;
+
+    private Task<PublicRecordAccessResponse?> LoadInspectionPublicAccessAsync()
+        => PublicRecordsService.GetForInspectionAsync(Id);
+
+    private Task<PublicRecordAccessResponse?> EnableInspectionPublicAccessAsync()
+        => PublicRecordsService.EnableForInspectionAsync(Id);
+
+    private Task DisableInspectionPublicAccessAsync()
+        => PublicRecordsService.DisableForInspectionAsync(Id);
 
     private InspectionChecklistResponse MechanicalChecklistResponse => BuildChecklistResponse(
         "Mekanik ve Yuruyen Aksam Kontrolleri",

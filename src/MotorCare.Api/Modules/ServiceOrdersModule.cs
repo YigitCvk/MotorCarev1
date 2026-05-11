@@ -26,6 +26,7 @@ using MotorCare.Application.ServiceOrders.Queries.GetServiceOrderById;
 using MotorCare.Application.ServiceOrders.Queries.GetServiceOrders;
 using MotorCare.Application.ServiceOrders.Queries.GetServiceOrderStatusHistory;
 using MotorCare.Domain.Enums;
+using MotorCare.Domain.PublicRecords;
 
 namespace MotorCare.Api.Modules;
 
@@ -93,6 +94,71 @@ public sealed class ServiceOrdersModule : ICarterModule
         .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/{id:guid}/public-access", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.GetForRecordAsync(PublicRecordType.ServiceOrder, id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .WithName("GetServiceOrderPublicAccess")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces<PublicRecordAccessDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPut("/{id:guid}/public-access/enable", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.EnableAsync(PublicRecordType.ServiceOrder, id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .WithName("EnableServiceOrderPublicAccess")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces<PublicRecordAccessDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPut("/{id:guid}/public-access/disable", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            await publicRecordAccessService.DisableAsync(PublicRecordType.ServiceOrder, id, tenantId, ct);
+            return Results.NoContent();
+        })
+        .WithName("DisableServiceOrderPublicAccess")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 

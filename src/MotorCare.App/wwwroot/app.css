@@ -3504,6 +3504,86 @@ h1:focus { outline: none; }
     color: #111827;
 }
 
+.public-access-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.public-access-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.public-access-details a {
+    overflow-wrap: anywhere;
+}
+
+.public-access-preview {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border: 1px solid var(--mc-border);
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.public-access-preview > div:last-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.public-access-preview strong {
+    color: var(--mc-text);
+}
+
+.public-access-preview span {
+    color: var(--mc-text-muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.public-access-qr,
+.public-access-qr-placeholder {
+    width: 7rem;
+    height: 7rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--mc-border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.public-access-qr svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.public-access-qr-placeholder {
+    color: var(--mc-text-muted);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.public-access-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.65rem;
+}
+
+.disabled-link {
+    pointer-events: none;
+    opacity: 0.55;
+}
+
 .print-page-shell {
     max-width: 1120px;
     margin: 0 auto;
@@ -4033,9 +4113,132 @@ h1:focus { outline: none; }
     margin-top: 1.25rem !important;
 }
 
+.qr-print-page {
+    max-width: 760px;
+}
+
+.qr-label-sheet {
+    display: grid;
+    justify-content: center;
+}
+
+.qr-label-card {
+    width: min(100%, 110mm);
+    min-height: 72mm;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1.5px solid #111827;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: var(--mc-shadow-sm);
+}
+
+.qr-label-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #d1d5db;
+}
+
+.qr-label-brand {
+    color: var(--mc-primary);
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.qr-label-header h1 {
+    margin: 0.15rem 0 0;
+    font-size: 1.15rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.qr-label-header span {
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.qr-label-main {
+    display: grid;
+    grid-template-columns: 34mm minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: center;
+}
+
+.qr-label-qr {
+    width: 34mm;
+    height: 34mm;
+    display: grid;
+    place-items: center;
+    background: #fff;
+}
+
+.qr-label-qr svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.qr-label-details {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.35rem 0.65rem;
+    margin: 0;
+    font-size: 0.86rem;
+}
+
+.qr-label-details dt {
+    color: #64748b;
+    font-weight: 800;
+}
+
+.qr-label-details dd {
+    margin: 0;
+    color: #111827;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.qr-label-note {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    background: #f0f9ff;
+    color: #075985;
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.qr-label-url {
+    color: #475569;
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 640px) {
     .public-record-page {
         padding: 1rem;
+    }
+
+    .public-access-grid,
+    .public-access-preview,
+    .qr-label-main {
+        grid-template-columns: 1fr;
+    }
+
+    .public-access-actions {
+        justify-content: stretch;
+    }
+
+    .public-access-actions > * {
+        text-align: center;
     }
 
     .public-record-header,
@@ -4209,6 +4412,21 @@ h1:focus { outline: none; }
 
     .print-footer {
         break-inside: avoid;
+    }
+
+    .qr-print-page {
+        max-width: none;
+    }
+
+    .qr-label-card {
+        width: 100%;
+        min-height: 0;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+
+    .qr-label-note {
+        background: #f0f9ff !important;
     }
 
     a {

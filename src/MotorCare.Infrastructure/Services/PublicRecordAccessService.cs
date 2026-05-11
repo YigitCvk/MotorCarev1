@@ -46,6 +46,27 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         return GetOrCreateAsync(PublicRecordType.MotorcycleInspection, inspectionId, tenantId, cancellationToken);
     }
 
+    public async Task<PublicRecordAccessDto?> GetForRecordAsync(
+        PublicRecordType recordType,
+        Guid recordId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
+        if (string.IsNullOrWhiteSpace(normalizedTenantId) || recordId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var access = await _context.PublicRecordAccesses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.TenantId == normalizedTenantId && x.RecordType == recordType && x.RecordId == recordId,
+                cancellationToken);
+
+        return access is null ? null : ToDto(access);
+    }
+
     public async Task<PublicRecordAccessDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var normalizedSlug = NormalizeSlug(slug);
@@ -59,6 +80,38 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             .FirstOrDefaultAsync(x => x.Slug == normalizedSlug && x.IsActive, cancellationToken);
 
         return access is null ? null : ToDto(access);
+    }
+
+    public async Task<PublicRecordAccessDto?> EnableAsync(
+        PublicRecordType recordType,
+        Guid recordId,
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
+        if (string.IsNullOrWhiteSpace(normalizedTenantId) || recordId == Guid.Empty)
+        {
+            return null;
+        }
+
+        if (!await RecordExistsAsync(recordType, recordId, normalizedTenantId, cancellationToken))
+        {
+            return null;
+        }
+
+        var existing = await _context.PublicRecordAccesses
+            .FirstOrDefaultAsync(
+                x => x.TenantId == normalizedTenantId && x.RecordType == recordType && x.RecordId == recordId,
+                cancellationToken);
+
+        if (existing is not null)
+        {
+            existing.Enable();
+            await _context.SaveChangesAsync(cancellationToken);
+            return ToDto(existing);
+        }
+
+        return await CreateAsync(recordType, recordId, normalizedTenantId, cancellationToken);
     }
 
     public async Task DisableAsync(
@@ -204,33 +257,31 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             return null;
         }
 
-        var recordExists = recordType switch
-        {
-            PublicRecordType.ServiceOrder => await _context.ServiceOrders
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .AnyAsync(x => x.Id == recordId && x.TenantId == normalizedTenantId, cancellationToken),
-            PublicRecordType.MotorcycleInspection => await _context.MotorcycleInspections
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .AnyAsync(x => x.Id == recordId && x.TenantId == normalizedTenantId, cancellationToken),
-            _ => false
-        };
-
-        if (!recordExists)
+        if (!await RecordExistsAsync(recordType, recordId, normalizedTenantId, cancellationToken))
         {
             return null;
         }
 
         var existing = await _context.PublicRecordAccesses
             .FirstOrDefaultAsync(
-                x => x.RecordType == recordType && x.RecordId == recordId,
+                x => x.TenantId == normalizedTenantId && x.RecordType == recordType && x.RecordId == recordId,
                 cancellationToken);
 
         if (existing is not null)
         {
             return ToDto(existing);
         }
+
+        return await CreateAsync(recordType, recordId, normalizedTenantId, cancellationToken);
+    }
+
+    private async Task<PublicRecordAccessDto> CreateAsync(
+        PublicRecordType recordType,
+        Guid recordId,
+        string tenantId,
+        CancellationToken cancellationToken)
+    {
+        PublicRecordAccess? existing;
 
         for (var attempt = 0; attempt < MaxSlugAttempts; attempt++)
         {
@@ -245,7 +296,7 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             }
 
             var access = new PublicRecordAccess(
-                normalizedTenantId,
+                tenantId,
                 recordType,
                 recordId,
                 slug,
@@ -264,7 +315,7 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
                 existing = await _context.PublicRecordAccesses
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
-                        x => x.RecordType == recordType && x.RecordId == recordId,
+                        x => x.TenantId == tenantId && x.RecordType == recordType && x.RecordId == recordId,
                         cancellationToken);
 
                 if (existing is not null)
@@ -275,6 +326,26 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         }
 
         throw new InvalidOperationException("Could not generate a unique public record slug.");
+    }
+
+    private Task<bool> RecordExistsAsync(
+        PublicRecordType recordType,
+        Guid recordId,
+        string tenantId,
+        CancellationToken cancellationToken)
+    {
+        return recordType switch
+        {
+            PublicRecordType.ServiceOrder => _context.ServiceOrders
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == recordId && x.TenantId == tenantId, cancellationToken),
+            PublicRecordType.MotorcycleInspection => _context.MotorcycleInspections
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == recordId && x.TenantId == tenantId, cancellationToken),
+            _ => Task.FromResult(false)
+        };
     }
 
     private async Task<PublicRecordAccess?> GetActiveAccessForPublicReadAsync(

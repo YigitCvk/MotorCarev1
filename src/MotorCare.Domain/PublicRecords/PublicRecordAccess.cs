@@ -40,6 +40,17 @@ public sealed class PublicRecordAccess : BaseEntity
         AccessCount++;
     }
 
+    public void Enable()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        IsActive = true;
+        DisabledAtUtc = null;
+    }
+
     public void Disable(DateTimeOffset disabledAtUtc)
     {
         if (!IsActive)

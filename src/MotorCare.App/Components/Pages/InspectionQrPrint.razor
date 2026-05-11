@@ -1,0 +1,168 @@
+@page "/inspections/{Id:guid}/qr-print"
+@layout MotorCare.App.Components.Layout.PrintLayout
+@using Microsoft.Extensions.Options
+@using System.Net
+@using MotorCare.App.Configuration
+@using MotorCare.App.Models.Inspections
+@using MotorCare.App.Models.PublicRecords
+@inject AuthService AuthService
+@inject InspectionsService InspectionsService
+@inject PublicRecordsService PublicRecordsService
+@inject QrCodeSvgService QrCodeSvgService
+@inject IOptions<PublicReportOptions> PublicReportOptions
+@inject NavigationManager NavigationManager
+
+<PageTitle>@(_inspection?.InspectionNo ?? "Ekspertiz QR Kartı")</PageTitle>
+
+<div class="print-page-shell qr-print-page">
+    @if (_loading)
+    {
+        <section class="loading-state">
+            <strong>QR kartı hazırlanıyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </section>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <section class="error-state">
+            <strong>QR kartı hazırlanamadı</strong>
+            <p>@_error</p>
+            <a class="app-btn-secondary mt-3" href="@($"/inspections/{Id}")">Detaya Dön</a>
+        </section>
+    }
+    else if (_inspection is not null)
+    {
+        <div class="print-toolbar no-print">
+            <a class="app-btn-secondary" href="@($"/inspections/{Id}")">← Detaya Dön</a>
+            <button type="button" class="app-btn-primary" onclick="window.print()">Yazdır</button>
+        </div>
+
+        <article class="qr-label-sheet">
+            <section class="qr-label-card">
+                <header class="qr-label-header">
+                    <div>
+                        <div class="qr-label-brand">GarajPass</div>
+                        <h1>Dijital Ekspertiz Kaydı</h1>
+                    </div>
+                    <span>QR Doğrulama</span>
+                </header>
+
+                <div class="qr-label-main">
+                    <div class="qr-label-qr">@((MarkupString)(_qrSvg ?? string.Empty))</div>
+                    <dl class="qr-label-details">
+                        <dt>Kayıt Tipi</dt>
+                        <dd>Ekspertiz Kaydı</dd>
+                        <dt>Plaka</dt>
+                        <dd>@Display(_inspection.Plate)</dd>
+                        <dt>Araç</dt>
+                        <dd>@Display(VehicleText)</dd>
+                        <dt>Tarih</dt>
+                        <dd>@(_inspection.CompletedAt ?? _inspection.CreatedAt).LocalDateTime.ToString("dd.MM.yyyy")</dd>
+                    </dl>
+                </div>
+
+                <p class="qr-label-note">Bu QR ile dijital kaydı doğrulayabilirsiniz.</p>
+                <div class="qr-label-url">@_publicUrl</div>
+            </section>
+        </article>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private MotorcycleInspectionDetail? _inspection;
+    private PublicRecordAccessResponse? _publicAccess;
+    private string? _publicUrl;
+    private string? _qrSvg;
+    private bool _loading = true;
+    private string? _error;
+
+    private string VehicleText
+    {
+        get
+        {
+            var parts = new[] { _inspection?.Brand, _inspection?.Model }
+                .Where(value => !string.IsNullOrWhiteSpace(value));
+            return string.Join(" ", parts);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+            await InvokeAsync(StateHasChanged);
+
+            _inspection = await InspectionsService.GetByIdAsync(Id);
+            if (_inspection is null)
+            {
+                _error = "Ekspertiz kaydı bulunamadı.";
+                return;
+            }
+
+            _publicAccess = await PublicRecordsService.GetForInspectionAsync(Id);
+            if (_publicAccess is null || !_publicAccess.IsActive || string.IsNullOrWhiteSpace(_publicAccess.Slug))
+            {
+                _error = "Public QR erişimi pasif. Önce ekspertiz detayındaki Dijital Ekspertiz / QR kartından erişimi açın.";
+                return;
+            }
+
+            _publicUrl = BuildPublicUrl($"/public/inspection-report/{_publicAccess.Slug}");
+            _qrSvg = QrCodeSvgService.GenerateSvg(_publicUrl);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _error = "Public QR erişimi bulunamadı. Önce ekspertiz detayındaki Dijital Ekspertiz / QR kartından erişimi açın.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string BuildPublicUrl(string path)
+    {
+        var configuredBaseUrl = PublicReportOptions.Value.BaseUrl;
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? NavigationManager.BaseUri
+            : configuredBaseUrl.Trim();
+
+        if (!baseUrl.EndsWith("/", StringComparison.Ordinal))
+        {
+            baseUrl += "/";
+        }
+
+        return new Uri(new Uri(baseUrl), path.TrimStart('/')).ToString();
+    }
+
+    private static string Display(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value;
+}

@@ -1,0 +1,274 @@
+@using System.Net
+@using Microsoft.Extensions.Options
+@using MotorCare.App.Configuration
+@using MotorCare.App.Models.PublicRecords
+@inject IOptions<PublicReportOptions> PublicReportOptions
+@inject NavigationManager NavigationManager
+@inject QrCodeSvgService QrCodeSvgService
+
+<section class="app-card public-access-card" id="@ElementId">
+    <div class="section-header">
+        <div>
+            <div class="section-title">@Title</div>
+            <div class="section-subtitle">@Subtitle</div>
+        </div>
+        <span class="@StatusBadgeClass">@StatusText</span>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-state compact">
+            <strong>QR erişimi yükleniyor</strong>
+            <p>Lütfen bekleyin.</p>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <div class="error-state compact mb-3">
+                <strong>QR erişimi alınamadı</strong>
+                <p>@_error</p>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div class="empty-state compact mb-3">
+                <strong>İşlem tamamlandı</strong>
+                <p>@_message</p>
+            </div>
+        }
+
+        <div class="public-access-grid">
+            <div class="public-access-details">
+                <dl class="detail-list">
+                    <dt>Kayıt Tipi</dt>
+                    <dd>@RecordTypeLabel</dd>
+                    <dt>Public URL</dt>
+                    <dd>
+                        @if (!string.IsNullOrWhiteSpace(PublicUrl))
+                        {
+                            <a href="@PublicUrl" target="_blank" rel="noopener noreferrer">@PublicUrl</a>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </dd>
+                    <dt>Erişim Sayısı</dt>
+                    <dd>@(_access?.AccessCount ?? 0)</dd>
+                    <dt>Son Erişim</dt>
+                    <dd>@FormatDateTime(_access?.LastAccessedAtUtc)</dd>
+                </dl>
+            </div>
+
+            <div class="public-access-preview">
+                @if (!string.IsNullOrWhiteSpace(_qrSvg))
+                {
+                    <div class="public-access-qr">@((MarkupString)_qrSvg)</div>
+                }
+                else
+                {
+                    <div class="public-access-qr-placeholder">QR</div>
+                }
+                <div>
+                    <strong>@RecordTypeLabel</strong>
+                    <span>@PlateText</span>
+                    <span>@VehicleText</span>
+                    <span>@FormatDate(RecordDate)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="public-access-actions">
+            @if (_access?.IsActive == true)
+            {
+                <button type="button" class="app-btn-secondary danger-action" @onclick="DisableAsync" disabled="@_working">
+                    @(_working ? "Güncelleniyor..." : "Pasife Al")
+                </button>
+                <a class="app-btn-secondary" href="@PublicUrl" target="_blank" rel="noopener noreferrer">Public Kaydı Aç</a>
+                <a class="app-btn-primary" href="@PrintHref">QR Kartı Yazdır</a>
+            }
+            else
+            {
+                <button type="button" class="app-btn-primary" @onclick="EnableAsync" disabled="@_working">
+                    @(_working ? "Güncelleniyor..." : "Erişimi Aç")
+                </button>
+                <a class="app-btn-secondary disabled-link" href="@PrintHref" aria-disabled="true">QR Kartı Yazdır</a>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public string ElementId { get; set; } = "public-access-section";
+    [Parameter] public string Title { get; set; } = "Dijital Kayıt / QR";
+    [Parameter] public string Subtitle { get; set; } = "Public QR erişimi ve doğrulama bağlantısı";
+    [Parameter] public string RecordTypeLabel { get; set; } = "Dijital Kayıt";
+    [Parameter] public string PublicPathPrefix { get; set; } = string.Empty;
+    [Parameter] public string PrintHref { get; set; } = string.Empty;
+    [Parameter] public string? Plate { get; set; }
+    [Parameter] public string? Vehicle { get; set; }
+    [Parameter] public DateTimeOffset? RecordDate { get; set; }
+    [Parameter] public Func<Task<PublicRecordAccessResponse?>>? LoadAccess { get; set; }
+    [Parameter] public Func<Task<PublicRecordAccessResponse?>>? EnableAccess { get; set; }
+    [Parameter] public Func<Task>? DisableAccess { get; set; }
+
+    private PublicRecordAccessResponse? _access;
+    private bool _loading = true;
+    private bool _working;
+    private string? _error;
+    private string? _message;
+    private string? _qrSvg;
+
+    private string StatusText => _access?.IsActive == true ? "Aktif" : "Pasif";
+
+    private string StatusBadgeClass => _access?.IsActive == true
+        ? "status-badge badge-completed"
+        : "status-badge badge-muted";
+
+    private string PlateText => string.IsNullOrWhiteSpace(Plate) ? "Plaka yok" : Plate;
+
+    private string VehicleText => string.IsNullOrWhiteSpace(Vehicle) ? "Araç bilgisi yok" : Vehicle;
+
+    private string? PublicPath => string.IsNullOrWhiteSpace(_access?.Slug) || string.IsNullOrWhiteSpace(PublicPathPrefix)
+        ? null
+        : $"{PublicPathPrefix.TrimEnd('/')}/{_access.Slug}";
+
+    private string? PublicUrl => string.IsNullOrWhiteSpace(PublicPath)
+        ? null
+        : BuildPublicUrl(PublicPath);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            if (LoadAccess is null)
+            {
+                _access = null;
+                return;
+            }
+
+            _access = await LoadAccess();
+            RefreshQr();
+        }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _access = null;
+            RefreshQr();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+            _access = null;
+            RefreshQr();
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _access = null;
+            RefreshQr();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task EnableAsync()
+    {
+        if (EnableAccess is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _working = true;
+            _error = null;
+            _message = null;
+            _access = await EnableAccess();
+            _message = "Public QR erişimi aktif edildi.";
+            RefreshQr();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task DisableAsync()
+    {
+        if (DisableAccess is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _working = true;
+            _error = null;
+            _message = null;
+            await DisableAccess();
+            await LoadAsync();
+            _message = "Public QR erişimi pasife alındı.";
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private void RefreshQr()
+    {
+        _qrSvg = _access?.IsActive == true && !string.IsNullOrWhiteSpace(PublicUrl)
+            ? QrCodeSvgService.GenerateSvg(PublicUrl)
+            : null;
+    }
+
+    private string BuildPublicUrl(string path)
+    {
+        var configuredBaseUrl = PublicReportOptions.Value.BaseUrl;
+        var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl)
+            ? NavigationManager.BaseUri
+            : configuredBaseUrl.Trim();
+
+        if (!baseUrl.EndsWith("/", StringComparison.Ordinal))
+        {
+            baseUrl += "/";
+        }
+
+        return new Uri(new Uri(baseUrl), path.TrimStart('/')).ToString();
+    }
+
+    private static string FormatDate(DateTimeOffset? value)
+        => value?.LocalDateTime.ToString("dd.MM.yyyy") ?? "-";
+
+    private static string FormatDateTime(DateTimeOffset? value)
+        => value?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-";
+}

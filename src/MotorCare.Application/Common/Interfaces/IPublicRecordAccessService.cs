@@ -5,11 +5,15 @@ namespace MotorCare.Application.Common.Interfaces;
 
 public interface IPublicRecordAccessService
 {
+    Task<PublicRecordAccessDto?> GetForRecordAsync(PublicRecordType recordType, Guid recordId, string tenantId, CancellationToken cancellationToken = default);
+
     Task<PublicRecordAccessDto?> GetOrCreateForServiceOrderAsync(Guid serviceOrderId, string tenantId, CancellationToken cancellationToken = default);
 
     Task<PublicRecordAccessDto?> GetOrCreateForInspectionAsync(Guid inspectionId, string tenantId, CancellationToken cancellationToken = default);
 
     Task<PublicRecordAccessDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
+
+    Task<PublicRecordAccessDto?> EnableAsync(PublicRecordType recordType, Guid recordId, string tenantId, CancellationToken cancellationToken = default);
 
     Task DisableAsync(PublicRecordType recordType, Guid recordId, string tenantId, CancellationToken cancellationToken = default);
 

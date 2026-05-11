@@ -12,6 +12,7 @@ using MotorCare.Application.Inspections.Queries.GetMotorcycleInspectionById;
 using MotorCare.Application.Inspections.Queries.GetMotorcycleInspections;
 using MotorCare.Application.PublicRecords;
 using MotorCare.Domain.Enums;
+using MotorCare.Domain.PublicRecords;
 using MotorCare.Domain.Repositories;
 using MotorCare.Application.Common.Interfaces;
 
@@ -85,6 +86,65 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
         })
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/{id:guid}/public-access", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.GetForRecordAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .Produces<PublicRecordAccessDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPut("/{id:guid}/public-access/enable", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var access = await publicRecordAccessService.EnableAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
+            return access is null ? Results.NotFound() : Results.Ok(access);
+        })
+        .Produces<PublicRecordAccessDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPut("/{id:guid}/public-access/disable", async (
+            Guid id,
+            IPublicRecordAccessService publicRecordAccessService,
+            ITenantProvider tenantProvider,
+            CancellationToken ct) =>
+        {
+            var tenantId = tenantProvider.GetTenantId();
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return Results.Unauthorized();
+            }
+
+            await publicRecordAccessService.DisableAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
+            return Results.NoContent();
+        })
+        .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
