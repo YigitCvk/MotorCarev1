@@ -20,14 +20,14 @@
             <p>Lütfen bekleyin.</p>
         </section>
     }
-    else if (!string.IsNullOrWhiteSpace(_error))
+    else if (!string.IsNullOrWhiteSpace(_loadError))
     {
         <section class="error-state">
             <strong>Servis detayı alınamadı</strong>
-            <p>@_error</p>
-            @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
+            <p>@_loadError</p>
+            @if (!string.IsNullOrWhiteSpace(_loadErrorEndpoint))
             {
-                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_loadErrorEndpoint</p>
             }
         </section>
     }
@@ -78,6 +78,18 @@
             <section class="empty-state">
                 <strong>İşlem başarılı</strong>
                 <p>@_actionMessage</p>
+            </section>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_actionError))
+        {
+            <section class="error-state">
+                <strong>İşlem tamamlanamadı</strong>
+                <p>@_actionError</p>
+                @if (!string.IsNullOrWhiteSpace(_actionErrorEndpoint))
+                {
+                    <p class="small text-muted mt-2">İstek: @_actionErrorEndpoint</p>
+                }
             </section>
         }
 
@@ -186,22 +198,36 @@
                 <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Yeni Durum</label>
                     <div class="inline-form-row">
-                        <InputSelect class="form-select" @bind-Value="_statusRequest.Status">
-                            <option value="InProgress">İşlemde</option>
-                            <option value="WaitingForParts">Parça Bekliyor</option>
-                            <option value="Completed">Teslime Hazır</option>
-                            <option value="Delivered">Teslim Edildi</option>
-                            <option value="Cancelled">İptal</option>
+                        <InputSelect class="form-select" @bind-Value="_statusRequest.Status" disabled="@(_isWorking || !HasStatusUpdateOptions(_order.Status))">
+                            @foreach (var option in GetStatusUpdateOptions(_order.Status))
+                            {
+                                <option value="@option.Value">@option.Text</option>
+                            }
                         </InputSelect>
-                        <button type="button" class="app-btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">
+                        <button type="button" class="app-btn-primary" @onclick="UpdateStatusAsync" disabled="@(_isWorking || !HasStatusUpdateOptions(_order.Status))">
                             Kaydet
                         </button>
                     </div>
+                    @if (!HasStatusUpdateOptions(_order.Status))
+                    {
+                        <div class="text-muted small mt-2">Bu servis emri için uygun bir durum geçişi yok.</div>
+                    }
                     <div class="mt-3">
                         <label class="form-label">Açıklama</label>
                         <InputTextArea class="form-control" @bind-Value="_statusRequest.Note" maxlength="500" placeholder="Durum değişikliği ile ilgili kısa not ekleyin..." />
                         <div class="text-muted small mt-1">En fazla 500 karakter.</div>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(_statusUpdateError))
+                    {
+                        <div class="error-state compact mt-3">
+                            <strong>Durum güncellenemedi</strong>
+                            <p>@_statusUpdateError</p>
+                            @if (!string.IsNullOrWhiteSpace(_statusUpdateErrorEndpoint))
+                            {
+                                <p class="small text-muted mt-2">İstek: @_statusUpdateErrorEndpoint</p>
+                            }
+                        </div>
+                    }
                 </div>
             </section>
         </section>
@@ -725,8 +751,12 @@
     private bool _isUploadingAttachment;
     private bool _shouldRefreshAttachmentImages;
     private bool _shouldRefreshPreviewImage;
-    private string? _error;
-    private string? _errorEndpoint;
+    private string? _loadError;
+    private string? _loadErrorEndpoint;
+    private string? _actionError;
+    private string? _actionErrorEndpoint;
+    private string? _statusUpdateError;
+    private string? _statusUpdateErrorEndpoint;
     private string? _actionMessage;
     private ServiceOrderDetailModel? _order;
     private readonly List<ServiceOrderActivityFeedItem> _activityFeed = [];
@@ -790,17 +820,21 @@
         try
         {
             _isLoading = true;
-            _error = null;
-            _errorEndpoint = null;
+            _loadError = null;
+            _loadErrorEndpoint = null;
             if (resetMessages)
             {
                 _actionMessage = null;
+                _actionError = null;
+                _actionErrorEndpoint = null;
+                _statusUpdateError = null;
+                _statusUpdateErrorEndpoint = null;
             }
 
             _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
             if (_order is not null)
             {
-                _statusRequest.Status = _order.Status is "Open" ? "InProgress" : _order.Status;
+                _statusRequest.Status = GetDefaultStatusUpdateValue(_order.Status);
                 await LoadActivityFeedAsync();
                 await LoadStatusHistoryAsync();
                 await LoadAttachmentsAsync();
@@ -813,12 +847,12 @@
         }
         catch (ApiException ex)
         {
-            _error = ex.Message;
-            _errorEndpoint = ex.Endpoint;
+            _loadError = ex.Message;
+            _loadErrorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _loadError = ex.Message;
         }
         finally
         {
@@ -829,10 +863,63 @@
 
     private async Task UpdateStatusAsync()
     {
-        await ExecuteActionAsync(
-            () => ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest),
-            "Servis durumu güncellendi.");
-        _statusRequest.Note = null;
+        if (_order is null)
+        {
+            return;
+        }
+
+        if (!CanUpdateStatusTo(_order.Status, _statusRequest.Status))
+        {
+            _statusUpdateError = GetInvalidStatusTransitionMessage(_order.Status, _statusRequest.Status);
+            _statusUpdateErrorEndpoint = null;
+            _actionMessage = null;
+            return;
+        }
+
+        try
+        {
+            _isWorking = true;
+            _statusUpdateError = null;
+            _statusUpdateErrorEndpoint = null;
+            _actionError = null;
+            _actionErrorEndpoint = null;
+            _actionMessage = null;
+
+            await UpdateStatusWithAllowedStepsAsync();
+            _actionMessage = "Servis durumu güncellendi.";
+            _statusRequest.Note = null;
+            await LoadAsync(resetMessages: false);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (ApiException ex)
+        {
+            _statusUpdateError = GetStatusUpdateErrorMessage(ex);
+            _statusUpdateErrorEndpoint = ex.Endpoint;
+        }
+        catch (Exception ex)
+        {
+            _statusUpdateError = ex.Message;
+        }
+        finally
+        {
+            _isWorking = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task UpdateStatusWithAllowedStepsAsync()
+    {
+        if (_order is { Status: "Open" } && _statusRequest.Status == "Completed")
+        {
+            await ServiceOrdersService.UpdateStatusAsync(
+                Id,
+                new UpdateServiceOrderStatusRequest { Status = "InProgress" });
+        }
+
+        await ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest);
     }
 
     private Task<PublicRecordAccessResponse?> LoadServiceOrderPublicAccessAsync()
@@ -967,8 +1054,8 @@
         {
             _isUploadingAttachment = true;
             _attachmentsError = null;
-            _error = null;
-            _errorEndpoint = null;
+            _actionError = null;
+            _actionErrorEndpoint = null;
             _actionMessage = null;
 
             await ServiceOrdersService.UploadAttachmentAsync(
@@ -991,7 +1078,6 @@
         catch (ApiException ex)
         {
             _attachmentsError = ex.Message;
-            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -1024,7 +1110,6 @@
         catch (ApiException ex)
         {
             _attachmentsError = ex.Message;
-            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -1115,13 +1200,13 @@
     {
         if (string.IsNullOrWhiteSpace(_operationRequest.Description))
         {
-            _error = "İşlem açıklaması zorunludur.";
+            _actionError = "İşlem açıklaması zorunludur.";
             return;
         }
 
         if (_operationRequest.Price < 0)
         {
-            _error = "Tutar geçersiz.";
+            _actionError = "Tutar geçersiz.";
             return;
         }
 
@@ -1144,13 +1229,13 @@
     {
         if (string.IsNullOrWhiteSpace(_partRequest.PartName))
         {
-            _error = "Parça adı zorunludur.";
+            _actionError = "Parça adı zorunludur.";
             return;
         }
 
         if (_partRequest.UnitPrice < 0 || _partRequest.Quantity <= 0)
         {
-            _error = "Tutar geçersiz.";
+            _actionError = "Tutar geçersiz.";
             return;
         }
 
@@ -1175,7 +1260,7 @@
     {
         if (_paymentRequest.Amount <= 0)
         {
-            _error = "Tutar geçersiz.";
+            _actionError = "Tutar geçersiz.";
             return;
         }
 
@@ -1197,8 +1282,10 @@
         try
         {
             _isWorking = true;
-            _error = null;
-            _errorEndpoint = null;
+            _actionError = null;
+            _actionErrorEndpoint = null;
+            _statusUpdateError = null;
+            _statusUpdateErrorEndpoint = null;
             _actionMessage = null;
 
             await action();
@@ -1211,12 +1298,12 @@
         }
         catch (ApiException ex)
         {
-            _error = ex.Message;
-            _errorEndpoint = ex.Endpoint;
+            _actionError = ex.Message;
+            _actionErrorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _actionError = ex.Message;
         }
         finally
         {
@@ -1250,8 +1337,80 @@
         }
         catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
-            _error = "Sayfa gecisi tamamlanamadi. Lutfen tekrar deneyin.";
+            _actionError = "Sayfa geçişi tamamlanamadı. Lütfen tekrar deneyin.";
         }
+    }
+
+    private static IReadOnlyList<StatusTransitionOption> GetStatusUpdateOptions(string status) => status switch
+    {
+        "Open" =>
+        [
+            new("InProgress", "İşlemde"),
+            new("Completed", "Tamamlandı"),
+            new("Cancelled", "İptal")
+        ],
+        "InProgress" =>
+        [
+            new("Completed", "Tamamlandı"),
+            new("WaitingForParts", "Parça Bekliyor"),
+            new("Cancelled", "İptal")
+        ],
+        "WaitingForParts" =>
+        [
+            new("InProgress", "İşlemde"),
+            new("Completed", "Tamamlandı"),
+            new("Cancelled", "İptal")
+        ],
+        "Completed" => [new("Delivered", "Teslim Edildi")],
+        _ => []
+    };
+
+    private static bool HasStatusUpdateOptions(string status)
+        => GetStatusUpdateOptions(status).Count > 0;
+
+    private static bool CanUpdateStatusTo(string currentStatus, string requestedStatus)
+        => GetStatusUpdateOptions(currentStatus).Any(option => option.Value == requestedStatus);
+
+    private static string GetDefaultStatusUpdateValue(string status)
+    {
+        var options = GetStatusUpdateOptions(status);
+        return options.Count > 0 ? options[0].Value : status;
+    }
+
+    private static string GetInvalidStatusTransitionMessage(string currentStatus, string requestedStatus)
+        => requestedStatus == "Delivered" && currentStatus != "Completed"
+            ? "Servis emri teslim edildi olarak işaretlenmeden önce tamamlandı durumunda olmalıdır."
+            : "Seçilen durum geçişi mevcut servis emri için uygun değil.";
+
+    private static string GetStatusUpdateErrorMessage(ApiException exception)
+    {
+        var message = exception.Message;
+        if (message.Contains("Cannot mark as delivered", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("Order must be in Completed state", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Servis emri teslim edildi olarak işaretlenmeden önce tamamlandı durumunda olmalıdır.";
+        }
+
+        if (message.Contains("Cannot complete order", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Servis emri tamamlandı olarak işaretlenmeden önce işlemde veya parça bekliyor durumunda olmalıdır.";
+        }
+
+        if (message.Contains("already selected", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Servis emri zaten seçilen durumda.";
+        }
+
+        if (exception.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity)
+        {
+            return string.IsNullOrWhiteSpace(message)
+                ? "Durum güncellenemedi. Lütfen uygun bir durum seçip tekrar deneyin."
+                : message;
+        }
+
+        return string.IsNullOrWhiteSpace(message)
+            ? "Durum güncellenemedi. Lütfen tekrar deneyin."
+            : message;
     }
 
     private static string GetStatusBadgeClass(string status) => status switch
@@ -1348,6 +1507,8 @@
 
     private bool CanRemovePart(ServiceOrderPart part)
         => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - part.TotalPrice);
+
+    private sealed record StatusTransitionOption(string Value, string Text);
 
     private sealed record AttachmentTypeOption(string Value, string Text);
 }
