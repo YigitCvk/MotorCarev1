@@ -98,6 +98,28 @@ public class User : AggregateRoot, ITenantEntity
         PasswordHash = passwordHash;
     }
 
+    public void AcceptInvite(string fullName, string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) throw new DomainException("Ad soyad gereklidir.");
+        if (string.IsNullOrWhiteSpace(passwordHash)) throw new DomainException("Password hash is required.");
+        FullName = fullName.Trim();
+        PasswordHash = passwordHash;
+    }
+
+    public void UpdatePendingInvite(string? fullName, UserRole role)
+    {
+        if (IsEmailVerified)
+        {
+            throw new DomainException("Doğrulanmış kullanıcı davet bilgisi güncellenemez.");
+        }
+
+        Role = role;
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            FullName = fullName.Trim();
+        }
+    }
+
     public void SetTwoFactor(bool enabled, TwoFactorProvider? provider, string? totpSecretEncrypted = null)
     {
         if (enabled && provider is null)

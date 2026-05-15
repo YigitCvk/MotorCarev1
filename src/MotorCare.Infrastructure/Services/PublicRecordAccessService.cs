@@ -22,14 +22,6 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         _context = context;
     }
 
-    private sealed record ServiceRecordPreviewProjection(
-        string OrderNo,
-        DateTimeOffset OpenedAt,
-        Guid VehicleId,
-        string? WorkDescription,
-        ServiceOrderStatus Status,
-        List<string> OperationDescriptions);
-
     public Task<PublicRecordAccessDto?> GetOrCreateForServiceOrderAsync(
         Guid serviceOrderId,
         string tenantId,
@@ -140,7 +132,7 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PublicServiceRecordPreviewDto?> GetServiceRecordPreviewAsync(
+    public async Task<PublicServiceRecordDto?> GetServiceRecordAsync(
         string slug,
         CancellationToken cancellationToken = default)
     {
@@ -154,15 +146,13 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
             .IgnoreQueryFilters()
             .AsSplitQuery()
             .AsNoTracking()
-            .Where(x => x.Id == access.RecordId && x.TenantId == access.TenantId)
-            .Select(x => new ServiceRecordPreviewProjection(
-                x.OrderNo,
-                x.OpenedAt,
-                x.VehicleId,
-                x.WorkDescription,
-                x.Status,
-                x.Operations.Select(operation => operation.Description).ToList()))
-            .FirstOrDefaultAsync(cancellationToken);
+            .Include(x => x.Operations)
+            .Include(x => x.Parts)
+            .Include(x => x.Consumables)
+            .Include(x => x.Payments)
+            .FirstOrDefaultAsync(
+                x => x.Id == access.RecordId && x.TenantId == access.TenantId,
+                cancellationToken);
 
         if (order is null)
         {
@@ -176,27 +166,82 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
                 x => x.Id == order.VehicleId && x.TenantId == access.TenantId,
                 cancellationToken);
 
+        var customerName = await _context.Customers
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(x => x.Id == order.CustomerId && x.TenantId == access.TenantId)
+            .Select(x => x.FullName)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var tenantName = await _context.Tenants
             .AsNoTracking()
             .Where(x => x.Identifier == access.TenantId && x.IsActive)
             .Select(x => x.Name)
             .FirstOrDefaultAsync(cancellationToken);
 
-        await RegisterAccessAsync(access, cancellationToken);
+        var payments = order.Payments
+            .OrderBy(x => x.PaymentDate)
+            .ThenBy(x => x.CreatedAt)
+            .ThenBy(x => x.Id)
+            .ToList();
 
-        return new PublicServiceRecordPreviewDto(
+        return new PublicServiceRecordDto(
             order.OrderNo,
             order.OpenedAt,
+            PublicDataMasker.MaskDisplayName(customerName),
             vehicle?.Plate.OriginalValue,
             vehicle?.Brand,
             vehicle?.Model,
-            BuildServiceSummary(order.WorkDescription, order.OperationDescriptions),
+            order.VehicleKm,
+            order.WorkDescription,
+            BuildServiceSummary(order.WorkDescription, order.Operations.Select(x => x.Description)),
             order.Status.ToString(),
+            order.ClosedAt,
+            order.Operations
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .Select(x => new PublicServiceRecordOperationDto(x.Description))
+                .ToList(),
+            order.Parts
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .Select(x => new PublicServiceRecordPartDto(x.PartName, x.PartNumber, x.Quantity))
+                .ToList(),
+            order.Consumables
+                .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
+                .Select(x => new PublicServiceRecordConsumableDto(
+                    x.Category,
+                    x.Brand,
+                    x.ProductName,
+                    x.SubCategory,
+                    x.Specification,
+                    x.Notes))
+                .ToList(),
+            new PublicServiceRecordTotalsDto(
+                order.LaborTotal,
+                order.PartsTotal,
+                order.DiscountTotal,
+                order.GrandTotal,
+                order.PaidTotal,
+                order.RemainingTotal),
+            new PublicServiceRecordPaymentSummaryDto(
+                payments.Count,
+                order.PaidTotal,
+                payments.Where(x => x.Method == PaymentMethod.Cash).Sum(x => x.Amount),
+                payments.Where(x => x.Method == PaymentMethod.CreditCard).Sum(x => x.Amount),
+                payments.Where(x => x.Method == PaymentMethod.BankTransfer).Sum(x => x.Amount)),
+            payments
+                .Select(x => new PublicServiceRecordPaymentDto(
+                    x.Amount,
+                    x.Method.ToString(),
+                    x.PaymentDate))
+                .ToList(),
             tenantName,
             VerificationText);
     }
 
-    public async Task<PublicInspectionReportPreviewDto?> GetInspectionReportPreviewAsync(
+    public async Task<PublicInspectionReportDto?> GetInspectionReportAsync(
         string slug,
         CancellationToken cancellationToken = default)
     {
@@ -228,19 +273,32 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         var criticalCount = inspection.Items.Count(x =>
             x.Result is MotorcycleInspectionResult.Damaged or MotorcycleInspectionResult.Changed);
 
-        await RegisterAccessAsync(access, cancellationToken);
-
-        return new PublicInspectionReportPreviewDto(
+        return new PublicInspectionReportDto(
             inspection.InspectionNo,
             inspection.CompletedAt ?? inspection.CreatedAt,
             inspection.Plate,
             inspection.Brand,
             inspection.Model,
+            inspection.Year,
+            inspection.Mileage,
             MotorcycleInspectionTextMapper.ToText(inspection.PackageType),
             MotorcycleInspectionTextMapper.ToText(inspection.Status),
             inspection.Status == MotorcycleInspectionStatus.Completed,
             criticalCount,
             BuildInspectionSummary(inspection.Status, criticalCount),
+            inspection.GeneralNotes,
+            inspection.TestRideNotes,
+            inspection.CosmeticNotes,
+            inspection.Items
+                .OrderBy(x => x.Category)
+                .ThenBy(x => x.SortOrder)
+                .Select(x => new PublicInspectionReportItemDto(
+                    MotorcycleInspectionTextMapper.ToText(x.Category),
+                    x.Name,
+                    MotorcycleInspectionTextMapper.ToText(x.Result),
+                    x.Notes,
+                    x.SortOrder))
+                .ToList(),
             tenantName,
             VerificationText);
     }
@@ -360,17 +418,12 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
         }
 
         return await _context.PublicRecordAccesses
+            .AsNoTracking()
             .FirstOrDefaultAsync(
                 x => x.Slug == normalizedSlug &&
                      x.IsActive &&
                      x.RecordType == expectedRecordType,
                 cancellationToken);
-    }
-
-    private async Task RegisterAccessAsync(PublicRecordAccess access, CancellationToken cancellationToken)
-    {
-        access.RegisterAccess(DateTimeOffset.UtcNow);
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private static string GenerateSlug()

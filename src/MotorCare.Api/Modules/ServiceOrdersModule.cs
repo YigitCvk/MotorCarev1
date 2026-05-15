@@ -135,7 +135,7 @@ public sealed class ServiceOrdersModule : ICarterModule
             return access is null ? Results.NotFound() : Results.Ok(access);
         })
         .WithName("EnableServiceOrderPublicAccess")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderWrite)
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -157,7 +157,7 @@ public sealed class ServiceOrdersModule : ICarterModule
             return Results.NoContent();
         })
         .WithName("DisableServiceOrderPublicAccess")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -361,7 +361,7 @@ public sealed class ServiceOrdersModule : ICarterModule
 
         group.MapPost("/{id:guid}/parts", async (Guid id, AddPartToOrderRequest request, IMediator mediator, CancellationToken ct) =>
         {
-            await mediator.Send(new AddPartToOrderCommand(id, request.PartName, request.PartNumber, request.UnitPrice, request.Quantity), ct);
+            await mediator.Send(new AddPartToOrderCommand(id, request.PartName, request.PartNumber, request.UnitPrice, request.Quantity, request.InventoryItemId), ct);
             return Results.NoContent();
         })
         .WithName("AddPartToOrder")
@@ -424,7 +424,7 @@ public sealed class ServiceOrdersModule : ICarterModule
 
     public sealed record AddOperationToOrderRequest(string Description, decimal Price);
 
-    public sealed record AddPartToOrderRequest(string PartName, string? PartNumber, decimal UnitPrice, int Quantity);
+    public sealed record AddPartToOrderRequest(string PartName, string? PartNumber, decimal UnitPrice, int Quantity, Guid? InventoryItemId = null);
 
     public sealed record AddPaymentToOrderRequest(decimal Amount, PaymentMethod Method, DateTimeOffset? PaymentDate);
 

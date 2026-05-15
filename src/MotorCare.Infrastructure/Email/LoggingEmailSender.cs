@@ -22,14 +22,17 @@ public sealed class LoggingEmailSender : IEmailSender
         _environment = environment;
     }
 
-    public Task SendEmailVerificationAsync(string toEmail, string displayName, string verificationUrl, CancellationToken cancellationToken)
-        => SendAsync(EmailTemplateFactory.CreateVerificationEmail(toEmail, displayName, verificationUrl), cancellationToken);
+    public Task SendEmailVerificationAsync(string toEmail, string displayName, string code, DateTime expiresAtUtc, CancellationToken cancellationToken)
+        => SendAsync(EmailTemplateFactory.CreateVerificationEmail(toEmail, displayName, code, expiresAtUtc), cancellationToken);
 
     public Task SendPasswordResetCodeAsync(string toEmail, string displayName, string code, DateTime expiresAtUtc, CancellationToken cancellationToken)
         => SendAsync(EmailTemplateFactory.CreatePasswordResetCodeEmail(toEmail, displayName, code, expiresAtUtc), cancellationToken);
 
     public Task SendTwoFactorCodeAsync(string toEmail, string displayName, string code, DateTime expiresAtUtc, CancellationToken cancellationToken)
         => SendAsync(EmailTemplateFactory.CreateTwoFactorEmail(toEmail, displayName, code, expiresAtUtc), cancellationToken);
+
+    public Task SendUserInvitationAsync(string toEmail, string tenantIdentifier, string inviteUrl, DateTime expiresAtUtc, CancellationToken cancellationToken)
+        => SendAsync(EmailTemplateFactory.CreateInvitationEmail(toEmail, tenantIdentifier, inviteUrl, expiresAtUtc), cancellationToken);
 
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {

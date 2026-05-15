@@ -7,6 +7,8 @@ namespace MotorCare.Application.Auth.Commands.VerifyEmail;
 
 public sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, AuthActionMessageDto>
 {
+    private const string InvalidCodeMessage = "Doğrulama kodu geçersiz veya süresi dolmuş.";
+
     private readonly IUserRepository _userRepository;
     private readonly ISecurityTokenFactory _securityTokenFactory;
 
@@ -20,21 +22,37 @@ public sealed class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailComma
 
     public async Task<AuthActionMessageDto> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
     {
-        var tokenHash = _securityTokenFactory.Hash(request.Token);
-        var token = await _userRepository.GetActiveSecurityTokenByHashAsync(tokenHash, UserSecurityTokenPurpose.EmailVerification, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Doğrulama bağlantısı geçersiz veya süresi dolmuş.");
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedTenant = request.TenantIdentifier.Trim().ToLowerInvariant();
 
-        var user = await _userRepository.GetByIdAsync(token.UserId, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Doğrulama bağlantısı geçersiz veya süresi dolmuş.");
+        // Load user with security tokens so RevokeSecurityTokens can traverse the collection.
+        var user = await _userRepository.GetByEmailWithSecurityTokensAsync(
+            normalizedTenant, normalizedEmail, cancellationToken)
+            ?? throw new UnauthorizedAccessException(InvalidCodeMessage);
 
-        if (!string.Equals(user.Email, request.Email.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase))
+        if (user.IsEmailVerified)
+            return new AuthActionMessageDto("E-posta adresiniz zaten doğrulanmış.");
+
+        var now = DateTimeOffset.UtcNow;
+        var codeHash = _securityTokenFactory.Hash(request.Code);
+
+        // Get the user's own active token — avoids cross-user hash collision for 6-digit codes.
+        var latest = await _userRepository.GetLatestActiveSecurityTokenAsync(
+            user.Id, UserSecurityTokenPurpose.EmailVerification, cancellationToken);
+
+        if (latest is null)
+            throw new UnauthorizedAccessException(InvalidCodeMessage);
+
+        if (!string.Equals(latest.TokenHash, codeHash, StringComparison.Ordinal))
         {
-            throw new UnauthorizedAccessException("Doğrulama bağlantısı geçersiz veya süresi dolmuş.");
+            latest.RegisterFailedAttempt(now);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+            throw new UnauthorizedAccessException(InvalidCodeMessage);
         }
 
         user.MarkEmailVerified();
-        user.ConsumeSecurityToken(tokenHash, DateTimeOffset.UtcNow);
-        user.RevokeSecurityTokens(UserSecurityTokenPurpose.EmailVerification, DateTimeOffset.UtcNow);
+        latest.Consume(now);
+        user.RevokeSecurityTokens(UserSecurityTokenPurpose.EmailVerification, now);
 
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync(cancellationToken);

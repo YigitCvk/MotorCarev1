@@ -42,6 +42,12 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
             throw new DomainException("Servis emri zaten seçilen durumda.");
         }
 
+        if (string.Equals(_currentUserProvider.GetRole(), UserRole.Technician.ToString(), StringComparison.Ordinal) &&
+            request.Status is ServiceOrderStatus.Delivered or ServiceOrderStatus.Cancelled)
+        {
+            throw new UnauthorizedAccessException("Teknisyen rolü bu servis durumuna geçiş yapamaz.");
+        }
+
         switch (request.Status)
         {
             case ServiceOrderStatus.InProgress:

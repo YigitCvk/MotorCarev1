@@ -97,21 +97,21 @@ public sealed class PublicRecordsService
             cancellationToken);
     }
 
-    public Task<PublicServiceRecordPreview?> GetServiceRecordPreviewAsync(
+    public Task<PublicServiceRecord?> GetServiceRecordAsync(
         string slug,
         CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<PublicServiceRecordPreview>(
+        return _apiClient.GetAsync<PublicServiceRecord>(
             $"/api/public/service-record/{Uri.EscapeDataString(slug)}",
             authorized: false,
             cancellationToken);
     }
 
-    public Task<PublicInspectionReportPreview?> GetInspectionReportPreviewAsync(
+    public Task<PublicInspectionReport?> GetInspectionReportAsync(
         string slug,
         CancellationToken cancellationToken = default)
     {
-        return _apiClient.GetAsync<PublicInspectionReportPreview>(
+        return _apiClient.GetAsync<PublicInspectionReport>(
             $"/api/public/inspection-report/{Uri.EscapeDataString(slug)}",
             authorized: false,
             cancellationToken);

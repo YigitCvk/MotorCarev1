@@ -16,6 +16,12 @@ public sealed class AuthLinkBuilder : IAuthLinkBuilder
     public string BuildEmailVerificationUrl(string email, string token)
         => BuildUrl("/verify-email", email, token);
 
+    public string BuildInviteUrl(string token)
+    {
+        var baseUrl = (_options.AppBaseUrl ?? string.Empty).TrimEnd('/');
+        return $"{baseUrl}/accept-invite?token={HttpUtility.UrlEncode(token)}";
+    }
+
     private string BuildUrl(string path, string email, string token)
     {
         var baseUrl = (_options.AppBaseUrl ?? string.Empty).TrimEnd('/');

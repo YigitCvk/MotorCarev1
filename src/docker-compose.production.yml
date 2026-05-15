@@ -50,8 +50,8 @@ services:
       Email__FromName: ${Email__FromName:-GarajPass}
       Email__SmtpHost: ${Email__SmtpHost:-}
       Email__SmtpPort: ${Email__SmtpPort:-587}
-      Email__SmtpUsername: ${Email__SmtpUsername:-}
-      Email__SmtpPassword: ${Email__SmtpPassword:-}
+      Email__SmtpUsername: ${Email__SmtpUsername:?Email__SmtpUsername is required}
+      Email__SmtpPassword: ${Email__SmtpPassword:?Email__SmtpPassword is required}
       Email__EnableSsl: ${Email__EnableSsl:-true}
       Email__UseDefaultCredentials: ${Email__UseDefaultCredentials:-false}
       Email__AppBaseUrl: ${Email__AppBaseUrl:-https://garajpass.com}

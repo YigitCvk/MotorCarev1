@@ -7,7 +7,8 @@ public interface IEmailSender
     Task SendEmailVerificationAsync(
         string toEmail,
         string displayName,
-        string verificationUrl,
+        string code,
+        DateTime expiresAtUtc,
         CancellationToken cancellationToken);
 
     Task SendPasswordResetCodeAsync(
@@ -21,6 +22,13 @@ public interface IEmailSender
         string toEmail,
         string displayName,
         string code,
+        DateTime expiresAtUtc,
+        CancellationToken cancellationToken);
+
+    Task SendUserInvitationAsync(
+        string toEmail,
+        string tenantIdentifier,
+        string inviteUrl,
         DateTime expiresAtUtc,
         CancellationToken cancellationToken);
 

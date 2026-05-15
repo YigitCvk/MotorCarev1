@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @using MotorCare.Application.Common
+@using MotorCare.App.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
@@ -54,26 +55,29 @@
             </div>
 
             <div class="app-topbar-actions" @onfocusout="HandleCreateMenuFocusOutAsync">
-                <div class="app-topbar-menu-wrap">
-                    <button type="button" class="app-btn-primary" @onclick="ToggleCreateMenu">
-                        + Yeni
-                    </button>
+                @if (CreateActions.Count > 0)
+                {
+                    <div class="app-topbar-menu-wrap">
+                        <button type="button" class="app-btn-primary" @onclick="ToggleCreateMenu">
+                            + Yeni
+                        </button>
 
-                    @if (_isCreateMenuOpen)
-                    {
-                        <div class="app-topbar-panel app-create-menu">
-                            @foreach (var createAction in CreateActions)
-                            {
-                                <button type="button"
-                                        class="app-menu-link"
-                                        @onclick="@(() => NavigateTo(createAction.Href))">
-                                    <span class="app-menu-link-title">@createAction.Title</span>
-                                    <span class="app-menu-link-copy">@createAction.Description</span>
-                                </button>
-                            }
-                        </div>
-                    }
-                </div>
+                        @if (_isCreateMenuOpen)
+                        {
+                            <div class="app-topbar-panel app-create-menu">
+                                @foreach (var createAction in CreateActions)
+                                {
+                                    <button type="button"
+                                            class="app-menu-link"
+                                            @onclick="@(() => NavigateTo(createAction.Href))">
+                                        <span class="app-menu-link-title">@createAction.Title</span>
+                                        <span class="app-menu-link-copy">@createAction.Description</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
 
                 @if (_currentUser is not null)
                 {
@@ -101,18 +105,24 @@
 </div>
 
 <nav class="mobile-bottom-nav">
-    <NavLink href="/dashboard" Match="NavLinkMatch.Prefix">
-        <span class="nav-icon">DB</span>
-        <span>Dashboard</span>
-    </NavLink>
+    @if (AppRoleAccess.CanReadDashboard(_currentUser?.Role))
+    {
+        <NavLink href="/dashboard" Match="NavLinkMatch.Prefix">
+            <span class="nav-icon">DB</span>
+            <span>Dashboard</span>
+        </NavLink>
+    }
     <NavLink href="/appointments" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">RD</span>
         <span>Randevu</span>
     </NavLink>
-    <NavLink href="/service-orders" Match="NavLinkMatch.Prefix">
-        <span class="nav-icon">IS</span>
-        <span>İşler</span>
-    </NavLink>
+    @if (AppRoleAccess.CanReadServiceOrders(_currentUser?.Role))
+    {
+        <NavLink href="/service-orders" Match="NavLinkMatch.Prefix">
+            <span class="nav-icon">IS</span>
+            <span>İşler</span>
+        </NavLink>
+    }
     <NavLink href="/vehicles" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">AR</span>
         <span>Araçlar</span>
@@ -156,14 +166,33 @@
                     $"/appointments?q={Uri.EscapeDataString(_searchQuery.Trim())}")
             };
 
-    private static readonly IReadOnlyList<QuickActionLink> CreateActions =
-    [
-        new("Yeni Randevu", "Yeni kabul ve randevu kaydı oluştur", "/appointments/create"),
-        new("Yeni Servis", "Yeni servis emri aç", "/service-orders/create"),
-        new("Yeni Müşteri", "Yeni müşteri kartı oluştur", "/customers/create"),
-        new("Yeni Araç", "Yeni araç veya motosiklet ekle", "/vehicles/create"),
-        new("Yeni Hizmet", "Hizmet kataloğuna yeni kalem ekle", "/services/create")
-    ];
+    private IReadOnlyList<QuickActionLink> CreateActions
+    {
+        get
+        {
+            var role = _currentUser?.Role;
+            var actions = new List<QuickActionLink>();
+
+            if (AppRoleAccess.CanWriteServiceOrders(role))
+            {
+                actions.Add(new("Yeni Randevu", "Yeni kabul ve randevu kaydı oluştur", "/appointments/create"));
+                actions.Add(new("Yeni Servis", "Yeni servis emri aç", "/service-orders/create"));
+            }
+
+            if (AppRoleAccess.CanWriteCustomers(role))
+            {
+                actions.Add(new("Yeni Müşteri", "Yeni müşteri kartı oluştur", "/customers/create"));
+                actions.Add(new("Yeni Araç", "Yeni araç veya motosiklet ekle", "/vehicles/create"));
+            }
+
+            if (AppRoleAccess.CanWriteCustomers(role))
+            {
+                actions.Add(new("Yeni Hizmet", "Hizmet kataloğuna yeni kalem ekle", "/services/create"));
+            }
+
+            return actions;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

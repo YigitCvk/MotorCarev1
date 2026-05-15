@@ -34,7 +34,7 @@ public sealed class VehiclesModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetVehicleByPlate")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<VehicleDto>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);
@@ -45,7 +45,7 @@ public sealed class VehiclesModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetVehicleServiceHistory")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<VehicleServiceHistoryDto>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status404NotFound);

@@ -6,7 +6,8 @@ public sealed class VerifyEmailCommandValidator : AbstractValidator<VerifyEmailC
 {
     public VerifyEmailCommandValidator()
     {
+        RuleFor(x => x.TenantIdentifier).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Token).NotEmpty();
+        RuleFor(x => x.Code).NotEmpty().Matches("^[0-9]{6}$").WithMessage("Doğrulama kodu 6 haneli rakamdan oluşmalıdır.");
     }
 }

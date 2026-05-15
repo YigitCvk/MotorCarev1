@@ -17,7 +17,7 @@ public interface IPublicRecordAccessService
 
     Task DisableAsync(PublicRecordType recordType, Guid recordId, string tenantId, CancellationToken cancellationToken = default);
 
-    Task<PublicServiceRecordPreviewDto?> GetServiceRecordPreviewAsync(string slug, CancellationToken cancellationToken = default);
+    Task<PublicServiceRecordDto?> GetServiceRecordAsync(string slug, CancellationToken cancellationToken = default);
 
-    Task<PublicInspectionReportPreviewDto?> GetInspectionReportPreviewAsync(string slug, CancellationToken cancellationToken = default);
+    Task<PublicInspectionReportDto?> GetInspectionReportAsync(string slug, CancellationToken cancellationToken = default);
 }

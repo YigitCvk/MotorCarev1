@@ -8,6 +8,8 @@ using MotorCare.Domain.Users;
 
 namespace MotorCare.Application.Users.Commands.CreateTenantUser;
 
+// Superseded by InviteUserCommand. Retained for internal/migration use only.
+// This endpoint will be removed after pilot validation confirms invite flow is stable.
 public sealed class CreateTenantUserCommandHandler : IRequestHandler<CreateTenantUserCommand, Guid>
 {
     private readonly IUserRepository _userRepository;

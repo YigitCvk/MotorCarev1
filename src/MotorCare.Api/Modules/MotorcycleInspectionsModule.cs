@@ -24,8 +24,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
     {
         var group = app.MapGroup("/api/inspections")
             .WithTags("Inspections")
-            .WithOpenApi()
-            .RequireAuthorization(AuthorizationPolicies.CustomerOperations);
+            .WithOpenApi();
 
         group.MapGet("/", async (
             string? q,
@@ -55,6 +54,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
 
             return Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionRead)
         .Produces<PagedResult<MotorcycleInspectionListItemDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -64,6 +64,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             var result = await mediator.Send(new GetMotorcycleInspectionByIdQuery(id), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionRead)
         .Produces<MotorcycleInspectionDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -84,6 +85,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             var access = await publicRecordAccessService.GetOrCreateForInspectionAsync(id, tenantId, ct);
             return access is null ? Results.NotFound() : Results.Ok(access);
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -104,6 +106,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             var access = await publicRecordAccessService.GetForRecordAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
             return access is null ? Results.NotFound() : Results.Ok(access);
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionRead)
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -124,6 +127,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             var access = await publicRecordAccessService.EnableAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
             return access is null ? Results.NotFound() : Results.Ok(access);
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces<PublicRecordAccessDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -144,6 +148,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             await publicRecordAccessService.DisableAsync(PublicRecordType.MotorcycleInspection, id, tenantId, ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -185,6 +190,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
                 id,
                 inspection?.InspectionNo ?? string.Empty));
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces<CreateMotorcycleInspectionResponse>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -215,6 +221,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
 
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -225,6 +232,7 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
             await mediator.Send(new UpdateMotorcycleInspectionItemCommand(id, itemId, request.Result, request.Notes), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -234,13 +242,15 @@ public sealed class MotorcycleInspectionsModule : ICarterModule
         {
             await mediator.Send(new CompleteMotorcycleInspectionCommand(id), ct);
             return Results.NoContent();
-        });
+        })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite);
 
         group.MapPut("/{id:guid}/cancel", async (Guid id, IMediator mediator, CancellationToken ct) =>
         {
             await mediator.Send(new CancelMotorcycleInspectionCommand(id), ct);
             return Results.NoContent();
-        });
+        })
+        .RequireAuthorization(AuthorizationPolicies.InspectionWrite);
     }
 
     public sealed record CreateMotorcycleInspectionRequest(

@@ -93,6 +93,33 @@
                 window.setTimeout(function () {
                     URL.revokeObjectURL(objectUrl);
                 }, 60000);
+            },
+            copyText: async function (value) {
+                if (!value) {
+                    return false;
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                        await navigator.clipboard.writeText(value);
+                        return true;
+                    } catch (error) {
+                    }
+                }
+
+                var textArea = document.createElement("textarea");
+                textArea.value = value;
+                textArea.setAttribute("readonly", "");
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.select();
+
+                try {
+                    return document.execCommand("copy");
+                } finally {
+                    textArea.remove();
+                }
             }
         };
     </script>

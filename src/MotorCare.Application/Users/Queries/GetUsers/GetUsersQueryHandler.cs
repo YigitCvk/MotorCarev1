@@ -53,6 +53,9 @@ public sealed class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, IReadO
         UserRole.Receptionist => "Danışman",
         UserRole.Technician => "Teknisyen",
         UserRole.Manager => "Müdür",
+        UserRole.Inspector => "Ekspertiz",
+        UserRole.Accountant => "Muhasebe",
+        UserRole.ReadOnly => "Sadece Okuma",
         _ => role.ToString()
     };
 }

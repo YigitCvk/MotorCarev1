@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<ISecurityTokenFactory, SecurityTokenFactory>();
         services.AddScoped<IAuthLinkBuilder, AuthLinkBuilder>();
         services.AddScoped<IPublicRecordAccessService, PublicRecordAccessService>();
+        services.AddScoped<IDashboardReadService, DashboardReadService>();
         services.AddScoped<SmtpEmailSender>();
         services.AddScoped<LoggingEmailSender>();
         services.AddScoped<IEmailSender>(sp =>

@@ -19,8 +19,7 @@ public sealed class InventoryModule : ICarterModule
     {
         var group = app.MapGroup("/api/inventory")
             .WithTags("Inventory")
-            .WithOpenApi()
-            .RequireAuthorization(AuthorizationPolicies.CustomerOperations);
+            .WithOpenApi();
 
         group.MapGet("/", async (
             string? q,
@@ -38,6 +37,7 @@ public sealed class InventoryModule : ICarterModule
 
             return Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.InventoryRead)
         .Produces<PagedResult<InventoryItemDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -47,6 +47,7 @@ public sealed class InventoryModule : ICarterModule
             var result = await mediator.Send(new GetInventoryItemByIdQuery(id), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.InventoryRead)
         .Produces<InventoryItemDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -70,6 +71,7 @@ public sealed class InventoryModule : ICarterModule
 
             return Results.Created($"/api/inventory/{id}", id);
         })
+        .RequireAuthorization(AuthorizationPolicies.InventoryWrite)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -94,6 +96,7 @@ public sealed class InventoryModule : ICarterModule
 
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.InventoryWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status409Conflict)
@@ -104,19 +107,22 @@ public sealed class InventoryModule : ICarterModule
         {
             await mediator.Send(new ActivateInventoryItemCommand(id), ct);
             return Results.NoContent();
-        });
+        })
+        .RequireAuthorization(AuthorizationPolicies.InventoryWrite);
 
         group.MapPut("/{id:guid}/deactivate", async (Guid id, IMediator mediator, CancellationToken ct) =>
         {
             await mediator.Send(new DeactivateInventoryItemCommand(id), ct);
             return Results.NoContent();
-        });
+        })
+        .RequireAuthorization(AuthorizationPolicies.InventoryWrite);
 
         group.MapPost("/{id:guid}/adjust-stock", async (Guid id, AdjustInventoryStockRequest request, IMediator mediator, CancellationToken ct) =>
         {
             await mediator.Send(new AdjustInventoryStockCommand(id, request.QuantityDelta, request.Reason), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.InventoryWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)

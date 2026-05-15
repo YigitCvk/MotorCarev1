@@ -3,8 +3,10 @@ using MediatR;
 using MotorCare.Api.Authorization;
 using MotorCare.Application.Users.Commands.CreateTenantUser;
 using MotorCare.Application.Users.Commands.DeactivateUser;
+using MotorCare.Application.Users.Commands.InviteUser;
 using MotorCare.Application.Users.Commands.UpdateUserRole;
 using MotorCare.Application.Users.Queries.GetUsers;
+using MotorCare.Application.Users.Queries.ValidateInvitation;
 using MotorCare.Domain.Enums;
 
 namespace MotorCare.Api.Modules;
@@ -23,7 +25,7 @@ public sealed class UsersModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("GetUsers")
-        .RequireAuthorization(AuthorizationPolicies.TenantManagement)
+        .RequireAuthorization(AuthorizationPolicies.UserManagement)
         .Produces<IReadOnlyList<UserDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden);
 
@@ -39,11 +41,33 @@ public sealed class UsersModule : ICarterModule
             return Results.Created($"/api/users/{id}", id);
         })
         .WithName("CreateUser")
-        .RequireAuthorization(AuthorizationPolicies.TenantManagement)
+        .WithDescription("Deprecated: use POST /api/users/invite instead. Retained for internal migration only.")
+        .RequireAuthorization(AuthorizationPolicies.UserManagement)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/invite", async (InviteUserRequest request, IMediator mediator, CancellationToken ct) =>
+        {
+            await mediator.Send(new InviteUserCommand(request.Email, request.Role, request.FullName), ct);
+            return Results.NoContent();
+        })
+        .WithName("InviteUser")
+        .RequireAuthorization(AuthorizationPolicies.UserManagement)
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapGet("/invitations/{token}/validate", async (string token, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new ValidateInvitationQuery(token), ct);
+            return result is null ? Results.NotFound() : Results.Ok(result);
+        })
+        .WithName("ValidateUserInvitation")
+        .Produces<InvitationValidationDto>()
+        .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPut("/{id:guid}/role", async (Guid id, UpdateUserRoleRequest request, IMediator mediator, CancellationToken ct) =>
         {
@@ -51,7 +75,7 @@ public sealed class UsersModule : ICarterModule
             return Results.NoContent();
         })
         .WithName("UpdateUserRole")
-        .RequireAuthorization(AuthorizationPolicies.TenantManagement)
+        .RequireAuthorization(AuthorizationPolicies.UserManagement)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -63,7 +87,7 @@ public sealed class UsersModule : ICarterModule
             return Results.NoContent();
         })
         .WithName("DeactivateUser")
-        .RequireAuthorization(AuthorizationPolicies.TenantManagement)
+        .RequireAuthorization(AuthorizationPolicies.UserManagement)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -71,5 +95,6 @@ public sealed class UsersModule : ICarterModule
     }
 
     public sealed record CreateUserRequest(string FullName, string Email, string Password, UserRole Role);
+    public sealed record InviteUserRequest(string Email, UserRole Role, string? FullName);
     public sealed record UpdateUserRoleRequest(UserRole Role);
 }

@@ -7,5 +7,6 @@ public enum UserSecurityTokenPurpose
     TwoFactorEmailOtp = 3,
     TwoFactorChallenge = 4,
     TwoFactorEnableEmailOtp = 5,
-    TwoFactorDisableEmailOtp = 6
+    TwoFactorDisableEmailOtp = 6,
+    UserInvitation = 7
 }

@@ -6,6 +6,15 @@
 .codex-temp/
 .tmpapi/
 .tmpobj/
+.env
+.env.*
+deploy/portainer/*.env
+backups/
+**/backups/
+*.dump
+*.dump.sha256
+*.backup
+*.sql.gz
 publish-fix/
 publish-ssl/
 .git/

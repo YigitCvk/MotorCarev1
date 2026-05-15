@@ -6,5 +6,8 @@ public enum UserRole
     Admin = 2,
     Receptionist = 3,
     Technician = 4,
-    Manager = 5
+    Manager = 5,
+    Inspector = 6,
+    Accountant = 7,
+    ReadOnly = 8
 }

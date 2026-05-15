@@ -14,6 +14,7 @@ using MotorCare.Application.Auth.Commands.ResendTwoFactorEmail;
 using MotorCare.Application.Auth.Commands.ResetPassword;
 using MotorCare.Application.Auth.Commands.SendDisableTwoFactorEmailCode;
 using MotorCare.Application.Auth.Commands.SendEnableTwoFactorEmailCode;
+using MotorCare.Application.Auth.Commands.AcceptInvite;
 using MotorCare.Application.Auth.Commands.VerifyEmail;
 using MotorCare.Application.Auth.Commands.VerifyTwoFactorEmail;
 using MotorCare.Application.Auth.Queries.GetCurrentUser;
@@ -89,12 +90,32 @@ public sealed class AuthModule : ICarterModule
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
 
+        group.MapPost("/verify-email-code", async (VerifyEmailCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("VerifyEmailCode")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
         group.MapPost("/resend-email-verification", async (ResendEmailVerificationCommand command, IMediator mediator, CancellationToken ct) =>
         {
             var result = await mediator.Send(command, ct);
             return Results.Ok(result);
         })
         .WithName("ResendEmailVerification")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/resend-email-verification-code", async (ResendEmailVerificationCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("ResendEmailVerificationCode")
         .Produces<AuthActionMessageDto>()
         .ProducesProblem(StatusCodes.Status401Unauthorized)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -193,5 +214,15 @@ public sealed class AuthModule : ICarterModule
         .RequireAuthorization()
         .Produces<CurrentUserDto>()
         .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        group.MapPost("/accept-invite", async (AcceptInviteCommand command, IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(command, ct);
+            return Results.Ok(result);
+        })
+        .WithName("AcceptInvite")
+        .Produces<AuthActionMessageDto>()
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
     }
 }

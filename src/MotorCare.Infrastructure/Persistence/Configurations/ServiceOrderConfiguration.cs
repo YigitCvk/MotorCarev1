@@ -55,6 +55,7 @@ public class ServiceOrderConfiguration : IEntityTypeConfiguration<ServiceOrder>
             pb.Property(pi => pi.PartName).IsRequired().HasMaxLength(200);
             pb.Property(pi => pi.PartNumber).HasMaxLength(100);
             pb.Property(pi => pi.UnitPrice).HasPrecision(18, 2);
+            pb.Property(pi => pi.InventoryItemId);
             // TotalPrice is a computed property — do not map to database
             pb.Ignore(pi => pi.TotalPrice);
             pb.WithOwner().HasForeignKey("ServiceOrderId");

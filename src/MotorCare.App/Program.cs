@@ -66,6 +66,7 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<PublicRecordsService>();
 builder.Services.AddScoped<QrCodeSvgService>();
 builder.Services.AddScoped<ImportsService>();
+builder.Services.AddScoped<TenantsService>();
 
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
 if (string.IsNullOrWhiteSpace(dataProtectionPath))

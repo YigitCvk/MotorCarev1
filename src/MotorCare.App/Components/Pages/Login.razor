@@ -135,13 +135,17 @@
 
             NavigationManager.NavigateTo("/dashboard");
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
             _error = ex.Message;
             _canResendVerification =
                 !string.IsNullOrWhiteSpace(_model.TenantIdentifier) &&
                 !string.IsNullOrWhiteSpace(_model.Email) &&
-                ex.Message.Contains("doğrula", StringComparison.OrdinalIgnoreCase);
+                ex.Code == "EMAIL_NOT_VERIFIED";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
         }
         finally
         {

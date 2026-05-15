@@ -19,6 +19,12 @@ public sealed class UsersService(ApiClient apiClient)
         return apiClient.PostAsync<object, Guid>("/api/users", payload, authorized: true, ct)!;
     }
 
+    public Task InviteUserAsync(string email, string role, string? fullName = null, CancellationToken ct = default)
+    {
+        var payload = new { email, role = ToRoleValue(role), fullName };
+        return apiClient.PostAsync("/api/users/invite", payload, authorized: true, ct);
+    }
+
     public Task UpdateRoleAsync(Guid id, string role, CancellationToken ct = default)
         => apiClient.PutAsync($"/api/users/{id}/role", new { role = ToRoleValue(role) }, authorized: true, ct);
 
@@ -32,6 +38,9 @@ public sealed class UsersService(ApiClient apiClient)
         "Receptionist" => 3,
         "Technician" => 4,
         "Manager" => 5,
-        _ => 2
+        "Inspector" => 6,
+        "Accountant" => 7,
+        "ReadOnly" => 8,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Geçersiz kullanıcı rolü.")
     };
 }

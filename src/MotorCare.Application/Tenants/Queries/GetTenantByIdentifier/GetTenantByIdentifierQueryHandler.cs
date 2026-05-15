@@ -20,6 +20,17 @@ public class GetTenantByIdentifierQueryHandler : IRequestHandler<GetTenantByIden
             return null;
         }
 
-        return new TenantDto(tenant.Id, tenant.Identifier, tenant.Name, tenant.IsActive);
+        return new TenantDto(
+            tenant.Id,
+            tenant.Identifier,
+            tenant.Name,
+            tenant.LegalName,
+            tenant.LogoUrl,
+            tenant.Phone,
+            tenant.Email,
+            tenant.Address,
+            tenant.TaxOffice,
+            tenant.TaxNumber,
+            tenant.IsActive);
     }
 }

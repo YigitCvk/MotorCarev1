@@ -2,6 +2,7 @@
 @layout Layout.PublicLayout
 @using System.Net
 @using MotorCare.App.Models.PublicRecords
+@using PublicInspectionReportModel = MotorCare.App.Models.PublicRecords.PublicInspectionReport
 @inject PublicRecordsService PublicRecordsService
 
 <PageTitle>GarajPass Dijital Ekspertiz Kaydı</PageTitle>
@@ -33,7 +34,7 @@
         }
         else
         {
-            <article class="public-record-card">
+            <article class="public-record-card public-record-document">
                 <div class="public-record-verify">
                     <span class="public-record-check">OK</span>
                     <div>
@@ -49,7 +50,7 @@
                     </div>
                     <div>
                         <dt>Ekspertiz tarihi</dt>
-                        <dd>@_report.Date.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dd>@FormatDateTime(_report.Date)</dd>
                     </div>
                     <div>
                         <dt>Araç</dt>
@@ -57,15 +58,29 @@
                     </div>
                     <div>
                         <dt>Plaka</dt>
-                        <dd>@_report.VehiclePlate</dd>
+                        <dd>@DisplayText(_report.VehiclePlate)</dd>
                     </div>
+                    @if (_report.VehicleYear.HasValue)
+                    {
+                        <div>
+                            <dt>Model yılı</dt>
+                            <dd>@_report.VehicleYear</dd>
+                        </div>
+                    }
+                    @if (_report.VehicleMileage.HasValue)
+                    {
+                        <div>
+                            <dt>Kilometre</dt>
+                            <dd>@_report.VehicleMileage.Value.ToString("N0") km</dd>
+                        </div>
+                    }
                     <div>
                         <dt>Paket</dt>
-                        <dd>@_report.PackageType</dd>
+                        <dd>@DisplayText(_report.PackageType)</dd>
                     </div>
                     <div>
                         <dt>Durum</dt>
-                        <dd>@_report.Status</dd>
+                        <dd>@DisplayText(_report.Status)</dd>
                     </div>
                     @if (!string.IsNullOrWhiteSpace(_report.BusinessName))
                     {
@@ -76,18 +91,81 @@
                     }
                 </dl>
 
-                <section class="public-record-summary">
-                    <h2>Sonuç / özet</h2>
-                    <p>@_report.ResultSummary</p>
-                    <div class="public-record-mini-stat">
-                        <strong>@_report.CriticalFindingCount</strong>
-                        <span>Sınırlı public kritik bulgu sayısı</span>
+                <div class="public-record-split-grid">
+                    <section class="public-record-section">
+                        <h2>Sonuç özeti</h2>
+                        <p>@DisplayText(_report.ResultSummary)</p>
+                    </section>
+
+                    <section class="public-record-section public-record-stat-section">
+                        <h2>Kritik bulgular</h2>
+                        <div class="public-record-mini-stat">
+                            <strong>@_report.CriticalFindingCount</strong>
+                            <span>Hasarlı veya değişen kalem</span>
+                        </div>
+                    </section>
+                </div>
+
+                @if (HasNotes)
+                {
+                    <div class="public-record-notes-grid">
+                        @if (!string.IsNullOrWhiteSpace(_report.GeneralNotes))
+                        {
+                            <section class="public-record-section">
+                                <h2>Genel açıklama</h2>
+                                <p>@_report.GeneralNotes</p>
+                            </section>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_report.TestRideNotes))
+                        {
+                            <section class="public-record-section">
+                                <h2>Test sürüşü notları</h2>
+                                <p>@_report.TestRideNotes</p>
+                            </section>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_report.CosmeticNotes))
+                        {
+                            <section class="public-record-section">
+                                <h2>Kozmetik notlar</h2>
+                                <p>@_report.CosmeticNotes</p>
+                            </section>
+                        }
                     </div>
-                </section>
+                }
+
+                @if (ItemGroups.Count > 0)
+                {
+                    <section class="public-record-section">
+                        <h2>Kontrol kalemleri</h2>
+                        <div class="public-record-item-groups">
+                            @foreach (var group in ItemGroups)
+                            {
+                                <section class="public-record-item-group">
+                                    <h3>@group.Key</h3>
+                                    <div class="public-record-line-list">
+                                        @foreach (var item in group)
+                                        {
+                                            <article class="public-record-line-item public-record-line-item--inspection">
+                                                <div>
+                                                    <strong>@item.Name</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                                    {
+                                                        <span>@item.Notes</span>
+                                                    }
+                                                </div>
+                                                <em>@DisplayText(item.Result)</em>
+                                            </article>
+                                        }
+                                    </div>
+                                </section>
+                            }
+                        </div>
+                    </section>
+                }
 
                 <footer class="public-record-footer">
                     <strong>Bu rapor GarajPass üzerinden doğrulanmıştır.</strong>
-                    <span>Tam ekspertiz raporu erişimi yakında.</span>
+                    <span>@VerificationText</span>
                 </footer>
             </article>
         }
@@ -97,8 +175,20 @@
 @code {
     [Parameter] public string? Slug { get; set; }
 
-    private PublicInspectionReportPreview? _report;
+    private PublicInspectionReportModel? _report;
     private bool _loading = true;
+
+    private bool HasNotes => _report is not null
+        && (!string.IsNullOrWhiteSpace(_report.GeneralNotes)
+            || !string.IsNullOrWhiteSpace(_report.TestRideNotes)
+            || !string.IsNullOrWhiteSpace(_report.CosmeticNotes));
+
+    private IReadOnlyList<IGrouping<string, PublicInspectionReportItem>> ItemGroups
+        => (_report?.Items ?? [])
+            .OrderBy(x => x.Category)
+            .ThenBy(x => x.SortOrder)
+            .GroupBy(x => DisplayText(x.Category))
+            .ToList();
 
     private string VehicleText
     {
@@ -107,9 +197,13 @@
             var parts = new[] { _report?.VehicleBrand, _report?.VehicleModel }
                 .Where(x => !string.IsNullOrWhiteSpace(x));
             var text = string.Join(" ", parts);
-            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+            return DisplayText(text);
         }
     }
+
+    private string VerificationText => string.IsNullOrWhiteSpace(_report?.VerificationText)
+        ? "Dijital kayıt public bağlantı üzerinden okunmuştur."
+        : _report.VerificationText;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,7 +215,7 @@
 
         try
         {
-            _report = await PublicRecordsService.GetInspectionReportPreviewAsync(Slug);
+            _report = await PublicRecordsService.GetInspectionReportAsync(Slug);
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -132,4 +226,10 @@
             _loading = false;
         }
     }
+
+    private static string DisplayText(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private static string FormatDateTime(DateTimeOffset? value)
+        => value?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-";
 }

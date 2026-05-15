@@ -4,10 +4,12 @@
 @using System.Net
 @using MotorCare.App.Configuration
 @using MotorCare.App.Models.PublicRecords
+@using MotorCare.App.Models.Tenants
 @using ServiceOrderPrintModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
 @inject PublicRecordsService PublicRecordsService
+@inject TenantsService TenantsService
 @inject QrCodeSvgService QrCodeSvgService
 @inject IOptions<PublicReportOptions> PublicReportOptions
 @inject NavigationManager NavigationManager
@@ -40,9 +42,23 @@
 
             <header class="print-header">
                 <div>
-                    <div class="print-brand">GarajPass</div>
+                    <div class="print-firm-title-row">
+                        @if (!string.IsNullOrWhiteSpace(_tenantProfile?.LogoUrl))
+                        {
+                            <img class="print-firm-logo" src="@_tenantProfile.LogoUrl" alt="" />
+                        }
+                        <div class="print-brand">@FirmDisplayName</div>
+                    </div>
                     <h1>Servis Emri Raporu</h1>
-                    <p>@(_currentUser?.TenantIdentifier ?? "İşletme") · @_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</p>
+                    @if (!string.IsNullOrWhiteSpace(_tenantProfile?.LegalName))
+                    {
+                        <p>@_tenantProfile.LegalName</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(FirmContactLine))
+                    {
+                        <p>@FirmContactLine</p>
+                    }
+                    <p>@_order.OpenedAt.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</p>
                 </div>
                 <div class="print-header-meta">
                     <strong class="print-doc-no">@_order.OrderNo</strong>
@@ -247,6 +263,7 @@
 
     private ServiceOrderPrintModel? _order;
     private CurrentUserResponse? _currentUser;
+    private TenantProfile? _tenantProfile;
     private PublicRecordAccessResponse? _publicAccess;
     private string? _publicUrl;
     private string? _publicPath;
@@ -276,6 +293,7 @@
             _error = null;
             await InvokeAsync(StateHasChanged);
             _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
+            await TryLoadTenantProfileAsync();
             if (_order is not null)
             {
                 await LoadPublicQrAsync();
@@ -329,6 +347,25 @@
         _ => method
     };
 
+    private string FirmDisplayName
+        => _tenantProfile?.Name ?? _currentUser?.TenantIdentifier ?? "İşletme";
+
+    private string FirmContactLine
+    {
+        get
+        {
+            var parts = new[]
+            {
+                _tenantProfile?.Phone,
+                _tenantProfile?.Email,
+                _tenantProfile?.Address,
+                _tenantProfile?.Website
+            }.Where(value => !string.IsNullOrWhiteSpace(value));
+
+            return string.Join(" | ", parts);
+        }
+    }
+
     private async Task LoadPublicQrAsync()
     {
         try
@@ -349,6 +386,18 @@
             _publicUrl = null;
             _publicPath = null;
             _qrSvg = null;
+        }
+    }
+
+    private async Task TryLoadTenantProfileAsync()
+    {
+        try
+        {
+            _tenantProfile = await TenantsService.GetCurrentProfileAsync();
+        }
+        catch
+        {
+            _tenantProfile = null;
         }
     }
 

@@ -1,0 +1,41 @@
+@using MotorCare.App.Models.Inspections
+
+<div class="@RootClass">
+    <img class="inspection-vehicle-diagram__image"
+         src="/images/expertiz-report-motorcycle.svg"
+         alt="@AltText" />
+
+    @if (MarkerLayer is not null)
+    {
+        <div class="inspection-vehicle-diagram__marker-layer">
+            @MarkerLayer
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public MotorcycleViewType ViewType { get; set; } = MotorcycleViewType.Left;
+    [Parameter] public string AltText { get; set; } = "Motosiklet görünümü";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? MarkerLayer { get; set; }
+
+    private string RootClass
+    {
+        get
+        {
+            var classes = new List<string> { "inspection-vehicle-diagram" };
+
+            if (ViewType == MotorcycleViewType.Right)
+            {
+                classes.Add("inspection-vehicle-diagram--right");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class);
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+}

@@ -3,6 +3,8 @@ using System.Text;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MotorCare.Application.Common;
+using MotorCare.Application.Common.Errors;
+using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.Users.Entities;
@@ -19,6 +21,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
     private readonly IEmailSender _emailSender;
     private readonly ISecurityTokenFactory _securityTokenFactory;
     private readonly ILogger<LoginCommandHandler> _logger;
+
+    private const string InvalidCredentialsMessage = "İşletme kodu, e-posta veya şifre hatalı.";
 
     public LoginCommandHandler(
         ITenantRepository tenantRepository,
@@ -48,26 +52,53 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
             request.TenantIdentifier);
 
         var tenant = await _tenantRepository.GetByIdentifierAsync(request.TenantIdentifier, cancellationToken);
-        if (tenant is null || !tenant.IsActive)
+        if (tenant is null)
         {
             _logger.LogWarning(
                 EventIdStore.Auth.LoginFailed,
-                "Login failed: tenant not found or inactive. TenantIdentifier={TenantIdentifier}",
+                "Login failed: tenant not found. TenantIdentifier={TenantIdentifier}",
                 request.TenantIdentifier);
 
-            throw new UnauthorizedAccessException("Invalid tenant or credentials.");
+            throw new LoginException(ErrorCodes.LoginFailed, InvalidCredentialsMessage,
+                $"Tenant not found: {request.TenantIdentifier}");
+        }
+
+        if (!tenant.IsActive)
+        {
+            _logger.LogWarning(
+                EventIdStore.Auth.LoginFailed,
+                "Login failed: tenant inactive. TenantIdentifier={TenantIdentifier}",
+                request.TenantIdentifier);
+
+            throw new LoginException(ErrorCodes.TenantInactive,
+                "İşletmeniz şu anda aktif değil. Lütfen destek ile iletişime geçin.",
+                $"Tenant inactive: {request.TenantIdentifier}");
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var user = await _userRepository.GetByEmailAsync(tenant.Identifier, normalizedEmail, cancellationToken);
-        if (user is null || !user.IsActive)
+        if (user is null)
         {
             _logger.LogWarning(
                 EventIdStore.Auth.LoginFailed,
-                "Login failed: user not found or inactive. TenantIdentifier={TenantIdentifier}",
+                "Login failed: user not found. TenantIdentifier={TenantIdentifier}",
                 request.TenantIdentifier);
 
-            throw new UnauthorizedAccessException("Invalid tenant or credentials.");
+            throw new LoginException(ErrorCodes.LoginFailed, InvalidCredentialsMessage,
+                $"User not found: {normalizedEmail} in {request.TenantIdentifier}");
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning(
+                EventIdStore.Auth.LoginFailed,
+                "Login failed: user inactive. TenantIdentifier={TenantIdentifier} UserId={UserId}",
+                request.TenantIdentifier,
+                user.Id);
+
+            throw new LoginException(ErrorCodes.UserInactive,
+                "Hesabınız şu anda aktif değil.",
+                $"User inactive: {user.Id}");
         }
 
         if (!_passwordHasher.Verify(user.PasswordHash, request.Password))
@@ -78,18 +109,21 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
                 request.TenantIdentifier,
                 user.Id);
 
-            throw new UnauthorizedAccessException("Invalid tenant or credentials.");
+            throw new LoginException(ErrorCodes.LoginFailed, InvalidCredentialsMessage,
+                $"Invalid password for user: {user.Id}");
         }
 
         if (!user.IsEmailVerified)
         {
             _logger.LogWarning(
                 EventIdStore.Auth.LoginFailed,
-                "Login blocked because email is not verified. TenantIdentifier={TenantIdentifier} UserId={UserId}",
+                "Login blocked: email not verified. TenantIdentifier={TenantIdentifier} UserId={UserId}",
                 request.TenantIdentifier,
                 user.Id);
 
-            throw new UnauthorizedAccessException("E-posta adresinizi doğrulamanız gerekiyor.");
+            throw new LoginException(ErrorCodes.EmailNotVerified,
+                "E-posta adresinizi doğrulamanız gerekiyor.",
+                $"Email not verified for user: {user.Id}");
         }
 
         if (user.TwoFactorEnabled && user.TwoFactorProvider == TwoFactorProvider.Email)
@@ -129,7 +163,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
         var latestOtp = await _userRepository.GetLatestSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
         if (latestOtp is not null && latestOtp.CreatedAt >= now.AddMinutes(-1))
         {
-            throw new UnauthorizedAccessException("Yeni doğrulama kodu istemeden önce kısa süre bekleyin.");
+            throw new LoginException(ErrorCodes.TooManyAttempts,
+                "Yeni doğrulama kodu istemeden önce kısa süre bekleyin.");
         }
 
         user.RevokeSecurityTokens(UserSecurityTokenPurpose.TwoFactorEmailOtp, now);
@@ -182,7 +217,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
                 user.Id,
                 codeExpiresAt);
 
-            throw new UnauthorizedAccessException("Doğrulama kodu gönderilemedi. Lütfen tekrar deneyin.");
+            throw new LoginException(ErrorCodes.UnexpectedError,
+                "Doğrulama kodu gönderilemedi. Lütfen tekrar deneyin.");
         }
 
         return new AuthResponseDto(

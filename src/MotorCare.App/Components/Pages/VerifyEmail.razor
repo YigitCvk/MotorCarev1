@@ -10,73 +10,116 @@
     <div class="auth-panel auth-panel-brand">
         <div class="eyebrow" style="color:#fdba74">Hesap aktivasyonu</div>
         <h1 class="auth-title">E-posta doğrulama</h1>
-        <p class="auth-copy">Doğrulama bağlantısı geçerliyse GarajPass hesabını aktif hale getiririz.</p>
+        <p class="auth-copy">@_email adresine gönderilen 6 haneli kodu girin.</p>
     </div>
 
     <div class="auth-panel auth-panel-form auth-panel-narrow">
         <div class="section-header mb-2">
             <div>
-                <div class="section-title">Doğrulama Durumu</div>
-                <div class="section-subtitle">Sonuç burada görünür.</div>
+                <div class="section-title">Doğrulama Kodu</div>
+                <div class="section-subtitle">E-postanızı kontrol edin.</div>
             </div>
         </div>
 
-        @if (_isLoading)
+        @if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_tenant))
         {
-            <div class="state-loading">Doğrulama yapılıyor...</div>
-        }
-        else if (!string.IsNullOrWhiteSpace(_error))
-        {
-            <div class="alert alert-danger">@_error</div>
+            <div class="alert alert-warning">
+                Bu sayfaya doğrudan erişildi. Lütfen kayıt akışından gelin.
+            </div>
             <div class="auth-actions">
-                <a class="auth-link" href="/login">Giriş ekranına dön</a>
+                <a class="auth-link" href="/register">Kayıt Ol</a>
+                <span style="margin:0 .5rem;color:#94a3b8">·</span>
+                <a class="auth-link" href="/login">Giriş Yap</a>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <div class="alert alert-success">@_successMessage</div>
+            <div class="auth-actions">
+                <a class="btn btn-primary btn-lg" href="/login">Giriş Yap</a>
             </div>
         }
         else
         {
-            <div class="alert alert-success">@_message</div>
-            <div class="auth-actions">
-                <a class="btn btn-primary btn-lg" href="/login">Giriş Yap</a>
-            </div>
+            <EditForm Model="_model" OnValidSubmit="VerifyAsync">
+                <DataAnnotationsValidator />
+
+                <div class="form-field mb-3">
+                    <label class="form-label">Doğrulama Kodu</label>
+                    <InputText class="form-control text-center"
+                               style="font-size:1.75rem;letter-spacing:.3em;font-weight:700;max-width:200px"
+                               @bind-Value="_model.Code"
+                               placeholder="000000"
+                               maxlength="6"
+                               inputmode="numeric"
+                               autocomplete="one-time-code" />
+                    <ValidationMessage For="() => _model.Code" class="form-text text-danger" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger">@_error</div>
+                }
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" style="width:100%" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Doğrulanıyor..." : "Doğrula")
+                    </button>
+
+                    <button type="button" class="btn btn-link mt-2" style="font-size:.875rem"
+                            disabled="@(_resendCooldown > 0)"
+                            @onclick="ResendAsync">
+                        @(_resendCooldown > 0
+                            ? $"Yeni kod isteyin ({_resendCooldown}s)"
+                            : "Yeni kod gönder")
+                    </button>
+
+                    @if (!string.IsNullOrWhiteSpace(_resendMessage))
+                    {
+                        <div class="form-text text-muted mt-1">@_resendMessage</div>
+                    }
+                </div>
+            </EditForm>
         }
     </div>
 </div>
 
 @code {
-    private bool _isLoading = true;
-    private string? _message;
+    private readonly VerifyEmailRequest _model = new();
+    private bool _isSubmitting;
     private string? _error;
+    private string? _successMessage;
+    private string? _resendMessage;
+    private int _resendCooldown;
+    private string? _email;
+    private string? _tenant;
 
     [SupplyParameterFromQuery] public string? Email { get; set; }
-    [SupplyParameterFromQuery] public string? Token { get; set; }
+    [SupplyParameterFromQuery] public string? Tenant { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
-        if (!_isLoading)
-        {
-            return;
-        }
+        _email = Email ?? string.Empty;
+        _tenant = Tenant ?? string.Empty;
+        _model.Email = _email;
+        _model.TenantIdentifier = _tenant;
+    }
 
-        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Token))
-        {
-            _error = "Geçersiz doğrulama bağlantısı.";
-            _isLoading = false;
-            return;
-        }
+    private async Task VerifyAsync()
+    {
+        _isSubmitting = true;
+        _error = null;
 
         try
         {
-            var response = await AuthService.VerifyEmailAsync(new VerifyEmailRequest
-            {
-                Email = Email,
-                Token = Token
-            });
+            var response = await AuthService.VerifyEmailAsync(_model);
+            _successMessage = response?.Message ?? "E-posta adresiniz doğrulandı. GarajPass'e giriş yapabilirsiniz.";
 
-            _message = response?.Message ?? "E-posta adresin doğrulandi. GarajPass'e giriş yapabilirsin.";
             var uri = QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
             {
-                ["email"] = Email,
-                ["message"] = _message
+                ["tenant"] = _tenant,
+                ["email"] = _email,
+                ["message"] = _successMessage
             });
             NavigationManager.NavigateTo(uri);
         }
@@ -86,7 +129,39 @@
         }
         finally
         {
-            _isLoading = false;
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ResendAsync()
+    {
+        if (_resendCooldown > 0) return;
+
+        _resendMessage = null;
+        try
+        {
+            var response = await AuthService.ResendEmailVerificationAsync(new ResendEmailVerificationRequest
+            {
+                TenantIdentifier = _tenant ?? string.Empty,
+                Email = _email ?? string.Empty
+            });
+            _resendMessage = response?.Message ?? "Doğrulama kodu gönderildi.";
+            _ = StartCooldownAsync();
+        }
+        catch (Exception ex)
+        {
+            _resendMessage = ex.Message;
+        }
+    }
+
+    private async Task StartCooldownAsync()
+    {
+        _resendCooldown = 60;
+        while (_resendCooldown > 0)
+        {
+            await Task.Delay(1000);
+            _resendCooldown--;
+            StateHasChanged();
         }
     }
 }

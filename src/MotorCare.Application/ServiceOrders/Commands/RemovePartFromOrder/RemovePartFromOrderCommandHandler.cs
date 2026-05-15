@@ -10,15 +10,18 @@ namespace MotorCare.Application.ServiceOrders.Commands.RemovePartFromOrder;
 public class RemovePartFromOrderCommandHandler : IRequestHandler<RemovePartFromOrderCommand, Unit>
 {
     private readonly IServiceOrderRepository _repository;
+    private readonly IInventoryRepository _inventoryRepository;
     private readonly ITenantProvider _tenantProvider;
     private readonly ILogger<RemovePartFromOrderCommandHandler> _logger;
 
     public RemovePartFromOrderCommandHandler(
         IServiceOrderRepository repository,
+        IInventoryRepository inventoryRepository,
         ITenantProvider tenantProvider,
         ILogger<RemovePartFromOrderCommandHandler> logger)
     {
         _repository = repository;
+        _inventoryRepository = inventoryRepository;
         _tenantProvider = tenantProvider;
         _logger = logger;
     }
@@ -31,7 +34,17 @@ public class RemovePartFromOrderCommandHandler : IRequestHandler<RemovePartFromO
         var order = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
             ?? throw new NotFoundException(nameof(Domain.ServiceOrders.ServiceOrder), request.Id);
 
-        order.RemovePart(request.PartId);
+        var removedPart = order.RemovePart(request.PartId);
+
+        if (removedPart.InventoryItemId.HasValue)
+        {
+            var inventoryItem = await _inventoryRepository.GetByIdAsync(removedPart.InventoryItemId.Value, tenantId, cancellationToken);
+            if (inventoryItem is not null)
+            {
+                inventoryItem.AdjustStock(removedPart.Quantity, "Servis emri parça iadesi");
+                _inventoryRepository.Update(inventoryItem);
+            }
+        }
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);

@@ -162,9 +162,11 @@ public static class EventIdStore
     // ── User  2000-2099 ─────────────────────────────────────────────────────
     public static class User
     {
-        public static readonly EventId UserCreated     = new(2000, nameof(UserCreated));
-        public static readonly EventId UserRoleUpdated = new(2001, nameof(UserRoleUpdated));
-        public static readonly EventId UserDeactivated = new(2002, nameof(UserDeactivated));
+        public static readonly EventId UserCreated      = new(2000, nameof(UserCreated));
+        public static readonly EventId UserRoleUpdated  = new(2001, nameof(UserRoleUpdated));
+        public static readonly EventId UserDeactivated  = new(2002, nameof(UserDeactivated));
+        public static readonly EventId UserInviteSent   = new(2003, nameof(UserInviteSent));
+        public static readonly EventId UserInviteAccepted = new(2004, nameof(UserInviteAccepted));
     }
 
     // ── Import  2100-2199 ───────────────────────────────────────────────────

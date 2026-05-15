@@ -1,0 +1,162 @@
+@page "/accept-invite"
+@layout Layout.PublicLayout
+@inject AuthService AuthService
+
+<PageTitle>Daveti Kabul Et - GarajPass</PageTitle>
+
+<div class="auth-shell auth-shell-login">
+    <div class="auth-panel auth-panel-brand">
+        <div class="eyebrow" style="color:#fdba74">Hesap oluşturma</div>
+        <h1 class="auth-title">Daveti kabul et</h1>
+        <p class="auth-copy">Bilgilerini girerek GarajPass hesabını oluştur.</p>
+    </div>
+
+    <div class="auth-panel auth-panel-form auth-panel-narrow">
+        <div class="section-header mb-2">
+            <div>
+                <div class="section-title">Hesap Oluştur</div>
+                <div class="section-subtitle">Şifren en az 8 karakter olmalı.</div>
+            </div>
+        </div>
+
+        @if (_isValidating)
+        {
+            <section class="loading-state">
+                <strong>Davet kontrol ediliyor</strong>
+                <p>Lütfen bekleyin.</p>
+            </section>
+        }
+        else if (string.IsNullOrWhiteSpace(_token) || !_isInviteValid)
+        {
+            <div class="alert alert-warning">
+                @_validationError
+            </div>
+            <div class="auth-actions">
+                <a class="auth-link" href="/login">Giriş Yap</a>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <div class="alert alert-success">@_successMessage</div>
+            <div class="auth-actions">
+                <a class="btn btn-primary btn-lg" href="/login">Giriş Yap</a>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+                <DataAnnotationsValidator />
+
+                <div class="form-grid auth-form-grid">
+                    <div class="full-span">
+                        <label class="form-label">Ad Soyad</label>
+                        <InputText class="form-control" @bind-Value="_model.FullName" autocomplete="name" placeholder="Ad Soyad" />
+                        <ValidationMessage For="() => _model.FullName" class="form-text text-danger" />
+                    </div>
+
+                    <div class="full-span">
+                        <label class="form-label">Şifre</label>
+                        <InputText class="form-control" type="password" @bind-Value="_model.Password" autocomplete="new-password" />
+                        <ValidationMessage For="() => _model.Password" class="form-text text-danger" />
+                    </div>
+
+                    <div class="full-span">
+                        <label class="form-label">Şifre Tekrar</label>
+                        <InputText class="form-control" type="password" @bind-Value="_model.ConfirmPassword" autocomplete="new-password" />
+                        <ValidationMessage For="() => _model.ConfirmPassword" class="form-text text-danger" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger mt-3">@_error</div>
+                }
+
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" style="width:100%" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "Kaydediliyor..." : "Hesabı Oluştur")
+                    </button>
+                    <a class="auth-link" href="/login">Giriş ekranına dön</a>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly AcceptInviteRequest _model = new();
+    private bool _isSubmitting;
+    private bool _isValidating = true;
+    private bool _isInviteValid;
+    private string? _error;
+    private string? _successMessage;
+    private string _validationError = "Geçersiz davet bağlantısı. Lütfen e-postanızdaki bağlantıyı kullanın.";
+    private string? _token;
+
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _token = Token ?? string.Empty;
+        _model.Token = _token;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_token))
+        {
+            _isValidating = false;
+            return;
+        }
+
+        try
+        {
+            var invitation = await AuthService.ValidateInviteAsync(_token);
+            _isInviteValid = invitation is not null;
+            if (!_isInviteValid)
+            {
+                _validationError = "Davet bağlantısı geçersiz veya süresi dolmuş.";
+            }
+        }
+        catch
+        {
+            _validationError = "Davet bağlantısı geçersiz veya süresi dolmuş.";
+        }
+        finally
+        {
+            _isValidating = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_model.Password != _model.ConfirmPassword)
+        {
+            _error = "Şifreler eşleşmiyor.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _error = null;
+
+        try
+        {
+            var response = await AuthService.AcceptInviteAsync(_model);
+            _successMessage = response?.Message ?? "Hesabınız oluşturuldu. Giriş yapabilirsiniz.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

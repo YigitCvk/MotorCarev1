@@ -1,4 +1,9 @@
 @page "/settings/business"
+@using System.Net
+@using MotorCare.App.Models.Tenants
+@inject AuthService AuthService
+@inject TenantsService TenantsService
+@inject NavigationManager NavigationManager
 
 <PageTitle>İşletme Bilgileri</PageTitle>
 
@@ -7,55 +12,188 @@
         <div>
             <div class="eyebrow">Ayarlar</div>
             <h1 class="page-title">İşletme Bilgileri</h1>
-            <p class="page-description">GarajPass içindeki işletme profili, iletişim ve teslim bilgileri için başlangıç alanı.</p>
+            <p class="page-description">Firma profili, rapor üst bilgileri ve iletişim alanlarını yönetin.</p>
         </div>
         <div class="page-header-actions">
             <a class="app-btn-secondary" href="/settings">Ayarlara Dön</a>
-            <button type="button" class="app-btn-primary">Düzenle</button>
         </div>
     </section>
 
-    <section class="admin-grid">
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">Kurumsal Profil</div>
-                    <div class="section-subtitle">İşletme adı, unvan ve görünür marka bilgileri</div>
-                </div>
-                <span class="status-badge badge-open">Aktif</span>
-            </div>
-            <p class="admin-card-copy">İşletme adı, logo, kısa açıklama ve servis kabul metinlerini bu alandan yöneteceksiniz.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-primary">Yönet</button>
-            </div>
-        </article>
+    @if (_loading)
+    {
+        <section class="app-card">
+            <div class="state-loading">İşletme bilgileri yükleniyor...</div>
+        </section>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_loadError))
+        {
+            <section class="error-state">
+                <strong>İşletme bilgileri alınamadı</strong>
+                <p>@_loadError</p>
+            </section>
+        }
 
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
-                <div>
-                    <div class="section-title">İletişim ve Adres</div>
-                    <div class="section-subtitle">Telefon, e-posta, konum ve çalışma notları</div>
-                </div>
-                <span class="status-badge badge-open">Aktif</span>
-            </div>
-            <p class="admin-card-copy">Müşteriye görünen telefon, adres ve navigasyon açıklamalarını tenant bazında tutun.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Düzenle</button>
-            </div>
-        </article>
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div class="alert alert-success">@_message</div>
+        }
 
-        <article class="app-card admin-card">
-            <div class="admin-card-top">
+        @if (!string.IsNullOrWhiteSpace(_saveError))
+        {
+            <div class="alert alert-danger">@_saveError</div>
+        }
+
+        <section class="app-card">
+            <div class="form-grid">
                 <div>
-                    <div class="section-title">Vergi ve Fatura</div>
-                    <div class="section-subtitle">Resmî bilgiler ve belge üst bilgileri</div>
+                    <label class="form-label">Görünen firma adı *</label>
+                    <InputText class="form-control" @bind-Value="_form.Name" maxlength="150" />
                 </div>
-                <span class="status-badge badge-progress">Planlandı</span>
+                <div>
+                    <label class="form-label">Ticari unvan</label>
+                    <InputText class="form-control" @bind-Value="_form.LegalName" maxlength="200" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Logo URL</label>
+                    <InputText class="form-control" @bind-Value="_form.LogoUrl" maxlength="500" placeholder="https://..." />
+                </div>
+                <div>
+                    <label class="form-label">Telefon</label>
+                    <InputText class="form-control" @bind-Value="_form.Phone" maxlength="30" />
+                </div>
+                <div>
+                    <label class="form-label">E-posta</label>
+                    <InputText class="form-control" @bind-Value="_form.Email" maxlength="150" />
+                </div>
+                <div class="full-span">
+                    <label class="form-label">Adres</label>
+                    <InputTextArea class="form-control" @bind-Value="_form.Address" rows="3" maxlength="500" />
+                </div>
+                <div>
+                    <label class="form-label">Vergi dairesi</label>
+                    <InputText class="form-control" @bind-Value="_form.TaxOffice" maxlength="120" />
+                </div>
+                <div>
+                    <label class="form-label">Vergi numarası</label>
+                    <InputText class="form-control" @bind-Value="_form.TaxNumber" maxlength="30" />
+                </div>
+                <div>
+                    <label class="form-label">Web sitesi</label>
+                    <InputText class="form-control" @bind-Value="_form.Website" maxlength="250" placeholder="https://..." />
+                </div>
             </div>
-            <p class="admin-card-copy">Vergi dairesi, vergi numarası ve fatura çıktıları için ileride kullanılacak alan.</p>
-            <div class="admin-card-actions">
-                <button type="button" class="app-btn-secondary">Yakında</button>
+
+            <div class="sticky-mobile-action mt-4">
+                <button type="button" class="app-btn-primary" @onclick="SaveAsync" disabled="@(_saving || _loading)">
+                    @(_saving ? "Kaydediliyor..." : "Bilgileri Kaydet")
+                </button>
             </div>
-        </article>
-    </section>
+        </section>
+    }
 </div>
+
+@code {
+    private readonly UpdateTenantProfileRequest _form = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _loadError;
+    private string? _saveError;
+    private string? _message;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _loading = true;
+            _loadError = null;
+            await InvokeAsync(StateHasChanged);
+
+            var profile = await TenantsService.GetCurrentProfileAsync();
+            if (profile is null)
+            {
+                _loadError = "İşletme profili bulunamadı.";
+                return;
+            }
+
+            CopyToForm(profile);
+        }
+        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            _loadError = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            _saving = true;
+            _saveError = null;
+            _message = null;
+
+            if (string.IsNullOrWhiteSpace(_form.Name))
+            {
+                _saveError = "Görünen firma adı zorunludur.";
+                return;
+            }
+
+            var updated = await TenantsService.UpdateCurrentProfileAsync(_form);
+            if (updated is null)
+            {
+                _saveError = "İşletme bilgileri kaydedilemedi.";
+                return;
+            }
+
+            CopyToForm(updated);
+            _message = "İşletme bilgileri kaydedildi.";
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void CopyToForm(TenantProfile profile)
+    {
+        _form.Name = profile.Name;
+        _form.LegalName = profile.LegalName;
+        _form.LogoUrl = profile.LogoUrl;
+        _form.Phone = profile.Phone;
+        _form.Email = profile.Email;
+        _form.Address = profile.Address;
+        _form.TaxOffice = profile.TaxOffice;
+        _form.TaxNumber = profile.TaxNumber;
+        _form.Website = profile.Website;
+    }
+}

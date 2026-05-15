@@ -1,88 +1,90 @@
-# GarajPass Backup / Restore Planı
+# GarajPass Backup / Restore Runbook
 
-Bu doküman PostgreSQL backup ve restore tatbikatı için güvenli operasyon adımlarını tarif eder. Secret/env dosyaları terminale basılmamalı, Postgres container yanlışlıkla stop/remove/recreate edilmemelidir.
+This runbook covers PostgreSQL dumps and restore drills for the Compose-based staging and production stacks.
 
-## Temel Kurallar
+## Safety Rules
 
-- Staging komutlarında proje adı korunur: `-p motorcare-stack-src`.
-- Staging env dosyası kullanılır: `.env.staging`.
-- `motorcare-staging-postgres` container'ı durdurulmaz, silinmez, recreate edilmez.
-- Backup dosyaları repo içine yazılmaz.
-- Restore tatbikatı mümkünse ayrı bir restore-check veritabanında yapılır.
+- Take a backup before migrations or production deploys.
+- Store dumps outside the repo checkout, with restricted access and retention.
+- Treat dumps as production-like customer data even when they came from staging.
+- Never print populated env files, passwords, JWT keys, SMTP credentials, or dump contents into logs.
+- Do not stop, remove, or recreate a Postgres container as part of routine app deploys.
+- Prove restore capability in a separate database before considering a live restore.
 
-## Backup Komutu
+## Scripts
 
-Sunucuda:
-
-```bash
-cd /opt/motorcare-stack-src/src
-mkdir -p /opt/motorcare-backups
-docker exec motorcare-staging-postgres sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --no-owner --no-acl' > /opt/motorcare-backups/motorcare-staging-$(date -u +%Y%m%dT%H%M%SZ).dump
-```
-
-Kontrol:
+Linux:
 
 ```bash
-ls -lh /opt/motorcare-backups
+MOTORCARE_BACKUP_DIR=/opt/motorcare-backups sh scripts/backup-postgres.sh staging
+MOTORCARE_BACKUP_DIR=/opt/motorcare-backups sh scripts/backup-postgres.sh production
+sh scripts/restore-postgres.sh staging /opt/motorcare-backups/motorcare-staging-YYYYMMDDTHHMMSSZ.dump
 ```
 
-Not: `pg_dump` komutu container içindeki mevcut `POSTGRES_USER` ve `POSTGRES_DB` değerlerini kullanır; `.env.staging` içeriği ekrana basılmaz.
+PowerShell:
 
-## Restore Tatbikatı
-
-Restore kontrolü canlı staging DB üzerine değil, geçici bir DB üzerine yapılmalıdır.
-
-1. Backup dosyasını seç:
-
-```bash
-backup_file=/opt/motorcare-backups/motorcare-staging-YYYYMMDDTHHMMSSZ.dump
+```powershell
+.\scripts\backup-postgres.ps1 -Environment staging -BackupDir D:\motorcare-backups
+.\scripts\backup-postgres.ps1 -Environment production -BackupDir D:\motorcare-backups
+.\scripts\restore-postgres.ps1 -Environment staging -BackupFile D:\motorcare-backups\motorcare-staging-YYYYMMDDTHHMMSSZ.dump
 ```
 
-2. Geçici restore DB oluştur:
+The existing `backup-staging.sh` and `backup-staging.ps1` commands remain as wrappers for older procedures.
 
-```bash
-docker exec motorcare-staging-postgres sh -lc 'dropdb -U "$POSTGRES_USER" --if-exists motorcare_restore_check'
-docker exec motorcare-staging-postgres sh -lc 'createdb -U "$POSTGRES_USER" motorcare_restore_check'
-```
+## What The Scripts Do
 
-3. Backup'ı geçici DB'ye yükle:
+`backup-postgres`:
 
-```bash
-cat "$backup_file" | docker exec -i motorcare-staging-postgres sh -lc 'pg_restore -U "$POSTGRES_USER" -d motorcare_restore_check --no-owner --no-acl'
-```
+1. Uses the running container's `POSTGRES_USER` and `POSTGRES_DB` values without printing them.
+2. Creates a custom-format `pg_dump` archive with no owner or ACL metadata.
+3. Verifies that the archive is non-empty and readable by `pg_restore`.
+4. Writes a SHA-256 checksum beside the archive when the host tool is available.
 
-4. Temel doğrulama sorguları çalıştır:
+`restore-postgres`:
+
+1. Validates the custom-format archive.
+2. Recreates `motorcare_restore_check` unless a different check-database name is supplied.
+3. Restores the archive into that separate database.
+4. Refuses to target the live `POSTGRES_DB` database.
+5. Leaves the check database in place for manual validation.
+
+## Restore Drill Validation
+
+After the script finishes, run focused checks against `motorcare_restore_check`:
 
 ```bash
 docker exec motorcare-staging-postgres sh -lc 'psql -U "$POSTGRES_USER" -d motorcare_restore_check -c "select count(*) from \"Tenants\";"'
-docker exec motorcare-staging-postgres sh -lc 'psql -U "$POSTGRES_USER" -d motorcare_restore_check -c "select to_regclass('\''public.\"PublicRecordAccesses\"'\'');"'
+docker exec motorcare-staging-postgres sh -lc 'psql -U "$POSTGRES_USER" -d motorcare_restore_check -c "select count(*) from \"__EFMigrationsHistory\";"'
+docker exec motorcare-staging-postgres sh -lc 'dropdb -U "$POSTGRES_USER" --if-exists --force motorcare_restore_check'
 ```
 
-5. Tatbikat DB'sini temizle:
+For production drills, replace only the container name. Keep the target database separate from the live DB.
 
-```bash
-docker exec motorcare-staging-postgres sh -lc 'dropdb -U "$POSTGRES_USER" --if-exists motorcare_restore_check'
-```
+## Live Restore Gate
 
-## Canlı Restore Gerektiğinde
+The automated restore scripts intentionally do not overwrite the live database. A live restore needs a separate incident record and an explicit decision covering:
 
-- Önce olay kaydı alın: deploy commit, `/api/version`, migration, backup dosyası, mevcut container durumu.
-- API/App trafiği durdurma veya bakım modu ihtiyacı ayrıca değerlendirilir.
-- Postgres container silinmez veya recreate edilmez.
-- Canlı DB üzerine restore ancak en güncel backup doğrulandıktan ve veri kaybı etkisi onaylandıktan sonra yapılır.
-- Canlı restore sonrasında migrator çalıştırılmadan önce migration durumu kontrol edilir.
+- deploy commit, image tags, `/api/version`, and latest migration;
+- selected archive name plus checksum verification;
+- expected data-loss window and business approval;
+- traffic stop or maintenance mode plan;
+- a successful restore drill from the same archive;
+- post-restore smoke owner and rollback owner.
 
-## Dikkat Edilecek Secret/Env Konuları
+If those conditions are not satisfied, roll back app images first and leave the database untouched.
 
-- `.env.staging` ve production env dosyaları `cat`, `type`, `echo` ile log'a basılmaz.
-- SMTP, JWT, database password, token veya kod değerleri rapora yazılmaz.
-- Gerekiyorsa yalnızca key varlığı maskeli kontrol edilir.
-- Backup dosyaları gizli veri içerir; erişim yetkisi ve saklama süresi sınırlandırılmalıdır.
+## Post-Restore Smoke
 
-## Hızlı Sağlık Kontrolü
+Minimum checks after a restore drill or approved live restore:
 
-```bash
-docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep motorcare
-curl -i http://127.0.0.1:5102/health
-curl -i http://127.0.0.1:5102/api/version
-```
+1. `/health` and `/api/version`
+2. Login with a test tenant
+3. Dashboard load
+4. Service order list
+5. Appointment list
+6. Inspection print route
+7. Logs checked for unexpected `500`, `password`, `token`, reset code, or SMTP secret exposure
+
+## Related Secret Handling
+
+See `docs/ops/secret-management.md` for env-file storage, placeholder rules, build-context exclusions, rotation notes, and secret inventory.

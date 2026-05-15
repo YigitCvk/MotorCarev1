@@ -106,18 +106,26 @@
                 return;
             }
 
-            _success = response.VerificationEmailSent
-                ? "Kayıt oluşturuldu. Doğrulama e-postası gönderildi."
-                : "Kayıt oluşturuldu. Doğrulama e-postası gönderilemedi; daha sonra tekrar isteyebilirsiniz.";
-
-            var loginUri = QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
+            if (response.VerificationEmailSent)
             {
-                ["tenant"] = response.TenantIdentifier,
-                ["email"] = response.OwnerEmail,
-                ["message"] = _success
-            });
-
-            NavigationManager.NavigateTo(loginUri);
+                var verifyUri = QueryHelpers.AddQueryString("/verify-email", new Dictionary<string, string?>
+                {
+                    ["tenant"] = response.TenantIdentifier,
+                    ["email"] = response.OwnerEmail
+                });
+                NavigationManager.NavigateTo(verifyUri);
+            }
+            else
+            {
+                _success = "Kayıt oluşturuldu. Doğrulama e-postası gönderilemedi; daha sonra tekrar isteyebilirsiniz.";
+                var loginUri = QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
+                {
+                    ["tenant"] = response.TenantIdentifier,
+                    ["email"] = response.OwnerEmail,
+                    ["message"] = _success
+                });
+                NavigationManager.NavigateTo(loginUri);
+            }
         }
         catch (Exception ex)
         {

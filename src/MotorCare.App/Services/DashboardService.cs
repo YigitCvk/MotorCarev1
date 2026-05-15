@@ -12,6 +12,9 @@ public sealed class DashboardService
         _apiClient = apiClient;
     }
 
+    public Task<DailySummaryResponse?> GetDailySummaryAsync(CancellationToken ct = default)
+        => _apiClient.GetAsync<DailySummaryResponse>("/api/dashboard/daily", authorized: true, ct);
+
     public Task<PaymentSummaryDto?> GetPaymentSummaryAsync(DateTime from, DateTime to, CancellationToken ct = default)
     {
         var fromUtc = new DateTimeOffset(DateTime.SpecifyKind(from.Date, DateTimeKind.Utc));

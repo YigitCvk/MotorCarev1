@@ -8,6 +8,7 @@ public static class ExpectedExceptionClassifier
 {
     public static bool IsExpected(Exception exception)
         => exception is AppValidationException
+            or LoginException
             or UnauthorizedAccessException
             or NotFoundException
             or ConflictException
@@ -19,6 +20,7 @@ public static class ExpectedExceptionClassifier
         => exception switch
         {
             AppValidationException => LogLevel.Warning,
+            LoginException => LogLevel.Warning,
             UnauthorizedAccessException => LogLevel.Warning,
             NotFoundException => LogLevel.Information,
             ConflictException => LogLevel.Warning,

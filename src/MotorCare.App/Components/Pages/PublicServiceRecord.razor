@@ -2,6 +2,7 @@
 @layout Layout.PublicLayout
 @using System.Net
 @using MotorCare.App.Models.PublicRecords
+@using PublicServiceRecordModel = MotorCare.App.Models.PublicRecords.PublicServiceRecord
 @inject PublicRecordsService PublicRecordsService
 
 <PageTitle>GarajPass Dijital Servis Kaydı</PageTitle>
@@ -33,7 +34,7 @@
         }
         else
         {
-            <article class="public-record-card">
+            <article class="public-record-card public-record-document">
                 <div class="public-record-verify">
                     <span class="public-record-check">OK</span>
                     <div>
@@ -48,17 +49,35 @@
                         <dd>@_record.OrderNo</dd>
                     </div>
                     <div>
-                        <dt>Tarih</dt>
-                        <dd>@_record.Date.LocalDateTime.ToString("dd.MM.yyyy HH:mm")</dd>
+                        <dt>Açılış tarihi</dt>
+                        <dd>@FormatDateTime(_record.Date)</dd>
                     </div>
+                    @if (_record.ClosedAt.HasValue)
+                    {
+                        <div>
+                            <dt>Kapanış tarihi</dt>
+                            <dd>@FormatDateTime(_record.ClosedAt)</dd>
+                        </div>
+                    }
                     <div>
                         <dt>Araç</dt>
                         <dd>@VehicleText</dd>
                     </div>
                     <div>
                         <dt>Plaka</dt>
-                        <dd>@(_record.VehiclePlate ?? "-")</dd>
+                        <dd>@DisplayText(_record.VehiclePlate)</dd>
                     </div>
+                    <div>
+                        <dt>Araç KM</dt>
+                        <dd>@_record.VehicleKm.ToString("N0") km</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(_record.MaskedCustomerDisplayName))
+                    {
+                        <div>
+                            <dt>Müşteri</dt>
+                            <dd>@_record.MaskedCustomerDisplayName</dd>
+                        </div>
+                    }
                     <div>
                         <dt>Durum</dt>
                         <dd>@GetStatusText(_record.Status)</dd>
@@ -72,14 +91,149 @@
                     }
                 </dl>
 
-                <section class="public-record-summary">
-                    <h2>Kısa servis özeti</h2>
-                    <p>@_record.ServiceSummary</p>
+                <div class="public-record-split-grid">
+                    <section class="public-record-section">
+                        <h2>Servis özeti</h2>
+                        <p>@DisplayText(_record.ServiceSummary)</p>
+                        @if (!string.IsNullOrWhiteSpace(_record.WorkDescription)
+                            && !string.Equals(_record.WorkDescription, _record.ServiceSummary, StringComparison.Ordinal))
+                        {
+                            <h3>Yapılan iş</h3>
+                            <p>@_record.WorkDescription</p>
+                        }
+                    </section>
+
+                    <section class="public-record-section">
+                        <h2>Tutar özeti</h2>
+                        <dl class="public-record-totals">
+                            <div>
+                                <dt>İşçilik</dt>
+                                <dd>@FormatMoney(_record.Totals.LaborTotal)</dd>
+                            </div>
+                            <div>
+                                <dt>Parça</dt>
+                                <dd>@FormatMoney(_record.Totals.PartsTotal)</dd>
+                            </div>
+                            <div>
+                                <dt>İndirim</dt>
+                                <dd>@FormatMoney(_record.Totals.DiscountTotal)</dd>
+                            </div>
+                            <div class="is-total">
+                                <dt>Genel toplam</dt>
+                                <dd>@FormatMoney(_record.Totals.GrandTotal)</dd>
+                            </div>
+                            <div>
+                                <dt>Tahsil edilen</dt>
+                                <dd>@FormatMoney(_record.Totals.PaidTotal)</dd>
+                            </div>
+                            <div>
+                                <dt>Kalan bakiye</dt>
+                                <dd>@FormatMoney(_record.Totals.RemainingTotal)</dd>
+                            </div>
+                        </dl>
+                    </section>
+                </div>
+
+                <section class="public-record-section">
+                    <h2>Tahsilat özeti</h2>
+                    <dl class="public-record-totals public-record-totals--payment-summary">
+                        <div>
+                            <dt>Ödeme adedi</dt>
+                            <dd>@_record.PaymentSummary.PaymentCount</dd>
+                        </div>
+                        <div class="is-total">
+                            <dt>Toplam tahsilat</dt>
+                            <dd>@FormatMoney(_record.PaymentSummary.TotalPaid)</dd>
+                        </div>
+                        <div>
+                            <dt>Nakit</dt>
+                            <dd>@FormatMoney(_record.PaymentSummary.CashTotal)</dd>
+                        </div>
+                        <div>
+                            <dt>Kredi kartı</dt>
+                            <dd>@FormatMoney(_record.PaymentSummary.CreditCardTotal)</dd>
+                        </div>
+                        <div>
+                            <dt>Havale / EFT</dt>
+                            <dd>@FormatMoney(_record.PaymentSummary.BankTransferTotal)</dd>
+                        </div>
+                    </dl>
                 </section>
+
+                @if (Operations.Count > 0 || Parts.Count > 0 || Consumables.Count > 0)
+                {
+                    <div class="public-record-breakdown-grid">
+                        @if (Operations.Count > 0)
+                        {
+                            <section class="public-record-section">
+                                <h2>Operasyonlar</h2>
+                                <div class="public-record-line-list">
+                                    @foreach (var operation in Operations)
+                                    {
+                                        <article class="public-record-line-item">
+                                            <strong>@operation.Description</strong>
+                                        </article>
+                                    }
+                                </div>
+                            </section>
+                        }
+
+                        @if (Parts.Count > 0)
+                        {
+                            <section class="public-record-section">
+                                <h2>Kullanılan parçalar</h2>
+                                <div class="public-record-line-list">
+                                    @foreach (var part in Parts)
+                                    {
+                                        <article class="public-record-line-item">
+                                            <strong>@part.PartName</strong>
+                                            <span>@GetPartMeta(part)</span>
+                                        </article>
+                                    }
+                                </div>
+                            </section>
+                        }
+
+                        @if (Consumables.Count > 0)
+                        {
+                            <section class="public-record-section">
+                                <h2>Sarf ürünleri</h2>
+                                <div class="public-record-line-list">
+                                    @foreach (var consumable in Consumables)
+                                    {
+                                        <article class="public-record-line-item">
+                                            <strong>@GetConsumableTitle(consumable)</strong>
+                                            <span>@GetConsumableMeta(consumable)</span>
+                                        </article>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    </div>
+                }
+
+                @if (Payments.Count > 0)
+                {
+                    <section class="public-record-section">
+                        <h2>Tahsilatlar</h2>
+                        <div class="public-record-payment-list">
+                            @foreach (var payment in Payments)
+                            {
+                                <article class="public-record-payment-row">
+                                    <div>
+                                        <strong>@GetPaymentLabel(payment.Method)</strong>
+                                        <span>@FormatDateTime(payment.PaymentDate)</span>
+                                    </div>
+                                    <strong>@FormatMoney(payment.Amount)</strong>
+                                </article>
+                            }
+                        </div>
+                    </section>
+                }
 
                 <footer class="public-record-footer">
                     <strong>Bu kayıt GarajPass üzerinden doğrulanmıştır.</strong>
-                    <span>Detaylı kayıt erişimi yakında.</span>
+                    <span>@VerificationText</span>
                 </footer>
             </article>
         }
@@ -89,8 +243,13 @@
 @code {
     [Parameter] public string? Slug { get; set; }
 
-    private PublicServiceRecordPreview? _record;
+    private PublicServiceRecordModel? _record;
     private bool _loading = true;
+
+    private IReadOnlyList<PublicServiceRecordOperation> Operations => _record?.Operations ?? [];
+    private IReadOnlyList<PublicServiceRecordPart> Parts => _record?.Parts ?? [];
+    private IReadOnlyList<PublicServiceRecordConsumable> Consumables => _record?.Consumables ?? [];
+    private IReadOnlyList<PublicServiceRecordPayment> Payments => _record?.Payments ?? [];
 
     private string VehicleText
     {
@@ -99,9 +258,13 @@
             var parts = new[] { _record?.VehicleBrand, _record?.VehicleModel }
                 .Where(x => !string.IsNullOrWhiteSpace(x));
             var text = string.Join(" ", parts);
-            return string.IsNullOrWhiteSpace(text) ? "-" : text;
+            return DisplayText(text);
         }
     }
+
+    private string VerificationText => string.IsNullOrWhiteSpace(_record?.VerificationText)
+        ? "Dijital kayıt public bağlantı üzerinden okunmuştur."
+        : _record.VerificationText;
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,7 +276,7 @@
 
         try
         {
-            _record = await PublicRecordsService.GetServiceRecordPreviewAsync(Slug);
+            _record = await PublicRecordsService.GetServiceRecordAsync(Slug);
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -133,6 +296,42 @@
         "Completed" => "Tamamlandı",
         "Delivered" => "Teslim edildi",
         "Cancelled" => "İptal",
-        _ => status
+        _ => DisplayText(status)
     };
+
+    private static string GetPaymentLabel(string method) => method switch
+    {
+        "Cash" => "Nakit",
+        "CreditCard" => "Kredi Kartı",
+        "BankTransfer" => "Havale / EFT",
+        _ => DisplayText(method)
+    };
+
+    private static string GetPartMeta(PublicServiceRecordPart part)
+    {
+        var partNo = string.IsNullOrWhiteSpace(part.PartNumber) ? null : $"Parça no: {part.PartNumber}";
+        var quantity = part.Quantity > 0 ? $"Adet: {part.Quantity}" : null;
+        return JoinDisplayParts(partNo, quantity);
+    }
+
+    private static string GetConsumableTitle(PublicServiceRecordConsumable consumable)
+        => JoinDisplayParts(consumable.Brand, consumable.ProductName);
+
+    private static string GetConsumableMeta(PublicServiceRecordConsumable consumable)
+        => JoinDisplayParts(consumable.Category, consumable.SubCategory, consumable.Specification, consumable.Notes);
+
+    private static string JoinDisplayParts(params string?[] parts)
+    {
+        var text = string.Join(" · ", parts.Where(x => !string.IsNullOrWhiteSpace(x)));
+        return DisplayText(text);
+    }
+
+    private static string DisplayText(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private static string FormatDateTime(DateTimeOffset? value)
+        => value?.LocalDateTime.ToString("dd.MM.yyyy HH:mm") ?? "-";
+
+    private static string FormatMoney(decimal value)
+        => $"{value:N2} ₺";
 }

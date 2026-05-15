@@ -1,6 +1,8 @@
 using Carter;
-using MotorCare.Application.Common.Interfaces;
+using MediatR;
 using MotorCare.Application.PublicRecords;
+using MotorCare.Application.PublicRecords.Queries.GetPublicInspectionReport;
+using MotorCare.Application.PublicRecords.Queries.GetPublicServiceRecord;
 
 namespace MotorCare.Api.Modules;
 
@@ -14,28 +16,28 @@ public sealed class PublicRecordsModule : ICarterModule
 
         group.MapGet("/service-record/{slug}", async (
             string slug,
-            IPublicRecordAccessService publicRecordAccessService,
+            IMediator mediator,
             CancellationToken ct) =>
         {
-            var result = await publicRecordAccessService.GetServiceRecordPreviewAsync(slug, ct);
+            var result = await mediator.Send(new GetPublicServiceRecordQuery(slug), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetPublicServiceRecord")
         .AllowAnonymous()
-        .Produces<PublicServiceRecordPreviewDto>()
+        .Produces<PublicServiceRecordDto>()
         .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/inspection-report/{slug}", async (
             string slug,
-            IPublicRecordAccessService publicRecordAccessService,
+            IMediator mediator,
             CancellationToken ct) =>
         {
-            var result = await publicRecordAccessService.GetInspectionReportPreviewAsync(slug, ct);
+            var result = await mediator.Send(new GetPublicInspectionReportQuery(slug), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetPublicInspectionReport")
         .AllowAnonymous()
-        .Produces<PublicInspectionReportPreviewDto>()
+        .Produces<PublicInspectionReportDto>()
         .ProducesProblem(StatusCodes.Status404NotFound);
     }
 }

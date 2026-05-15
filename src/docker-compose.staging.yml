@@ -54,7 +54,7 @@ services:
       Email__EnableSsl: ${Email__EnableSsl:-true}
       Email__UseDefaultCredentials: ${Email__UseDefaultCredentials:-false}
       Email__AppBaseUrl: ${Email__AppBaseUrl:-https://staging.bakimsuite.com}
-      Email__SendEmails: ${Email__SendEmails:-true}
+      Email__SendEmails: ${Email__SendEmails:-false}
       Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection

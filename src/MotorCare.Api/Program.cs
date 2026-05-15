@@ -14,6 +14,7 @@ using MotorCare.Api.Middleware;
 using MotorCare.Api.Swagger;
 using MotorCare.Application;
 using MotorCare.Application.Common.Interfaces;
+using MotorCare.Application.Common.Security;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
 using MotorCare.Infrastructure.Persistence.Seed;
@@ -162,42 +163,41 @@ try
         options.AddPolicy(AuthorizationPolicies.TenantManagement, policy =>
             policy.RequireRole(UserRole.Owner.ToString()));
 
+        options.AddPolicy(AuthorizationPolicies.UserManagement, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.UserManagement)));
+
+        options.AddPolicy(AuthorizationPolicies.CustomerRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.CustomerRead)));
+
         options.AddPolicy(AuthorizationPolicies.CustomerOperations, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.CustomerWrite)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderRead, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString(),
-                UserRole.Technician.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderRead)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderWrite, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString(),
-                UserRole.Technician.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderWrite)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderPayments, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderPayments)));
+
+        options.AddPolicy(AuthorizationPolicies.InspectionRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InspectionRead)));
+
+        options.AddPolicy(AuthorizationPolicies.InspectionWrite, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InspectionWrite)));
+
+        options.AddPolicy(AuthorizationPolicies.InventoryRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InventoryRead)));
+
+        options.AddPolicy(AuthorizationPolicies.InventoryWrite, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InventoryWrite)));
 
         options.AddPolicy(AuthorizationPolicies.DashboardRead, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.DashboardRead)));
 
         options.AddPolicy(AuthorizationPolicies.ImportOperations, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ImportOperations)));
     });
 
     builder.Services.AddApplication();

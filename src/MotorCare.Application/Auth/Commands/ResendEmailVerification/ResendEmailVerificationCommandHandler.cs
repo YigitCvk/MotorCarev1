@@ -12,7 +12,6 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
     private readonly IUserRepository _userRepository;
     private readonly ITenantRepository _tenantRepository;
     private readonly IEmailSender _emailSender;
-    private readonly IAuthLinkBuilder _authLinkBuilder;
     private readonly ISecurityTokenFactory _securityTokenFactory;
     private readonly ILogger<ResendEmailVerificationCommandHandler> _logger;
 
@@ -20,14 +19,12 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
         IUserRepository userRepository,
         ITenantRepository tenantRepository,
         IEmailSender emailSender,
-        IAuthLinkBuilder authLinkBuilder,
         ISecurityTokenFactory securityTokenFactory,
         ILogger<ResendEmailVerificationCommandHandler> logger)
     {
         _userRepository = userRepository;
         _tenantRepository = tenantRepository;
         _emailSender = emailSender;
-        _authLinkBuilder = authLinkBuilder;
         _securityTokenFactory = securityTokenFactory;
         _logger = logger;
     }
@@ -37,7 +34,8 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
         var tenant = await _tenantRepository.GetByIdentifierAsync(request.TenantIdentifier, cancellationToken)
             ?? throw new UnauthorizedAccessException("İşletme bulunamadı.");
 
-        var user = await _userRepository.GetByEmailAsync(tenant.Identifier, request.Email.Trim().ToLowerInvariant(), cancellationToken)
+        // Include security tokens so RevokeSecurityTokens can traverse the full collection.
+        var user = await _userRepository.GetByEmailWithSecurityTokensAsync(tenant.Identifier, request.Email.Trim().ToLowerInvariant(), cancellationToken)
             ?? throw new UnauthorizedAccessException("Kullanıcı bulunamadı.");
 
         if (user.IsEmailVerified)
@@ -47,17 +45,18 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
 
         var now = DateTimeOffset.UtcNow;
         var latest = await _userRepository.GetLatestSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.EmailVerification, cancellationToken);
-        if (latest is not null && latest.CreatedAt >= now.AddMinutes(-1))
+        if (latest is not null && latest.CreatedAt >= now.AddSeconds(-60))
         {
-            return new AuthActionMessageDto("Lütfen yeni doğrulama e-postası istemeden önce kısa süre bekleyin.");
+            return new AuthActionMessageDto("Lütfen yeni doğrulama kodu istemeden önce 60 saniye bekleyin.");
         }
 
         user.RevokeSecurityTokens(UserSecurityTokenPurpose.EmailVerification, now);
-        var plainToken = _securityTokenFactory.GenerateOpaqueToken();
+        var code = _securityTokenFactory.GenerateNumericCode();
+        var expiresAt = now.AddMinutes(10);
         var token = user.AddSecurityToken(
             UserSecurityTokenPurpose.EmailVerification,
-            _securityTokenFactory.Hash(plainToken),
-            now.AddHours(24),
+            _securityTokenFactory.Hash(code),
+            expiresAt,
             now);
 
         _userRepository.Update(user);
@@ -71,8 +70,7 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
 
         try
         {
-            var verificationUrl = _authLinkBuilder.BuildEmailVerificationUrl(user.Email, plainToken);
-            await _emailSender.SendEmailVerificationAsync(user.Email, user.FullName, verificationUrl, cancellationToken);
+            await _emailSender.SendEmailVerificationAsync(user.Email, user.FullName, code, expiresAt.UtcDateTime, cancellationToken);
             _logger.LogInformation(EventIdStore.Auth.EmailVerificationSent, "Email verification resent. UserId={UserId}", user.Id);
         }
         catch (Exception ex)
@@ -80,6 +78,6 @@ public sealed class ResendEmailVerificationCommandHandler : IRequestHandler<Rese
             _logger.LogError(EventIdStore.Auth.EmailVerificationSendFailed, ex, "Email verification resend failed. UserId={UserId}", user.Id);
         }
 
-        return new AuthActionMessageDto("Doğrulama e-postası gönderildi.");
+        return new AuthActionMessageDto("Doğrulama kodu gönderildi.");
     }
 }

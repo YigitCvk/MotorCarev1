@@ -17,7 +17,6 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IEmailSender _emailSender;
-    private readonly IAuthLinkBuilder _authLinkBuilder;
     private readonly ISecurityTokenFactory _securityTokenFactory;
     private readonly ILogger<CreateTenantWithOwnerCommandHandler> _logger;
 
@@ -26,7 +25,6 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IEmailSender emailSender,
-        IAuthLinkBuilder authLinkBuilder,
         ISecurityTokenFactory securityTokenFactory,
         ILogger<CreateTenantWithOwnerCommandHandler> logger)
     {
@@ -34,7 +32,6 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _emailSender = emailSender;
-        _authLinkBuilder = authLinkBuilder;
         _securityTokenFactory = securityTokenFactory;
         _logger = logger;
     }
@@ -70,12 +67,12 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
     private async Task<bool> TrySendVerificationEmailAsync(User owner, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
-        var plainToken = _securityTokenFactory.GenerateOpaqueToken();
-        var tokenHash = _securityTokenFactory.Hash(plainToken);
+        var code = _securityTokenFactory.GenerateNumericCode();
+        var expiresAt = now.AddMinutes(10);
         var token = owner.AddSecurityToken(
             UserSecurityTokenPurpose.EmailVerification,
-            tokenHash,
-            now.AddHours(24),
+            _securityTokenFactory.Hash(code),
+            expiresAt,
             now);
 
         _userRepository.Update(owner);
@@ -90,8 +87,7 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
 
         try
         {
-            var verificationUrl = _authLinkBuilder.BuildEmailVerificationUrl(owner.Email, plainToken);
-            await _emailSender.SendEmailVerificationAsync(owner.Email, owner.FullName, verificationUrl, cancellationToken);
+            await _emailSender.SendEmailVerificationAsync(owner.Email, owner.FullName, code, expiresAt.UtcDateTime, cancellationToken);
 
             _logger.LogInformation(
                 EventIdStore.Auth.EmailVerificationSent,

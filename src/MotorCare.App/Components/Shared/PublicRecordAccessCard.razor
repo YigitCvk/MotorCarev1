@@ -5,6 +5,7 @@
 @inject IOptions<PublicReportOptions> PublicReportOptions
 @inject NavigationManager NavigationManager
 @inject QrCodeSvgService QrCodeSvgService
+@inject IJSRuntime JSRuntime
 
 <section class="app-card public-access-card" id="@ElementId">
     <div class="section-header">
@@ -87,6 +88,12 @@
                 <button type="button" class="app-btn-secondary danger-action" @onclick="DisableAsync" disabled="@_working">
                     @(_working ? "Güncelleniyor..." : "Pasife Al")
                 </button>
+                <button type="button"
+                        class="app-btn-secondary"
+                        @onclick="CopyPublicUrlAsync"
+                        disabled="@(_working || _copying || string.IsNullOrWhiteSpace(PublicUrl))">
+                    @(_copying ? "Kopyalanıyor..." : "Bağlantıyı Kopyala")
+                </button>
                 <a class="app-btn-secondary" href="@PublicUrl" target="_blank" rel="noopener noreferrer">Public Kaydı Aç</a>
                 <a class="app-btn-primary" href="@PrintHref">QR Kartı Yazdır</a>
             }
@@ -118,6 +125,7 @@
     private PublicRecordAccessResponse? _access;
     private bool _loading = true;
     private bool _working;
+    private bool _copying;
     private string? _error;
     private string? _message;
     private string? _qrSvg;
@@ -241,6 +249,38 @@
         finally
         {
             _working = false;
+        }
+    }
+
+    private async Task CopyPublicUrlAsync()
+    {
+        if (string.IsNullOrWhiteSpace(PublicUrl))
+        {
+            return;
+        }
+
+        try
+        {
+            _copying = true;
+            _error = null;
+            _message = null;
+
+            var copied = await JSRuntime.InvokeAsync<bool>("motorCareUi.copyText", PublicUrl);
+            if (copied)
+            {
+                _message = "Public bağlantı panoya kopyalandı.";
+                return;
+            }
+
+            _error = "Bağlantı kopyalanamadı. Lütfen tekrar deneyin.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _copying = false;
         }
     }
 

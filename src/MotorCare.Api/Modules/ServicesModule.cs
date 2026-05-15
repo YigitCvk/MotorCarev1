@@ -19,8 +19,7 @@ public sealed class ServicesModule : ICarterModule
     {
         var group = app.MapGroup("/api/services")
             .WithTags("Services")
-            .WithOpenApi()
-            .RequireAuthorization(AuthorizationPolicies.CustomerOperations);
+            .WithOpenApi();
 
         group.MapGet("/", async (
             string? q,
@@ -37,6 +36,7 @@ public sealed class ServicesModule : ICarterModule
 
             return Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<PagedResult<ServiceCatalogItemDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -46,6 +46,7 @@ public sealed class ServicesModule : ICarterModule
             var result = await mediator.Send(new GetServiceCatalogItemByIdQuery(id), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<ServiceCatalogItemDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -66,6 +67,7 @@ public sealed class ServicesModule : ICarterModule
 
             return Results.Created($"/api/services/{id}", id);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -87,6 +89,7 @@ public sealed class ServicesModule : ICarterModule
 
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status409Conflict)
@@ -98,6 +101,7 @@ public sealed class ServicesModule : ICarterModule
             await mediator.Send(new ActivateServiceCatalogItemCommand(id), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -108,6 +112,7 @@ public sealed class ServicesModule : ICarterModule
             await mediator.Send(new DeactivateServiceCatalogItemCommand(id), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)

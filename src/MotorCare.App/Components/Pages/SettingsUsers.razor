@@ -15,7 +15,7 @@
         <div class="page-header-actions">
             <a class="app-btn-secondary" href="/settings">Ayarlara Dön</a>
             <button type="button" class="app-btn-primary" @onclick="ToggleCreateForm">
-                @(_showCreateForm ? "Formu Kapat" : "+ Yeni Kullanıcı")
+                @(_showCreateForm ? "Formu Kapat" : "+ Kullanıcı Davet Et")
             </button>
         </div>
     </section>
@@ -23,25 +23,26 @@
     @if (_showCreateForm)
     {
         <section class="app-card mb-4">
-            <div class="section-title mb-3">Yeni Kullanıcı Ekle</div>
+            <div class="section-title mb-3">Kullanıcı Davet Et</div>
+            <p class="text-muted small mb-3">Kullanıcıya davet e-postası gönderilir. Kullanıcı kendi şifresini belirler.</p>
 
             @if (!string.IsNullOrWhiteSpace(_createError))
             {
                 <div class="alert-error mb-3">@_createError</div>
             }
+            @if (!string.IsNullOrWhiteSpace(_inviteSuccess))
+            {
+                <div class="alert-success mb-3">@_inviteSuccess</div>
+            }
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label">Ad Soyad <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" @bind="_createFullName" placeholder="Ad Soyad" />
+                    <label class="form-label">Ad Soyad</label>
+                    <input type="text" class="form-control" @bind="_createFullName" placeholder="Opsiyonel" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">E-posta <span class="text-danger">*</span></label>
                     <input type="email" class="form-control" @bind="_createEmail" placeholder="ornek@sirket.com" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Şifre <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" @bind="_createPassword" placeholder="En az 8 karakter" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">Rol <span class="text-danger">*</span></label>
@@ -50,14 +51,17 @@
                         <option value="Admin">Yönetici</option>
                         <option value="Receptionist">Danışman</option>
                         <option value="Technician">Teknisyen</option>
+                        <option value="Inspector">Ekspertiz</option>
+                        <option value="Accountant">Muhasebe</option>
+                        <option value="ReadOnly">Sadece Okuma</option>
                         <option value="Manager">Müdür</option>
                     </select>
                 </div>
             </div>
 
             <div class="form-actions mt-3">
-                <button type="button" class="app-btn-primary" @onclick="CreateUserAsync" disabled="@_isCreating">
-                    @(_isCreating ? "Kaydediliyor..." : "Kullanıcı Ekle")
+                <button type="button" class="app-btn-primary" @onclick="InviteUserAsync" disabled="@_isCreating">
+                    @(_isCreating ? "Gönderiliyor..." : "Davet Gönder")
                 </button>
                 <button type="button" class="app-btn-secondary" @onclick="ToggleCreateForm" disabled="@_isCreating">
                     Vazgeç
@@ -127,6 +131,9 @@
                                             <option value="Admin" selected="@(user.Role == "Admin")">Yönetici</option>
                                             <option value="Receptionist" selected="@(user.Role == "Receptionist")">Danışman</option>
                                             <option value="Technician" selected="@(user.Role == "Technician")">Teknisyen</option>
+                                            <option value="Inspector" selected="@(user.Role == "Inspector")">Ekspertiz</option>
+                                            <option value="Accountant" selected="@(user.Role == "Accountant")">Muhasebe</option>
+                                            <option value="ReadOnly" selected="@(user.Role == "ReadOnly")">Sadece Okuma</option>
                                             <option value="Manager" selected="@(user.Role == "Manager")">Müdür</option>
                                         </select>
                                     }
@@ -212,9 +219,9 @@
     private bool _showCreateForm;
     private bool _isCreating;
     private string? _createError;
+    private string? _inviteSuccess;
     private string _createFullName = string.Empty;
     private string _createEmail = string.Empty;
-    private string _createPassword = string.Empty;
     private string _createRole = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -259,32 +266,23 @@
     {
         _showCreateForm = !_showCreateForm;
         _createError = null;
+        _inviteSuccess = null;
         if (!_showCreateForm)
         {
             _createFullName = string.Empty;
             _createEmail = string.Empty;
-            _createPassword = string.Empty;
             _createRole = string.Empty;
         }
     }
 
-    private async Task CreateUserAsync()
+    private async Task InviteUserAsync()
     {
         _createError = null;
+        _inviteSuccess = null;
 
-        if (string.IsNullOrWhiteSpace(_createFullName))
-        {
-            _createError = "Ad Soyad alanı zorunludur.";
-            return;
-        }
         if (string.IsNullOrWhiteSpace(_createEmail))
         {
             _createError = "E-posta alanı zorunludur.";
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(_createPassword) || _createPassword.Length < 8)
-        {
-            _createError = "Şifre en az 8 karakter olmalıdır.";
             return;
         }
         if (string.IsNullOrWhiteSpace(_createRole))
@@ -298,22 +296,12 @@
             _isCreating = true;
             await InvokeAsync(StateHasChanged);
 
-            var request = new CreateUserRequest
-            {
-                FullName = _createFullName,
-                Email = _createEmail,
-                Password = _createPassword,
-                Role = _createRole
-            };
+            await UsersService.InviteUserAsync(_createEmail, _createRole, _createFullName);
 
-            await UsersService.CreateUserAsync(request);
-
-            _showCreateForm = false;
+            _inviteSuccess = $"{_createEmail} adresine davet e-postası gönderildi.";
             _createFullName = string.Empty;
             _createEmail = string.Empty;
-            _createPassword = string.Empty;
             _createRole = string.Empty;
-            _actionMessage = "Kullanıcı başarıyla eklendi.";
 
             await LoadUsersAsync();
         }

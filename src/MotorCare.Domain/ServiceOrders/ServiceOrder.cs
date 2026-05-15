@@ -88,17 +88,17 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
     // --- Parts ---
 
-    public void AddPart(string partName, string? partNumber, decimal unitPrice, int quantity)
+    public void AddPart(string partName, string? partNumber, decimal unitPrice, int quantity, Guid? inventoryItemId = null)
     {
         EnsureModifiable();
         if (string.IsNullOrWhiteSpace(partName)) throw new DomainException("Part name is required.");
         if (unitPrice < 0) throw new DomainException("Unit price cannot be negative.");
         if (quantity <= 0) throw new DomainException("Quantity must be greater than zero.");
-        _parts.Add(new ServicePartItem(partName, partNumber, unitPrice, quantity));
+        _parts.Add(new ServicePartItem(partName, partNumber, unitPrice, quantity, inventoryItemId));
         RecalculateTotals();
     }
 
-    public void RemovePart(Guid partId)
+    public ServicePartItem RemovePart(Guid partId)
     {
         EnsureModifiable();
         var part = _parts.FirstOrDefault(p => p.Id == partId)
@@ -108,6 +108,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
         _parts.Remove(part);
         RecalculateTotals();
+        return part;
     }
 
     // --- Consumables ---

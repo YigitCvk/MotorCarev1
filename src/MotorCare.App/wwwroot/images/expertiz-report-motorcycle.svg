@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" fill="none">
+  <g id="vehicle-shadow" opacity="0.75">
+    <ellipse cx="470" cy="427" rx="350" ry="24" fill="#CBD5E1"/>
+  </g>
+
+  <g id="rear-wheel">
+    <circle cx="730" cy="377" r="102" fill="#0F172A"/>
+    <circle cx="730" cy="377" r="75" fill="#334155"/>
+    <circle cx="730" cy="377" r="57" fill="#F8FAFC"/>
+    <circle cx="730" cy="377" r="22" fill="#475569"/>
+    <path d="M730 320V434M673 377H787M690 337L770 417M770 337L690 417" stroke="#94A3B8" stroke-width="12" stroke-linecap="round"/>
+  </g>
+
+  <g id="front-wheel">
+    <circle cx="228" cy="377" r="102" fill="#0F172A"/>
+    <circle cx="228" cy="377" r="75" fill="#334155"/>
+    <circle cx="228" cy="377" r="57" fill="#F8FAFC"/>
+    <circle cx="228" cy="377" r="22" fill="#475569"/>
+    <path d="M228 320V434M171 377H285M188 337L268 417M268 337L188 417" stroke="#94A3B8" stroke-width="12" stroke-linecap="round"/>
+  </g>
+
+  <g id="vehicle-frame" stroke="#334155" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M284 365L398 251L520 365H669"/>
+    <path d="M398 251L464 366"/>
+    <path d="M520 365L578 254L697 254"/>
+    <path d="M632 255L730 377"/>
+  </g>
+
+  <g id="vehicle-body">
+    <path d="M356 242C388 192 453 173 520 183L588 194C610 198 630 211 645 229L676 265H540C500 265 463 252 430 228L356 242Z" fill="#2563EB"/>
+    <path d="M344 246C361 212 391 190 429 183L504 170C535 165 569 171 597 188L629 207H508C462 207 418 221 377 247L344 246Z" fill="#60A5FA"/>
+    <path d="M558 196L661 198C690 198 714 210 731 232L752 259H640L558 196Z" fill="#0F172A"/>
+    <path d="M572 194L664 194C682 194 700 200 714 211L663 250H598L572 194Z" fill="#1E293B"/>
+    <path d="M535 274H650C681 274 707 298 710 329H579C558 329 540 313 537 292L535 274Z" fill="#475569"/>
+    <path d="M355 244L320 274C301 291 290 314 287 339H336C345 304 367 273 398 252L355 244Z" fill="#1E293B"/>
+    <path d="M418 248H531L484 344H390L418 248Z" fill="#111827"/>
+    <path d="M398 271H477L444 332H376L398 271Z" fill="#64748B"/>
+    <path d="M519 342H639L654 375H523C504 375 489 360 489 342H519Z" fill="#111827"/>
+    <path d="M653 374H771C787 374 801 384 807 399H658C647 399 638 390 638 379V374H653Z" fill="#475569"/>
+  </g>
+
+  <g id="vehicle-controls" stroke="#334155" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M305 347L281 219"/>
+    <path d="M281 219L319 184"/>
+    <path d="M270 220H329"/>
+    <path d="M251 206L225 191"/>
+    <path d="M330 183L352 174"/>
+  </g>
+
+  <g id="vehicle-detail" stroke="#CBD5E1" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M542 215H625"/>
+    <path d="M594 288H665"/>
+    <path d="M327 343H364"/>
+    <path d="M503 365H569"/>
+  </g>
+</svg>

@@ -1,5 +1,7 @@
 @using Microsoft.Extensions.Options
+@using MotorCare.App.Authorization
 @using MotorCare.App.Configuration
+@inject AuthService AuthService
 @inject IOptions<BuildInfoOptions> BuildInfo
 
 <aside class="app-sidebar">
@@ -15,6 +17,8 @@
         <div class="app-sidebar__group">
             <div class="app-sidebar__group-label">Operasyon</div>
 
+            @if (AppRoleAccess.CanReadDashboard(_role))
+            {
             <NavLink class="app-sidebar__link" href="/dashboard" Match="NavLinkMatch.All">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 13.5 12 4l9 9.5"></path>
@@ -22,6 +26,7 @@
                 </svg>
                 <span>Dashboard</span>
             </NavLink>
+            }
 
             <NavLink class="app-sidebar__link" href="/appointments" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -31,6 +36,8 @@
                 <span>Randevular</span>
             </NavLink>
 
+            @if (AppRoleAccess.CanReadServiceOrders(_role))
+            {
             <NavLink class="app-sidebar__link" href="/service-orders" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 5.5h12"></path>
@@ -41,7 +48,10 @@
                 </svg>
                 <span>Servis Emirleri</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanReadCustomers(_role))
+            {
             <NavLink class="app-sidebar__link" href="/customers" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16 20v-1.3A3.7 3.7 0 0 0 12.3 15H7.7A3.7 3.7 0 0 0 4 18.7V20"></path>
@@ -50,7 +60,10 @@
                 </svg>
                 <span>Müşteriler</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanReadCustomers(_role))
+            {
             <NavLink class="app-sidebar__link" href="/vehicles" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m4 14 1.5-5h13L20 14"></path>
@@ -61,7 +74,10 @@
                 </svg>
                 <span>Araçlar</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanReadInspections(_role))
+            {
             <NavLink class="app-sidebar__link" href="/inspections" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7 4.5h10"></path>
@@ -71,6 +87,7 @@
                 </svg>
                 <span>Ekspertiz</span>
             </NavLink>
+            }
         </div>
 
         <div class="app-sidebar__group">
@@ -85,6 +102,8 @@
                 <span>Hizmetler</span>
             </NavLink>
 
+            @if (AppRoleAccess.CanReadInventory(_role))
+            {
             <NavLink class="app-sidebar__link" href="/inventory" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 8.5 12 4l8 4.5-8 4.5z"></path>
@@ -93,7 +112,10 @@
                 </svg>
                 <span>Stok / Parça</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanImport(_role))
+            {
             <NavLink class="app-sidebar__link" href="/imports" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3v13"></path>
@@ -102,7 +124,10 @@
                 </svg>
                 <span>Veri Aktarımı</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanReadFinance(_role))
+            {
             <NavLink class="app-sidebar__link" href="/finance" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3v18"></path>
@@ -110,6 +135,7 @@
                 </svg>
                 <span>Finans / Kasa</span>
             </NavLink>
+            }
 
             <NavLink class="app-sidebar__link" href="/reports" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -138,6 +164,13 @@
 </aside>
 
 @code {
+    private string? _role;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _role = (await AuthService.GetCurrentUserAsync())?.Role;
+    }
+
     private string FooterVersionText
     {
         get

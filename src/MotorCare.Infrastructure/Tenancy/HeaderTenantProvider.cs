@@ -15,11 +15,18 @@ public class HeaderTenantProvider : ITenantProvider
 
     public string? GetTenantId()
     {
+        var authenticatedTenant = _httpContextAccessor.HttpContext?.User
+            .FindFirst(JwtTokenGenerator.TenantIdentifierClaim)?.Value;
+        if (!string.IsNullOrWhiteSpace(authenticatedTenant))
+        {
+            return authenticatedTenant;
+        }
+
         if (_httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantId) == true)
         {
             return tenantId.ToString();
         }
 
-        return _httpContextAccessor.HttpContext?.User.FindFirst(JwtTokenGenerator.TenantIdentifierClaim)?.Value;
+        return null;
     }
 }

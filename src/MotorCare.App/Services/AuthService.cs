@@ -52,12 +52,25 @@ public sealed class AuthService
 
     public Task<AuthActionResponse?> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken cancellationToken = default)
     {
-        return _apiClient.PostAsync<VerifyEmailRequest, AuthActionResponse>("/api/auth/verify-email", request, authorized: false, cancellationToken);
+        return _apiClient.PostAsync<VerifyEmailRequest, AuthActionResponse>("/api/auth/verify-email-code", request, authorized: false, cancellationToken);
     }
 
     public Task<AuthActionResponse?> ResendEmailVerificationAsync(ResendEmailVerificationRequest request, CancellationToken cancellationToken = default)
     {
-        return _apiClient.PostAsync<ResendEmailVerificationRequest, AuthActionResponse>("/api/auth/resend-email-verification", request, authorized: false, cancellationToken);
+        return _apiClient.PostAsync<ResendEmailVerificationRequest, AuthActionResponse>("/api/auth/resend-email-verification-code", request, authorized: false, cancellationToken);
+    }
+
+    public Task<AuthActionResponse?> AcceptInviteAsync(AcceptInviteRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync<AcceptInviteRequest, AuthActionResponse>("/api/auth/accept-invite", request, authorized: false, cancellationToken);
+    }
+
+    public Task<InvitationValidationResponse?> ValidateInviteAsync(string token, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.GetAsync<InvitationValidationResponse>(
+            $"/api/users/invitations/{Uri.EscapeDataString(token)}/validate",
+            authorized: false,
+            cancellationToken);
     }
 
     public async Task<LoginResponse?> VerifyTwoFactorAsync(VerifyTwoFactorRequest request, CancellationToken cancellationToken = default)

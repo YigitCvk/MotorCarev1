@@ -155,14 +155,17 @@ public sealed class ApiClient
         string uri,
         CancellationToken cancellationToken)
     {
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
         var fallback = response.StatusCode switch
         {
             HttpStatusCode.Unauthorized => "Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.",
             HttpStatusCode.Forbidden => "Bu işlem için yetkiniz bulunmuyor.",
-            _ => $"API isteği başarısız oldu ({(int)response.StatusCode})."
+            HttpStatusCode.NotFound => "İstenen kayıt bulunamadı.",
+            HttpStatusCode.UnprocessableEntity => "Gönderilen bilgilerde bir hata var. Lütfen formu kontrol edin.",
+            HttpStatusCode.Conflict => "Bu işlem mevcut kayıtlarla çakışıyor.",
+            _ => "İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin."
         };
 
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(content))
         {
             return new ApiException(response.StatusCode, uri, fallback);
@@ -172,15 +175,33 @@ public sealed class ApiClient
         {
             using var document = JsonDocument.Parse(content);
             var builder = new StringBuilder();
+            string? code = null;
 
-            if (document.RootElement.TryGetProperty("detail", out var detail))
+            if (document.RootElement.TryGetProperty("code", out var codeEl))
             {
-                builder.Append(detail.GetString());
+                code = codeEl.GetString();
+            }
+
+            // Prefer "message" (current format), fall back to "detail", then "title"
+            if (document.RootElement.TryGetProperty("message", out var messageEl))
+            {
+                var msg = messageEl.GetString();
+                if (!string.IsNullOrWhiteSpace(msg))
+                    builder.Append(msg);
+            }
+
+            if (builder.Length == 0 && document.RootElement.TryGetProperty("detail", out var detail))
+            {
+                var msg = detail.GetString();
+                if (!string.IsNullOrWhiteSpace(msg))
+                    builder.Append(msg);
             }
 
             if (builder.Length == 0 && document.RootElement.TryGetProperty("title", out var title))
             {
-                builder.Append(title.GetString());
+                var msg = title.GetString();
+                if (!string.IsNullOrWhiteSpace(msg))
+                    builder.Append(msg);
             }
 
             if (document.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
@@ -188,33 +209,29 @@ public sealed class ApiClient
                 foreach (var property in errors.EnumerateObject())
                 {
                     if (property.Value.ValueKind != JsonValueKind.Array)
-                    {
                         continue;
-                    }
 
                     foreach (var error in property.Value.EnumerateArray())
                     {
-                        var message = error.GetString();
-                        if (string.IsNullOrWhiteSpace(message))
-                        {
+                        var msg = error.GetString();
+                        if (string.IsNullOrWhiteSpace(msg))
                             continue;
-                        }
 
                         if (builder.Length > 0)
-                        {
                             builder.Append(' ');
-                        }
 
-                        builder.Append(message);
+                        builder.Append(msg);
                     }
                 }
             }
 
-            return new ApiException(response.StatusCode, uri, builder.Length > 0 ? builder.ToString() : content);
+            var finalMessage = builder.Length > 0 ? builder.ToString() : fallback;
+            return new ApiException(response.StatusCode, uri, finalMessage, code);
         }
         catch (JsonException)
         {
-            return new ApiException(response.StatusCode, uri, content);
+            // Never propagate raw server content — could contain SQL errors or stack traces
+            return new ApiException(response.StatusCode, uri, fallback);
         }
     }
 }
