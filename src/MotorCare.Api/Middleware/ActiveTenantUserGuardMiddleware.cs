@@ -118,7 +118,8 @@ public sealed class ActiveTenantUserGuardMiddleware
             return;
         }
 
-        var tokenRole = user.FindFirstValue(JwtTokenGenerator.RoleClaim);
+        var tokenRole = user.FindFirstValue(JwtTokenGenerator.RoleClaim)
+            ?? user.FindFirstValue(ClaimTypes.Role);
         if (!string.Equals(tokenRole, tenantUser.Role.ToString(), StringComparison.Ordinal))
         {
             await WriteProblemAsync(
