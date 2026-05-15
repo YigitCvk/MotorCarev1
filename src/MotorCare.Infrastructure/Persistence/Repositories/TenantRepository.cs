@@ -15,12 +15,12 @@ public class TenantRepository : ITenantRepository
 
     public async Task<Tenant?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Tenants.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        return await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
     public async Task<Tenant?> GetByIdentifierAsync(string identifier, CancellationToken cancellationToken = default)
     {
-        return await _context.Tenants.FirstOrDefaultAsync(t => t.Identifier == identifier, cancellationToken);
+        return await _context.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Identifier == identifier, cancellationToken);
     }
 
     public async Task AddAsync(Tenant tenant, CancellationToken cancellationToken = default)
