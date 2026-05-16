@@ -1,6 +1,7 @@
 @page "/login"
 @layout Layout.PublicLayout
 @using Microsoft.AspNetCore.WebUtilities
+@using MotorCare.App.Authorization
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -133,7 +134,13 @@
                 return;
             }
 
-            NavigationManager.NavigateTo("/dashboard");
+            if (response is null)
+            {
+                _error = "Giriş işlemi şu anda tamamlanamadı. Lütfen tekrar deneyin.";
+                return;
+            }
+
+            NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(response.Role));
         }
         catch (ApiException ex)
         {
@@ -143,9 +150,9 @@
                 !string.IsNullOrWhiteSpace(_model.Email) &&
                 ex.Code == "EMAIL_NOT_VERIFIED";
         }
-        catch (Exception ex)
+        catch
         {
-            _error = ex.Message;
+            _error = "Giriş işlemi şu anda tamamlanamadı. Lütfen tekrar deneyin.";
         }
         finally
         {
@@ -170,9 +177,13 @@
             _info = response?.Message ?? "Doğrulama e-postası gönderildi.";
             _canResendVerification = false;
         }
-        catch (Exception ex)
+        catch (ApiException ex)
         {
             _error = ex.Message;
+        }
+        catch
+        {
+            _error = "Doğrulama e-postası şu anda gönderilemedi. Lütfen tekrar deneyin.";
         }
         finally
         {

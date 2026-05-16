@@ -1,5 +1,6 @@
 @page "/two-factor"
 @layout Layout.PublicLayout
+@using MotorCare.App.Authorization
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 
@@ -94,8 +95,14 @@
 
         try
         {
-            await AuthService.VerifyTwoFactorAsync(_model);
-            NavigationManager.NavigateTo("/dashboard");
+            var response = await AuthService.VerifyTwoFactorAsync(_model);
+            if (response is null)
+            {
+                _error = "Doğrulama işlemi şu anda tamamlanamadı. Lütfen tekrar deneyin.";
+                return;
+            }
+
+            NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(response.Role));
         }
         catch (Exception ex)
         {

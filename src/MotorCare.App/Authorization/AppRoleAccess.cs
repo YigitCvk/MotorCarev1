@@ -5,6 +5,31 @@ public static class AppRoleAccess
     public static bool CanReadDashboard(string? role)
         => role is "Owner" or "Admin" or "Receptionist" or "Accountant" or "ReadOnly" or "Manager";
 
+    public static string GetDefaultRoute(string? role)
+    {
+        if (CanReadDashboard(role))
+        {
+            return "/dashboard";
+        }
+
+        if (CanReadServiceOrders(role))
+        {
+            return "/service-orders";
+        }
+
+        if (CanReadInspections(role))
+        {
+            return "/inspections";
+        }
+
+        if (CanReadCustomers(role))
+        {
+            return "/customers";
+        }
+
+        return "/settings";
+    }
+
     public static bool CanReadServiceOrders(string? role)
         => role is "Owner" or "Admin" or "Receptionist" or "Technician" or "Accountant" or "ReadOnly" or "Manager";
 

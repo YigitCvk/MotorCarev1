@@ -67,5 +67,5 @@ public sealed class TokenStorageService
     }
 
     private static bool IsRecoverableStorageException(Exception exception)
-        => exception is JSException or JSDisconnectedException or TaskCanceledException or OperationCanceledException or ObjectDisposedException;
+        => exception is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException or OperationCanceledException or ObjectDisposedException;
 }

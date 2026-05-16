@@ -23,6 +23,7 @@ else if (!string.IsNullOrWhiteSpace(_error))
         <section class="error-state">
             <strong>Dashboard alınamadı</strong>
             <p>@_error</p>
+            <button type="button" class="app-btn-secondary mt-3" @onclick="LoadAsync">Tekrar Dene</button>
         </section>
     </div>
 }
@@ -120,14 +121,14 @@ else
 
                 <article class="app-card">
                     <div class="section-title">Son Servis Kayıtları</div>
-                    @if (_summary.RecentServiceOrders.Count == 0)
+                    @if (RecentServiceOrders.Count == 0)
                     {
                         <p class="text-muted mt-3">Henüz servis kaydı yok.</p>
                     }
                     else
                     {
                         <div class="public-record-line-list mt-3">
-                            @foreach (var order in _summary.RecentServiceOrders)
+                            @foreach (var order in RecentServiceOrders)
                             {
                                 <article class="public-record-line-item">
                                     <div>
@@ -153,6 +154,7 @@ else
     private CurrentUserResponse? _user;
     private DailySummaryResponse? _summary;
     private DateTime _today;
+    private IReadOnlyList<RecentServiceOrderResponse> RecentServiceOrders => _summary?.RecentServiceOrders ?? [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -186,19 +188,35 @@ else
                 return;
             }
 
+            if (!AppRoleAccess.CanReadDashboard(_user.Role))
+            {
+                NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(_user.Role));
+                return;
+            }
+
             _summary = await DashboardService.GetDailySummaryAsync();
             if (_summary is null)
             {
-                _error = "Dashboard verisi boş döndü. Lütfen kısa süre sonra tekrar deneyin.";
+                _error = "Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin.";
             }
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
             NavigationManager.NavigateTo("/login");
         }
+        catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
+        {
+            if (_user is not null)
+            {
+                NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(_user.Role));
+                return;
+            }
+
+            _error = "Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin.";
+        }
         catch
         {
-            _error = "Dashboard verileri şu anda alınamıyor. Lütfen kısa süre sonra tekrar deneyin.";
+            _error = "Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin.";
         }
         finally
         {
@@ -212,7 +230,7 @@ else
            summary.TotalVehicleCount == 0 &&
            summary.OpenServiceOrderCount == 0 &&
            summary.TodayAppointmentCount == 0 &&
-           summary.RecentServiceOrders.Count == 0;
+           (summary.RecentServiceOrders?.Count ?? 0) == 0;
 
     private static string RoleText(string role) => role switch
     {
