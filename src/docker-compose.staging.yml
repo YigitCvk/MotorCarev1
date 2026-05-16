@@ -17,6 +17,15 @@ services:
     networks:
       - motorcare-staging
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: motorcare-staging-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_WEB_PORT:-8025}:8025"
+    networks:
+      - motorcare-staging
+
   api:
     image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:staging}
     build:
@@ -28,6 +37,8 @@ services:
     depends_on:
       migrator:
         condition: service_completed_successfully
+      mailpit:
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       ASPNETCORE_URLS: http://0.0.0.0:8080
@@ -47,14 +58,14 @@ services:
       Email__Provider: ${Email__Provider:-Smtp}
       Email__FromEmail: ${Email__FromEmail:-no-reply@bakimsuite.com}
       Email__FromName: ${Email__FromName:-GarajPass}
-      Email__SmtpHost: ${Email__SmtpHost:-}
-      Email__SmtpPort: ${Email__SmtpPort:-587}
+      Email__SmtpHost: ${Email__SmtpHost:-mailpit}
+      Email__SmtpPort: ${Email__SmtpPort:-1025}
       Email__SmtpUsername: ${Email__SmtpUsername:-}
       Email__SmtpPassword: ${Email__SmtpPassword:-}
-      Email__EnableSsl: ${Email__EnableSsl:-true}
+      Email__EnableSsl: ${Email__EnableSsl:-false}
       Email__UseDefaultCredentials: ${Email__UseDefaultCredentials:-false}
       Email__AppBaseUrl: ${Email__AppBaseUrl:-https://staging.bakimsuite.com}
-      Email__SendEmails: ${Email__SendEmails:-false}
+      Email__SendEmails: ${Email__SendEmails:-true}
       Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection
