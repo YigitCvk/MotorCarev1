@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # staging-auth-email-smoke.sh
 # Full uçtan uca email auth smoke testi.
-# Gereksinim: curl, jq, Mailpit çalışıyor olmalı.
+# Gereksinim: curl, python3, Mailpit çalışıyor olmalı.
 #
 # Kullanım:
 #   bash staging-auth-email-smoke.sh
@@ -24,13 +24,13 @@ PASS="${PASS:-}"
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-ok()   { echo -e "${GREEN}  ✓ $*${NC}"; }
-fail() { echo -e "${RED}  ✗ $*${NC}"; exit 1; }
-info() { echo -e "${YELLOW}► $*${NC}"; }
+ok()   { echo -e "${GREEN}  ✓ $*${NC}" >&2; }
+fail() { echo -e "${RED}  ✗ $*${NC}" >&2; exit 1; }
+info() { echo -e "${YELLOW}► $*${NC}" >&2; }
 
 require_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "Required: $1"; exit 1; }; }
 require_cmd curl
-require_cmd jq
+require_cmd python3
 
 # ── Yardımcı ──────────────────────────────────────────────────────────────
 mailpit_latest_message_id() {
@@ -41,11 +41,9 @@ mailpit_latest_message_id() {
         local id
         if [ -n "$subject_hint" ]; then
             id=$(curl -s "$MAILPIT_BASE/api/v1/messages" \
-                | jq -r --arg h "$subject_hint" \
-                    '.messages[] | select(.Subject | contains($h)) | .ID' \
-                | head -1)
+                | python3 -c 'import json, sys; hint = sys.argv[1]; data = json.load(sys.stdin); print(next((m.get("ID", "") for m in (data.get("messages") or []) if hint in (m.get("Subject") or "")), ""), end="")' "$subject_hint")
         else
-            id=$(curl -s "$MAILPIT_BASE/api/v1/messages" | jq -r '.messages[0].ID // empty')
+            id=$(curl -s "$MAILPIT_BASE/api/v1/messages" | python3 -c 'import json, sys; data = json.load(sys.stdin); messages = data.get("messages") or []; print(messages[0].get("ID", "") if messages else "", end="")')
         fi
         [ -n "$id" ] && [ "$id" != "null" ] && { echo "$id"; return; }
         sleep 2; waited=$((waited+2))
@@ -55,7 +53,7 @@ mailpit_latest_message_id() {
 
 mailpit_get_text() {
     local msg_id="$1"
-    curl -s "$MAILPIT_BASE/api/v1/message/$msg_id" | jq -r '.Text'
+    curl -s "$MAILPIT_BASE/api/v1/message/$msg_id" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("Text") or "", end="")'
 }
 
 mailpit_delete_all() {
@@ -82,7 +80,7 @@ check_status() {
     if [ "$status" = "$expected" ]; then
         ok "$label → HTTP $status"
     else
-        echo "  Body: $body"
+        echo "  Body: $body" >&2
         fail "$label → beklenen HTTP $expected, alınan $status"
     fi
     echo "$body"
@@ -112,8 +110,8 @@ mailpit_delete_all
 # ── 1. Register ───────────────────────────────────────────────────────────
 info "1/8 Register tenant..."
 RESP=$(api_post "/api/auth/register" \
-    "{\"tenantIdentifier\":\"$TENANT\",\"tenantName\":\"Smoke Garaj $SUFFIX\",\"ownerFullName\":\"Smoke Owner\",\"email\":\"$OWNER_EMAIL\",\"password\":\"$OWNER_PASS\"}")
-check_status "$RESP" "204" "Register" >/dev/null
+    "{\"tenantIdentifier\":\"$TENANT\",\"tenantName\":\"Smoke Garaj $SUFFIX\",\"ownerFullName\":\"Smoke Owner\",\"ownerEmail\":\"$OWNER_EMAIL\",\"ownerPassword\":\"$OWNER_PASS\"}")
+check_status "$RESP" "201" "Register" >/dev/null
 
 # ── 2. Verification code'u Mailpit'ten al ─────────────────────────────────
 info "2/8 Verification email bekleniyor..."
@@ -129,7 +127,11 @@ RESP=$(api_post "/api/auth/verify-email-code" \
     "{\"tenantIdentifier\":\"$TENANT\",\"email\":\"$OWNER_EMAIL\",\"code\":\"000000\"}")
 STATUS=$(echo "$RESP" | grep "__STATUS__" | grep -oP '\d+$')
 BODY=$(echo "$RESP" | grep -v "__STATUS__")
-ERR_CODE=$(echo "$BODY" | jq -r '.code // empty')
+ERR_CODE=$(echo "$BODY" | python3 -c 'import json, sys;
+try:
+    print(json.load(sys.stdin).get("code") or "", end="")
+except json.JSONDecodeError:
+    print("", end="")')
 if [ "$STATUS" != "200" ] && [ "$STATUS" != "204" ]; then
     ok "Yanlış kod reddedildi → HTTP $STATUS, code=$ERR_CODE"
 else
@@ -147,7 +149,7 @@ info "5/8 Owner login..."
 RESP=$(api_post "/api/auth/login" \
     "{\"tenantIdentifier\":\"$TENANT\",\"email\":\"$OWNER_EMAIL\",\"password\":\"$OWNER_PASS\"}")
 BODY=$(check_status "$RESP" "200" "Owner login")
-ACCESS_TOKEN=$(echo "$BODY" | jq -r '.accessToken')
+ACCESS_TOKEN=$(echo "$BODY" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("accessToken") or "", end="")')
 [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ] || fail "accessToken alınamadı"
 ok "Access token alındı"
 
@@ -161,7 +163,7 @@ mailpit_delete_all
 # ── 6. Kullanıcı davet et ─────────────────────────────────────────────────
 info "6/8 Kullanıcı davet ediliyor..."
 RESP=$(api_post "/api/users/invite" \
-    "{\"email\":\"$INVITE_EMAIL\",\"role\":\"Technician\",\"fullName\":\"Smoke Teknisyen\"}" \
+    "{\"email\":\"$INVITE_EMAIL\",\"role\":4,\"fullName\":\"Smoke Teknisyen\"}" \
     "$ACCESS_TOKEN")
 check_status "$RESP" "204" "Invite user" >/dev/null
 
@@ -169,8 +171,8 @@ check_status "$RESP" "204" "Invite user" >/dev/null
 info "7/8 Invite email bekleniyor..."
 MSG_ID=$(mailpit_latest_message_id "davet")
 TEXT=$(mailpit_get_text "$MSG_ID")
-INVITE_URL=$(echo "$TEXT" | grep -oP 'https?://[^\s]+accept-invite\?token=[^\s]+' | head -1)
-INVITE_TOKEN=$(echo "$INVITE_URL" | grep -oP '(?<=token=)[^&\s]+' | head -1)
+INVITE_URL=$(echo "$TEXT" | grep -oP 'https?://[^"<>[:space:]]+/accept-invite\?token=[^"<>[:space:]]+' | head -1)
+INVITE_TOKEN=$(echo "$INVITE_URL" | grep -oP '(?<=token=)[^"&<>[:space:]]+' | head -1)
 [ -n "$INVITE_TOKEN" ] || fail "Invite token URL'si Mailpit email'inde bulunamadı"
 ok "Invite token alındı (${#INVITE_TOKEN} karakter)"
 
@@ -201,7 +203,7 @@ info "8c. Davet edilen kullanıcı login..."
 RESP=$(api_post "/api/auth/login" \
     "{\"tenantIdentifier\":\"$TENANT\",\"email\":\"$INVITE_EMAIL\",\"password\":\"$INVITE_PASS\"}")
 BODY=$(check_status "$RESP" "200" "Invited user login")
-INVITED_TOKEN=$(echo "$BODY" | jq -r '.accessToken')
+INVITED_TOKEN=$(echo "$BODY" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("accessToken") or "", end="")')
 [ -n "$INVITED_TOKEN" ] && [ "$INVITED_TOKEN" != "null" ] || fail "Davet edilen kullanıcı accessToken alınamadı"
 ok "Davet edilen kullanıcı login başarılı"
 

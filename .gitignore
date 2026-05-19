@@ -110,3 +110,6 @@ desktop.ini
 ## Temp scripts
 temp-*.sh
 src/temp-*.sh
+
+## IDE cache files
+*.lscache
