@@ -8,4 +8,6 @@ public sealed record AddPartToOrderCommand(
     string? PartNumber,
     decimal UnitPrice,
     int Quantity,
-    Guid? InventoryItemId = null) : IRequest<Unit>;
+    Guid? InventoryItemId = null,
+    decimal Discount = 0m,
+    string? Notes = null) : IRequest<Unit>;

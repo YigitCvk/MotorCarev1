@@ -34,6 +34,9 @@ public sealed class ServiceOrderConsumable
     public string? SubCategory { get; set; }
     public string? Specification { get; set; }
     public string? Notes { get; set; }
+    public decimal UnitPrice { get; set; }
+    public int Quantity { get; set; }
+    public decimal LineTotal { get; set; }
 }
 
 public sealed class ServiceOrderDetail : ServiceOrderListItem

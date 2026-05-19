@@ -18,6 +18,8 @@ public class CreateServiceOrderCommandValidator : AbstractValidator<CreateServic
             consumable.RuleFor(x => x.SubCategory).MaximumLength(100).When(x => !string.IsNullOrWhiteSpace(x.SubCategory));
             consumable.RuleFor(x => x.Specification).MaximumLength(160).When(x => !string.IsNullOrWhiteSpace(x.Specification));
             consumable.RuleFor(x => x.Notes).MaximumLength(250).When(x => !string.IsNullOrWhiteSpace(x.Notes));
+            consumable.RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("Sarf miktarı sıfırdan büyük olmalıdır.");
+            consumable.RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0).WithMessage("Sarf birim fiyatı negatif olamaz.");
         });
     }
 }

@@ -11,17 +11,18 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public Guid VehicleId { get; private set; }
     public Guid CustomerId { get; private set; }
     public ServiceOrderStatus Status { get; private set; }
-    
+
     public DateTimeOffset OpenedAt { get; private set; }
     public DateTimeOffset? ClosedAt { get; private set; }
     public int VehicleKm { get; private set; }
-    
+
     public string? Complaint { get; private set; }
     public string? WorkDescription { get; private set; }
     public string? InternalNote { get; private set; }
 
     public decimal LaborTotal { get; private set; }
     public decimal PartsTotal { get; private set; }
+    public decimal ConsumablesTotal { get; private set; }
     public decimal DiscountTotal { get; private set; }
     public decimal GrandTotal { get; private set; }
     public decimal PaidTotal { get; private set; }
@@ -51,7 +52,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         if (vehicleId == Guid.Empty) throw new DomainException("Vehicle ID is required.");
         if (customerId == Guid.Empty) throw new DomainException("Customer ID is required.");
         if (vehicleKm < 0) throw new DomainException("Vehicle km cannot be negative.");
-        
+
         Id = Guid.NewGuid();
         TenantId = tenantId;
         OrderNo = orderNo;
@@ -67,10 +68,20 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
     public void AddOperation(string description, decimal price)
     {
+        AddOperation(description, 1m, price);
+    }
+
+    public void AddOperation(
+        string description,
+        decimal quantity,
+        decimal unitPrice,
+        decimal discount = 0m,
+        string? notes = null,
+        Guid? serviceCatalogItemId = null)
+    {
         EnsureModifiable();
         if (string.IsNullOrWhiteSpace(description)) throw new DomainException("Description is required.");
-        if (price < 0) throw new DomainException("Price cannot be negative.");
-        _operations.Add(new ServiceOperationItem(description, price));
+        _operations.Add(new ServiceOperationItem(description, quantity, unitPrice, discount, notes, serviceCatalogItemId));
         RecalculateTotals();
     }
 
@@ -80,7 +91,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         var operation = _operations.FirstOrDefault(o => o.Id == operationId)
             ?? throw new DomainException($"Operation with id '{operationId}' not found in this service order.");
 
-        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal - operation.Price, PartsTotal, DiscountTotal));
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal - operation.LineTotal, PartsTotal, ConsumablesTotal, DiscountTotal));
 
         _operations.Remove(operation);
         RecalculateTotals();
@@ -88,13 +99,18 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
     // --- Parts ---
 
-    public void AddPart(string partName, string? partNumber, decimal unitPrice, int quantity, Guid? inventoryItemId = null)
+    public void AddPart(
+        string partName,
+        string? partNumber,
+        decimal unitPrice,
+        int quantity,
+        Guid? inventoryItemId = null,
+        decimal discount = 0m,
+        string? notes = null)
     {
         EnsureModifiable();
         if (string.IsNullOrWhiteSpace(partName)) throw new DomainException("Part name is required.");
-        if (unitPrice < 0) throw new DomainException("Unit price cannot be negative.");
-        if (quantity <= 0) throw new DomainException("Quantity must be greater than zero.");
-        _parts.Add(new ServicePartItem(partName, partNumber, unitPrice, quantity, inventoryItemId));
+        _parts.Add(new ServicePartItem(partName, partNumber, unitPrice, quantity, inventoryItemId, discount, notes));
         RecalculateTotals();
     }
 
@@ -104,7 +120,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         var part = _parts.FirstOrDefault(p => p.Id == partId)
             ?? throw new DomainException($"Part with id '{partId}' not found in this service order.");
 
-        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal - part.TotalPrice, DiscountTotal));
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal - part.TotalPrice, ConsumablesTotal, DiscountTotal));
 
         _parts.Remove(part);
         RecalculateTotals();
@@ -116,13 +132,31 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     public void AddConsumable(
         string category,
         string productName,
+        decimal unitPrice,
+        int quantity,
         string? brand = null,
         string? subCategory = null,
         string? specification = null,
         string? notes = null)
     {
         EnsureModifiable();
-        _consumables.Add(new ServiceConsumableItem(category, productName, brand, subCategory, specification, notes));
+        if (unitPrice < 0) throw new DomainException("Unit price cannot be negative.");
+        if (quantity <= 0) throw new DomainException("Quantity must be greater than zero.");
+        _consumables.Add(new ServiceConsumableItem(category, productName, unitPrice, quantity, brand, subCategory, specification, notes));
+        RecalculateTotals();
+    }
+
+    public ServiceConsumableItem RemoveConsumable(Guid consumableId)
+    {
+        EnsureModifiable();
+        var consumable = _consumables.FirstOrDefault(c => c.Id == consumableId)
+            ?? throw new DomainException($"Consumable with id '{consumableId}' not found in this service order.");
+
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal, ConsumablesTotal - consumable.LineTotal, DiscountTotal));
+
+        _consumables.Remove(consumable);
+        RecalculateTotals();
+        return consumable;
     }
 
     // --- Payments ---
@@ -146,10 +180,10 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         EnsureModifiable();
         if (discount < 0) throw new DomainException("Discount cannot be negative.");
-        if (discount > (LaborTotal + PartsTotal)) throw new DomainException("Discount cannot exceed labor and parts total.");
+        if (discount > (LaborTotal + PartsTotal + ConsumablesTotal)) throw new DomainException("Discount cannot exceed labor, parts and consumables total.");
 
-        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal, discount));
-        
+        EnsurePaidTotalWillFit(CalculateGrandTotal(LaborTotal, PartsTotal, ConsumablesTotal, discount));
+
         DiscountTotal = discount;
         RecalculateTotals();
     }
@@ -161,7 +195,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (Status != ServiceOrderStatus.Open)
             throw new DomainException($"Cannot start progress from {Status} state. Order must be in Open state.");
-        
+
         Status = ServiceOrderStatus.InProgress;
     }
 
@@ -170,7 +204,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (Status != ServiceOrderStatus.InProgress)
             throw new DomainException($"Cannot set waiting for parts from {Status} state. Order must be in InProgress state.");
-        
+
         Status = ServiceOrderStatus.WaitingForParts;
     }
 
@@ -179,7 +213,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (Status != ServiceOrderStatus.WaitingForParts)
             throw new DomainException($"Cannot resume progress from {Status} state. Order must be in WaitingForParts state.");
-        
+
         Status = ServiceOrderStatus.InProgress;
     }
 
@@ -188,7 +222,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (Status != ServiceOrderStatus.InProgress && Status != ServiceOrderStatus.WaitingForParts)
             throw new DomainException($"Cannot complete order from {Status} state. Order must be in InProgress or WaitingForParts state.");
-        
+
         Status = ServiceOrderStatus.Completed;
         ClosedAt = DateTimeOffset.UtcNow;
     }
@@ -198,7 +232,7 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
     {
         if (Status != ServiceOrderStatus.Completed)
             throw new DomainException($"Cannot mark as delivered from {Status} state. Order must be in Completed state.");
-        
+
         Status = ServiceOrderStatus.Delivered;
     }
 
@@ -234,9 +268,10 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
 
     private void RecalculateTotals()
     {
-        LaborTotal = _operations.Sum(o => o.Price);
+        LaborTotal = _operations.Sum(o => o.LineTotal);
         PartsTotal = _parts.Sum(p => p.TotalPrice);
-        GrandTotal = CalculateGrandTotal(LaborTotal, PartsTotal, DiscountTotal);
+        ConsumablesTotal = _consumables.Sum(c => c.LineTotal);
+        GrandTotal = CalculateGrandTotal(LaborTotal, PartsTotal, ConsumablesTotal, DiscountTotal);
         PaidTotal = _payments.Sum(p => p.Amount);
     }
 
@@ -248,9 +283,9 @@ public class ServiceOrder : AggregateRoot, ITenantEntity
         }
     }
 
-    private static decimal CalculateGrandTotal(decimal laborTotal, decimal partsTotal, decimal discountTotal)
+    private static decimal CalculateGrandTotal(decimal laborTotal, decimal partsTotal, decimal consumablesTotal, decimal discountTotal)
     {
-        var total = (laborTotal + partsTotal) - discountTotal;
+        var total = (laborTotal + partsTotal + consumablesTotal) - discountTotal;
         return total < 0 ? 0 : total;
     }
 

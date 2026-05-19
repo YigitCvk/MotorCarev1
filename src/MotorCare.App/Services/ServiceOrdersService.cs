@@ -207,6 +207,21 @@ public sealed class ServiceOrdersService
         return _apiClient.DeleteAsync($"/api/service-orders/{id}/parts/{partId}", authorized: true, cancellationToken);
     }
 
+    public Task AddConsumableAsync(Guid id, AddConsumableRequest request, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PostAsync($"/api/service-orders/{id}/consumables", request, authorized: true, cancellationToken);
+    }
+
+    public Task RemoveConsumableAsync(Guid id, Guid consumableId, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.DeleteAsync($"/api/service-orders/{id}/consumables/{consumableId}", authorized: true, cancellationToken);
+    }
+
+    public Task SetDiscountAsync(Guid id, decimal discount, CancellationToken cancellationToken = default)
+    {
+        return _apiClient.PatchAsync($"/api/service-orders/{id}/discount", new { discount }, authorized: true, cancellationToken);
+    }
+
     public Task AddPaymentAsync(Guid id, AddPaymentRequest request, CancellationToken cancellationToken = default)
     {
         var payload = new

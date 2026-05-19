@@ -7,11 +7,13 @@ using MotorCare.Application.Common.Interfaces;
 using MotorCare.Application.Common.Models;
 using MotorCare.Application.PublicRecords;
 using MotorCare.Application.ServiceOrders.Commands.DeleteServiceOrderAttachment;
+using MotorCare.Application.ServiceOrders.Commands.AddConsumableToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddOperationToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddPartToOrder;
 using MotorCare.Application.ServiceOrders.Commands.AddPaymentToOrder;
 using MotorCare.Application.ServiceOrders.Commands.CreateServiceOrder;
 using MotorCare.Application.ServiceOrders.Commands.TrackConsumableCatalogUsage;
+using MotorCare.Application.ServiceOrders.Commands.RemoveConsumableFromOrder;
 using MotorCare.Application.ServiceOrders.Commands.RemoveOperationFromOrder;
 using MotorCare.Application.ServiceOrders.Commands.RemovePartFromOrder;
 using MotorCare.Application.ServiceOrders.Commands.SetOrderDiscount;
@@ -349,7 +351,7 @@ public sealed class ServiceOrdersModule : ICarterModule
 
         group.MapPost("/{id:guid}/operations", async (Guid id, AddOperationToOrderRequest request, IMediator mediator, CancellationToken ct) =>
         {
-            await mediator.Send(new AddOperationToOrderCommand(id, request.Description, request.Price), ct);
+            await mediator.Send(new AddOperationToOrderCommand(id, request.Description, request.EffectiveUnitPrice), ct);
             return Results.NoContent();
         })
         .WithName("AddOperationToOrder")
@@ -361,10 +363,45 @@ public sealed class ServiceOrdersModule : ICarterModule
 
         group.MapPost("/{id:guid}/parts", async (Guid id, AddPartToOrderRequest request, IMediator mediator, CancellationToken ct) =>
         {
-            await mediator.Send(new AddPartToOrderCommand(id, request.PartName, request.PartNumber, request.UnitPrice, request.Quantity, request.InventoryItemId), ct);
+            await mediator.Send(new AddPartToOrderCommand(id, request.PartName, request.PartNumber, request.UnitPrice, request.Quantity, request.InventoryItemId, request.Discount, request.Notes), ct);
             return Results.NoContent();
         })
         .WithName("AddPartToOrder")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderWrite)
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapPost("/{id:guid}/consumables", async (Guid id, AddConsumableToOrderRequest request, IMediator mediator, CancellationToken ct) =>
+        {
+            await mediator.Send(
+                new AddConsumableToOrderCommand(
+                    id,
+                    request.Category,
+                    request.ProductName,
+                    request.UnitPrice,
+                    request.Quantity,
+                    request.Brand,
+                    request.SubCategory,
+                    request.Specification,
+                    request.Notes),
+                ct);
+            return Results.NoContent();
+        })
+        .WithName("AddConsumableToOrder")
+        .RequireAuthorization(AuthorizationPolicies.ServiceOrderWrite)
+        .Produces(StatusCodes.Status204NoContent)
+        .ProducesProblem(StatusCodes.Status404NotFound)
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
+
+        group.MapDelete("/{id:guid}/consumables/{consumableId:guid}", async (Guid id, Guid consumableId, IMediator mediator, CancellationToken ct) =>
+        {
+            await mediator.Send(new RemoveConsumableFromOrderCommand(id, consumableId), ct);
+            return Results.NoContent();
+        })
+        .WithName("RemoveConsumableFromOrder")
         .RequireAuthorization(AuthorizationPolicies.ServiceOrderWrite)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
@@ -422,9 +459,40 @@ public sealed class ServiceOrdersModule : ICarterModule
 
     public sealed record UpdateServiceOrderStatusRequest(ServiceOrderStatus Status, string? Note = null);
 
-    public sealed record AddOperationToOrderRequest(string Description, decimal Price);
+    public sealed class AddOperationToOrderRequest
+    {
+        public Guid? ServiceCatalogItemId { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public decimal? Quantity { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public decimal Discount { get; set; }
+        public string? Notes { get; set; }
 
-    public sealed record AddPartToOrderRequest(string PartName, string? PartNumber, decimal UnitPrice, int Quantity, Guid? InventoryItemId = null);
+        // Backward-compatible alias for older clients.
+        public decimal? Price { get; set; }
+
+        public decimal EffectiveQuantity => Quantity is > 0m ? Quantity.Value : 1m;
+        public decimal EffectiveUnitPrice => UnitPrice is { } unitPrice ? unitPrice : Price ?? 0m;
+    }
+
+    public sealed record AddPartToOrderRequest(
+        string PartName,
+        string? PartNumber,
+        decimal UnitPrice,
+        int Quantity,
+        Guid? InventoryItemId = null,
+        decimal Discount = 0m,
+        string? Notes = null);
+
+    public sealed record AddConsumableToOrderRequest(
+        string Category,
+        string ProductName,
+        decimal UnitPrice,
+        int Quantity,
+        string? Brand = null,
+        string? SubCategory = null,
+        string? Specification = null,
+        string? Notes = null);
 
     public sealed record AddPaymentToOrderRequest(decimal Amount, PaymentMethod Method, DateTimeOffset? PaymentDate);
 

@@ -12,7 +12,9 @@ public sealed record CreateServiceOrderCommand(
 public sealed record CreateServiceOrderConsumableItem(
     string Category,
     string ProductName,
-    string? Brand,
-    string? SubCategory,
-    string? Specification,
-    string? Notes);
+    decimal UnitPrice = 0m,
+    int Quantity = 1,
+    string? Brand = null,
+    string? SubCategory = null,
+    string? Specification = null,
+    string? Notes = null);

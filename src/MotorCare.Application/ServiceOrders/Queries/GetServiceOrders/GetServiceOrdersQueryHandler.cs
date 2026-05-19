@@ -73,7 +73,7 @@ public class GetServiceOrdersQueryHandler : IRequestHandler<GetServiceOrdersQuer
                 order.InternalNote,
                 order.LaborTotal,
                 order.PartsTotal,
-                0m,
+                order.ConsumablesTotal,
                 order.DiscountTotal,
                 order.GrandTotal,
                 order.PaidTotal,

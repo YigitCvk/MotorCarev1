@@ -2,9 +2,28 @@ using MediatR;
 
 namespace MotorCare.Application.ServiceOrders.Queries.GetServiceOrderById;
 
-public sealed record ServiceOperationItemDto(Guid Id, string Description, decimal Price);
+public sealed record ServiceOperationItemDto(
+    Guid Id,
+    string Description,
+    decimal Price,
+    decimal Quantity,
+    decimal UnitPrice,
+    decimal Discount,
+    decimal LineTotal,
+    string? Notes,
+    Guid? ServiceCatalogItemId);
 
-public sealed record ServicePartItemDto(Guid Id, string PartName, string? PartNumber, decimal UnitPrice, int Quantity, decimal TotalPrice);
+public sealed record ServicePartItemDto(
+    Guid Id,
+    string PartName,
+    string? PartNumber,
+    decimal UnitPrice,
+    int Quantity,
+    decimal TotalPrice,
+    decimal Discount,
+    decimal LineTotal,
+    string? Notes,
+    Guid? InventoryItemId);
 
 public sealed record ServiceConsumableItemDto(
     Guid Id,
@@ -13,7 +32,10 @@ public sealed record ServiceConsumableItemDto(
     string ProductName,
     string? SubCategory,
     string? Specification,
-    string? Notes);
+    string? Notes,
+    decimal UnitPrice,
+    int Quantity,
+    decimal LineTotal);
 
 public sealed record ServicePaymentDto(Guid Id, decimal Amount, string Method, DateTimeOffset PaymentDate);
 

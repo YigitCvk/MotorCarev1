@@ -43,19 +43,27 @@ public class AddPartToOrderCommandHandler : IRequestHandler<AddPartToOrderComman
             _inventoryRepository.Update(inventoryItem);
         }
 
-        order.AddPart(request.PartName, request.PartNumber, request.UnitPrice, request.Quantity, request.InventoryItemId);
+        order.AddPart(
+            request.PartName,
+            request.PartNumber,
+            request.UnitPrice,
+            request.Quantity,
+            request.InventoryItemId,
+            request.Discount,
+            request.Notes);
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             EventIdStore.ServiceOrder.PartAdded,
-            "Part added to service order {ServiceOrderId} for tenant {TenantId}. PartName={PartName} Quantity={Quantity} UnitPrice={UnitPrice}",
+            "Part added to service order {ServiceOrderId} for tenant {TenantId}. PartName={PartName} Quantity={Quantity} UnitPrice={UnitPrice} Discount={Discount}",
             order.Id,
             tenantId,
             request.PartName,
             request.Quantity,
-            request.UnitPrice);
+            request.UnitPrice,
+            request.Discount);
 
         return Unit.Value;
     }

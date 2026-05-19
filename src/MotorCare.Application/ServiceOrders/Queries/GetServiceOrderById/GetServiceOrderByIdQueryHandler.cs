@@ -72,16 +72,35 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
             order.InternalNote,
             order.LaborTotal,
             order.PartsTotal,
-            0m,
+            order.ConsumablesTotal,
             order.DiscountTotal,
             order.GrandTotal,
             order.PaidTotal,
             order.RemainingTotal,
             order.Operations
-                .Select(operation => new ServiceOperationItemDto(operation.Id, operation.Description, operation.Price))
+                .Select(operation => new ServiceOperationItemDto(
+                    operation.Id,
+                    operation.Description,
+                    operation.Price,
+                    operation.Quantity,
+                    operation.UnitPrice,
+                    operation.Discount,
+                    operation.LineTotal,
+                    operation.Notes,
+                    operation.ServiceCatalogItemId))
                 .ToList(),
             order.Parts
-                .Select(part => new ServicePartItemDto(part.Id, part.PartName, part.PartNumber, part.UnitPrice, part.Quantity, part.TotalPrice))
+                .Select(part => new ServicePartItemDto(
+                    part.Id,
+                    part.PartName,
+                    part.PartNumber,
+                    part.UnitPrice,
+                    part.Quantity,
+                    part.TotalPrice,
+                    part.Discount,
+                    part.LineTotal,
+                    part.Notes,
+                    part.InventoryItemId))
                 .ToList(),
             order.Consumables
                 .Select(consumable => new ServiceConsumableItemDto(
@@ -91,7 +110,10 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
                     consumable.ProductName,
                     consumable.SubCategory,
                     consumable.Specification,
-                    consumable.Notes))
+                    consumable.Notes,
+                    consumable.UnitPrice,
+                    consumable.Quantity,
+                    consumable.LineTotal))
                 .ToList(),
             order.Payments
                 .Select(payment => new ServicePaymentDto(payment.Id, payment.Amount, payment.Method.ToString(), payment.PaymentDate))

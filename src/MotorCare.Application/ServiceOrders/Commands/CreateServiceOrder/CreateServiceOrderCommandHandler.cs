@@ -71,6 +71,8 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
                 order.AddConsumable(
                     consumable.Category,
                     consumable.ProductName,
+                    consumable.UnitPrice,
+                    consumable.Quantity,
                     consumable.Brand,
                     consumable.SubCategory,
                     consumable.Specification,

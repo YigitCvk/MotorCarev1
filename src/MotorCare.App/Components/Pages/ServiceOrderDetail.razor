@@ -2,11 +2,9 @@
 @using System.Globalization
 @using System.Net
 @using MotorCare.Application.ServiceOrders
-@using MotorCare.App.Models.PublicRecords
 @using ServiceOrderDetailModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
-@inject PublicRecordsService PublicRecordsService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
@@ -20,14 +18,14 @@
             <p>Lütfen bekleyin.</p>
         </section>
     }
-    else if (!string.IsNullOrWhiteSpace(_loadError))
+    else if (!string.IsNullOrWhiteSpace(_error))
     {
         <section class="error-state">
             <strong>Servis detayı alınamadı</strong>
-            <p>@_loadError</p>
-            @if (!string.IsNullOrWhiteSpace(_loadErrorEndpoint))
+            <p>@_error</p>
+            @if (!string.IsNullOrWhiteSpace(_errorEndpoint))
             {
-                <p class="small text-muted mt-2">İstek: @_loadErrorEndpoint</p>
+                <p class="small text-muted mt-2">İstek: @_errorEndpoint</p>
             }
         </section>
     }
@@ -65,9 +63,9 @@
                 <button type="button" class="app-btn-secondary" @onclick="BackToList">Listeye Dön</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("operations-section"))">İşçilik</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("parts-section"))">Parça</button>
+                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("discount-section"))">İndirim</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("consumables-section"))">Sarf Ürün</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("attachments-section"))">Dosyalar</button>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("public-access-section"))">Dijital QR</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
                 <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
             </div>
@@ -78,18 +76,6 @@
             <section class="empty-state">
                 <strong>İşlem başarılı</strong>
                 <p>@_actionMessage</p>
-            </section>
-        }
-
-        @if (!string.IsNullOrWhiteSpace(_actionError))
-        {
-            <section class="error-state">
-                <strong>İşlem tamamlanamadı</strong>
-                <p>@_actionError</p>
-                @if (!string.IsNullOrWhiteSpace(_actionErrorEndpoint))
-                {
-                    <p class="small text-muted mt-2">İstek: @_actionErrorEndpoint</p>
-                }
             </section>
         }
 
@@ -198,51 +184,25 @@
                 <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Yeni Durum</label>
                     <div class="inline-form-row">
-                        <InputSelect class="form-select" @bind-Value="_statusRequest.Status" disabled="@(_isWorking || !HasStatusUpdateOptions(_order.Status))">
-                            @foreach (var option in GetStatusUpdateOptions(_order.Status))
-                            {
-                                <option value="@option.Value">@option.Text</option>
-                            }
+                        <InputSelect class="form-select" @bind-Value="_statusRequest.Status">
+                            <option value="InProgress">İşlemde</option>
+                            <option value="WaitingForParts">Parça Bekliyor</option>
+                            <option value="Completed">Teslime Hazır</option>
+                            <option value="Delivered">Teslim Edildi</option>
+                            <option value="Cancelled">İptal</option>
                         </InputSelect>
-                        <button type="button" class="app-btn-primary" @onclick="UpdateStatusAsync" disabled="@(_isWorking || !HasStatusUpdateOptions(_order.Status))">
+                        <button type="button" class="app-btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">
                             Kaydet
                         </button>
                     </div>
-                    @if (!HasStatusUpdateOptions(_order.Status))
-                    {
-                        <div class="text-muted small mt-2">Bu servis emri için uygun bir durum geçişi yok.</div>
-                    }
                     <div class="mt-3">
                         <label class="form-label">Açıklama</label>
                         <InputTextArea class="form-control" @bind-Value="_statusRequest.Note" maxlength="500" placeholder="Durum değişikliği ile ilgili kısa not ekleyin..." />
                         <div class="text-muted small mt-1">En fazla 500 karakter.</div>
                     </div>
-                    @if (!string.IsNullOrWhiteSpace(_statusUpdateError))
-                    {
-                        <div class="error-state compact mt-3">
-                            <strong>Durum güncellenemedi</strong>
-                            <p>@_statusUpdateError</p>
-                            @if (!string.IsNullOrWhiteSpace(_statusUpdateErrorEndpoint))
-                            {
-                                <p class="small text-muted mt-2">İstek: @_statusUpdateErrorEndpoint</p>
-                            }
-                        </div>
-                    }
                 </div>
             </section>
         </section>
-
-        <PublicRecordAccessCard Title="Dijital Kayıt / QR"
-                                Subtitle="Servis kaydı public doğrulama bağlantısı ve QR çıktısı"
-                                RecordTypeLabel="Dijital Servis Kaydı"
-                                PublicPathPrefix="/public/service-record"
-                                PrintHref="@($"/service-orders/{Id}/qr-print")"
-                                Plate="@_order.VehiclePlate"
-                                Vehicle="@_order.VehicleDisplay"
-                                RecordDate="@_order.OpenedAt"
-                                LoadAccess="@LoadServiceOrderPublicAccessAsync"
-                                EnableAccess="@EnableServiceOrderPublicAccessAsync"
-                                DisableAccess="@DisableServiceOrderPublicAccessAsync" />
 
         <section class="app-card service-order-attachments-card" id="attachments-section">
             <div class="section-header">
@@ -484,16 +444,16 @@
         <section class="app-card" id="consumables-section">
             <div class="section-header">
                 <div>
-                    <div class="section-title">Kullanilan Sarf Ürünleri</div>
-                    <div class="section-subtitle">Servis emriyle birlikte kaydedilen sarf ve tuketim kalemleri</div>
+                    <div class="section-title">Kullanılan Sarf Ürünleri</div>
+                    <div class="section-subtitle">Servis emriyle birlikte kaydedilen sarf ve tüketim kalemleri</div>
                 </div>
             </div>
 
-            <div class="summary-list">
+            <div class="summary-list mb-4">
                 @if (_order.Consumables.Count == 0)
                 {
                     <div class="summary-list-item text-muted">
-                        <span>Bu servis emrinde kayıtlı sarf ürünu yok.</span>
+                        <span>Bu servis emrinde kayıtlı sarf ürünü yok.</span>
                     </div>
                 }
                 else
@@ -515,12 +475,13 @@
                                             <span> / @consumable.SubCategory</span>
                                         }
                                     </div>
+                                    <div class="text-muted small">@consumable.Quantity x @consumable.UnitPrice.ToString("N2") ₺</div>
                                     @if (!string.IsNullOrWhiteSpace(consumable.Specification) || !string.IsNullOrWhiteSpace(consumable.Notes))
                                     {
                                         <div class="text-muted small">
                                             @if (!string.IsNullOrWhiteSpace(consumable.Specification))
                                             {
-                                                <span>Ozellik: @consumable.Specification</span>
+                                                <span>Özellik: @consumable.Specification</span>
                                             }
                                             @if (!string.IsNullOrWhiteSpace(consumable.Notes))
                                             {
@@ -529,10 +490,43 @@
                                         </div>
                                     }
                                 </div>
+                                <div class="service-order-line-actions">
+                                    <span class="fw-bold">@consumable.LineTotal.ToString("N2") ₺</span>
+                                    <button type="button" class="app-btn-secondary" @onclick="() => RemoveConsumableAsync(consumable.Id)" disabled="@(_isWorking || !CanRemoveConsumable(consumable))">Sil</button>
+                                </div>
                             </div>
                         </div>
                     }
                 }
+            </div>
+
+            <div class="inline-form sticky-mobile-action">
+                <label class="form-label fw-semibold">Sarf Ürün Ekle</label>
+                <div class="form-grid compact-grid">
+                    <div>
+                        <label class="form-label">Kategori</label>
+                        <InputText class="form-control" @bind-Value="_consumableRequest.Category" placeholder="Yağ, Filtre..." />
+                    </div>
+                    <div>
+                        <label class="form-label">Ürün Adı</label>
+                        <InputText class="form-control" @bind-Value="_consumableRequest.ProductName" placeholder="Motor yağı 5W40" />
+                    </div>
+                    <div>
+                        <label class="form-label">Birim Fiyat (₺)</label>
+                        <InputNumber class="form-control" @bind-Value="_consumableRequest.UnitPrice" />
+                    </div>
+                    <div>
+                        <label class="form-label">Adet</label>
+                        <InputNumber class="form-control" @bind-Value="_consumableRequest.Quantity" />
+                    </div>
+                    <div>
+                        <label class="form-label">Marka (Opsiyonel)</label>
+                        <InputText class="form-control" @bind-Value="_consumableRequest.Brand" placeholder="Opsiyonel" />
+                    </div>
+                    <div class="full-span filter-actions">
+                        <button type="button" class="app-btn-primary" @onclick="AddConsumableAsync" disabled="@_isWorking">Sarf Ürün Ekle</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -663,6 +657,25 @@
             }
         </section>
 
+        <section class="app-card" id="discount-section">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">İndirim</div>
+                    <div class="section-subtitle">Servis emrine indirim uygula</div>
+                </div>
+            </div>
+
+            <div class="form-grid compact-grid sticky-mobile-action">
+                <div>
+                    <label class="form-label">İndirim Tutarı (₺)</label>
+                    <InputNumber class="form-control" @bind-Value="_discountAmount" />
+                </div>
+                <div class="filter-actions">
+                    <button type="button" class="app-btn-primary" @onclick="SetDiscountAsync" disabled="@_isWorking">İndirim Uygula</button>
+                </div>
+            </div>
+        </section>
+
         <section class="app-card service-order-payments-card" id="payments-section">
             <div class="section-header">
                 <div>
@@ -751,12 +764,8 @@
     private bool _isUploadingAttachment;
     private bool _shouldRefreshAttachmentImages;
     private bool _shouldRefreshPreviewImage;
-    private string? _loadError;
-    private string? _loadErrorEndpoint;
-    private string? _actionError;
-    private string? _actionErrorEndpoint;
-    private string? _statusUpdateError;
-    private string? _statusUpdateErrorEndpoint;
+    private string? _error;
+    private string? _errorEndpoint;
     private string? _actionMessage;
     private ServiceOrderDetailModel? _order;
     private readonly List<ServiceOrderActivityFeedItem> _activityFeed = [];
@@ -767,6 +776,7 @@
     private string? _attachmentsError;
     private readonly AddOperationRequest _operationRequest = new();
     private readonly AddPartRequest _partRequest = new() { Quantity = 1 };
+    private readonly AddConsumableRequest _consumableRequest = new() { Quantity = 1 };
     private readonly AddPaymentRequest _paymentRequest = new() { Method = "Cash" };
     private readonly UpdateServiceOrderStatusRequest _statusRequest = new() { Status = "InProgress" };
     private IBrowserFile? _selectedAttachmentFile;
@@ -776,6 +786,7 @@
     private Guid? _deletingAttachmentId;
     private ServiceOrderAttachment? _previewAttachment;
     private DateTime? _paymentDate = DateTime.Today;
+    private decimal _discountAmount;
 
     private static readonly IReadOnlyList<AttachmentTypeOption> AttachmentTypeOptions =
     [
@@ -820,21 +831,18 @@
         try
         {
             _isLoading = true;
-            _loadError = null;
-            _loadErrorEndpoint = null;
+            _error = null;
+            _errorEndpoint = null;
             if (resetMessages)
             {
                 _actionMessage = null;
-                _actionError = null;
-                _actionErrorEndpoint = null;
-                _statusUpdateError = null;
-                _statusUpdateErrorEndpoint = null;
             }
 
             _order = await ServiceOrdersService.GetServiceOrderByIdAsync(Id);
             if (_order is not null)
             {
-                _statusRequest.Status = GetDefaultStatusUpdateValue(_order.Status);
+                _statusRequest.Status = _order.Status is "Open" ? "InProgress" : _order.Status;
+                _discountAmount = _order.DiscountTotal;
                 await LoadActivityFeedAsync();
                 await LoadStatusHistoryAsync();
                 await LoadAttachmentsAsync();
@@ -847,12 +855,12 @@
         }
         catch (ApiException ex)
         {
-            _loadError = ex.Message;
-            _loadErrorEndpoint = ex.Endpoint;
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
-            _loadError = ex.Message;
+            _error = ex.Message;
         }
         finally
         {
@@ -863,73 +871,11 @@
 
     private async Task UpdateStatusAsync()
     {
-        if (_order is null)
-        {
-            return;
-        }
-
-        if (!CanUpdateStatusTo(_order.Status, _statusRequest.Status))
-        {
-            _statusUpdateError = GetInvalidStatusTransitionMessage(_order.Status, _statusRequest.Status);
-            _statusUpdateErrorEndpoint = null;
-            _actionMessage = null;
-            return;
-        }
-
-        try
-        {
-            _isWorking = true;
-            _statusUpdateError = null;
-            _statusUpdateErrorEndpoint = null;
-            _actionError = null;
-            _actionErrorEndpoint = null;
-            _actionMessage = null;
-
-            await UpdateStatusWithAllowedStepsAsync();
-            _actionMessage = "Servis durumu güncellendi.";
-            _statusRequest.Note = null;
-            await LoadAsync(resetMessages: false);
-        }
-        catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-        {
-            NavigationManager.NavigateTo("/login");
-        }
-        catch (ApiException ex)
-        {
-            _statusUpdateError = GetStatusUpdateErrorMessage(ex);
-            _statusUpdateErrorEndpoint = ex.Endpoint;
-        }
-        catch (Exception ex)
-        {
-            _statusUpdateError = ex.Message;
-        }
-        finally
-        {
-            _isWorking = false;
-            await InvokeAsync(StateHasChanged);
-        }
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest),
+            "Servis durumu güncellendi.");
+        _statusRequest.Note = null;
     }
-
-    private async Task UpdateStatusWithAllowedStepsAsync()
-    {
-        if (_order is { Status: "Open" } && _statusRequest.Status == "Completed")
-        {
-            await ServiceOrdersService.UpdateStatusAsync(
-                Id,
-                new UpdateServiceOrderStatusRequest { Status = "InProgress" });
-        }
-
-        await ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest);
-    }
-
-    private Task<PublicRecordAccessResponse?> LoadServiceOrderPublicAccessAsync()
-        => PublicRecordsService.GetForServiceOrderAsync(Id);
-
-    private Task<PublicRecordAccessResponse?> EnableServiceOrderPublicAccessAsync()
-        => PublicRecordsService.EnableForServiceOrderAsync(Id);
-
-    private Task DisableServiceOrderPublicAccessAsync()
-        => PublicRecordsService.DisableForServiceOrderAsync(Id);
 
     private async Task LoadActivityFeedAsync()
     {
@@ -1054,8 +1000,8 @@
         {
             _isUploadingAttachment = true;
             _attachmentsError = null;
-            _actionError = null;
-            _actionErrorEndpoint = null;
+            _error = null;
+            _errorEndpoint = null;
             _actionMessage = null;
 
             await ServiceOrdersService.UploadAttachmentAsync(
@@ -1078,6 +1024,7 @@
         catch (ApiException ex)
         {
             _attachmentsError = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -1110,6 +1057,7 @@
         catch (ApiException ex)
         {
             _attachmentsError = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
@@ -1200,13 +1148,13 @@
     {
         if (string.IsNullOrWhiteSpace(_operationRequest.Description))
         {
-            _actionError = "İşlem açıklaması zorunludur.";
+            _error = "İşlem açıklaması zorunludur.";
             return;
         }
 
         if (_operationRequest.Price < 0)
         {
-            _actionError = "Tutar geçersiz.";
+            _error = "Tutar geçersiz.";
             return;
         }
 
@@ -1229,13 +1177,13 @@
     {
         if (string.IsNullOrWhiteSpace(_partRequest.PartName))
         {
-            _actionError = "Parça adı zorunludur.";
+            _error = "Parça adı zorunludur.";
             return;
         }
 
         if (_partRequest.UnitPrice < 0 || _partRequest.Quantity <= 0)
         {
-            _actionError = "Tutar geçersiz.";
+            _error = "Tutar geçersiz.";
             return;
         }
 
@@ -1256,11 +1204,49 @@
             "Parça kaldırıldı.");
     }
 
+    private async Task AddConsumableAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_consumableRequest.Category))
+        {
+            _error = "Kategori zorunludur.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_consumableRequest.ProductName))
+        {
+            _error = "Ürün adı zorunludur.";
+            return;
+        }
+
+        if (_consumableRequest.UnitPrice < 0 || _consumableRequest.Quantity <= 0)
+        {
+            _error = "Tutar geçersiz.";
+            return;
+        }
+
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.AddConsumableAsync(Id, _consumableRequest),
+            "Sarf ürünü eklendi.");
+
+        _consumableRequest.Category = string.Empty;
+        _consumableRequest.ProductName = string.Empty;
+        _consumableRequest.Brand = null;
+        _consumableRequest.UnitPrice = 0;
+        _consumableRequest.Quantity = 1;
+    }
+
+    private async Task RemoveConsumableAsync(Guid consumableId)
+    {
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.RemoveConsumableAsync(Id, consumableId),
+            "Sarf ürünü kaldırıldı.");
+    }
+
     private async Task AddPaymentAsync()
     {
         if (_paymentRequest.Amount <= 0)
         {
-            _actionError = "Tutar geçersiz.";
+            _error = "Tutar geçersiz.";
             return;
         }
 
@@ -1277,15 +1263,26 @@
         _paymentDate = DateTime.Today;
     }
 
+    private async Task SetDiscountAsync()
+    {
+        if (_discountAmount < 0)
+        {
+            _error = "İndirim tutarı negatif olamaz.";
+            return;
+        }
+
+        await ExecuteActionAsync(
+            () => ServiceOrdersService.SetDiscountAsync(Id, _discountAmount),
+            "İndirim uygulandı.");
+    }
+
     private async Task ExecuteActionAsync(Func<Task> action, string successMessage)
     {
         try
         {
             _isWorking = true;
-            _actionError = null;
-            _actionErrorEndpoint = null;
-            _statusUpdateError = null;
-            _statusUpdateErrorEndpoint = null;
+            _error = null;
+            _errorEndpoint = null;
             _actionMessage = null;
 
             await action();
@@ -1298,12 +1295,12 @@
         }
         catch (ApiException ex)
         {
-            _actionError = ex.Message;
-            _actionErrorEndpoint = ex.Endpoint;
+            _error = ex.Message;
+            _errorEndpoint = ex.Endpoint;
         }
         catch (Exception ex)
         {
-            _actionError = ex.Message;
+            _error = ex.Message;
         }
         finally
         {
@@ -1337,80 +1334,8 @@
         }
         catch (Exception ex) when (ex is JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException)
         {
-            _actionError = "Sayfa geçişi tamamlanamadı. Lütfen tekrar deneyin.";
+            _error = "Sayfa gecisi tamamlanamadi. Lutfen tekrar deneyin.";
         }
-    }
-
-    private static IReadOnlyList<StatusTransitionOption> GetStatusUpdateOptions(string status) => status switch
-    {
-        "Open" =>
-        [
-            new("InProgress", "İşlemde"),
-            new("Completed", "Tamamlandı"),
-            new("Cancelled", "İptal")
-        ],
-        "InProgress" =>
-        [
-            new("Completed", "Tamamlandı"),
-            new("WaitingForParts", "Parça Bekliyor"),
-            new("Cancelled", "İptal")
-        ],
-        "WaitingForParts" =>
-        [
-            new("InProgress", "İşlemde"),
-            new("Completed", "Tamamlandı"),
-            new("Cancelled", "İptal")
-        ],
-        "Completed" => [new("Delivered", "Teslim Edildi")],
-        _ => []
-    };
-
-    private static bool HasStatusUpdateOptions(string status)
-        => GetStatusUpdateOptions(status).Count > 0;
-
-    private static bool CanUpdateStatusTo(string currentStatus, string requestedStatus)
-        => GetStatusUpdateOptions(currentStatus).Any(option => option.Value == requestedStatus);
-
-    private static string GetDefaultStatusUpdateValue(string status)
-    {
-        var options = GetStatusUpdateOptions(status);
-        return options.Count > 0 ? options[0].Value : status;
-    }
-
-    private static string GetInvalidStatusTransitionMessage(string currentStatus, string requestedStatus)
-        => requestedStatus == "Delivered" && currentStatus != "Completed"
-            ? "Servis emri teslim edildi olarak işaretlenmeden önce tamamlandı durumunda olmalıdır."
-            : "Seçilen durum geçişi mevcut servis emri için uygun değil.";
-
-    private static string GetStatusUpdateErrorMessage(ApiException exception)
-    {
-        var message = exception.Message;
-        if (message.Contains("Cannot mark as delivered", StringComparison.OrdinalIgnoreCase) ||
-            message.Contains("Order must be in Completed state", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Servis emri teslim edildi olarak işaretlenmeden önce tamamlandı durumunda olmalıdır.";
-        }
-
-        if (message.Contains("Cannot complete order", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Servis emri tamamlandı olarak işaretlenmeden önce işlemde veya parça bekliyor durumunda olmalıdır.";
-        }
-
-        if (message.Contains("already selected", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Servis emri zaten seçilen durumda.";
-        }
-
-        if (exception.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity)
-        {
-            return string.IsNullOrWhiteSpace(message)
-                ? "Durum güncellenemedi. Lütfen uygun bir durum seçip tekrar deneyin."
-                : message;
-        }
-
-        return string.IsNullOrWhiteSpace(message)
-            ? "Durum güncellenemedi. Lütfen tekrar deneyin."
-            : message;
     }
 
     private static string GetStatusBadgeClass(string status) => status switch
@@ -1508,7 +1433,8 @@
     private bool CanRemovePart(ServiceOrderPart part)
         => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - part.TotalPrice);
 
-    private sealed record StatusTransitionOption(string Value, string Text);
+    private bool CanRemoveConsumable(ServiceOrderConsumable consumable)
+        => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - consumable.LineTotal);
 
     private sealed record AttachmentTypeOption(string Value, string Text);
 }
