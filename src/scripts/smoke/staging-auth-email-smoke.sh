@@ -71,6 +71,27 @@ api_post() {
         -d "$data"
 }
 
+redact_body() {
+    python3 -c 'import json, sys
+raw = sys.stdin.read()
+if not raw.strip():
+    sys.exit(0)
+sensitive = {"accesstoken", "refreshtoken", "twofactortoken", "token", "code", "password", "newpassword", "confirmpassword", "ownerpassword"}
+def scrub(value):
+    if isinstance(value, dict):
+        return {
+            key: "[redacted]" if key.lower() in sensitive or "token" in key.lower() or "password" in key.lower() else scrub(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [scrub(item) for item in value]
+    return value
+try:
+    print(json.dumps(scrub(json.loads(raw)), ensure_ascii=False), end="")
+except json.JSONDecodeError:
+    print("[redacted non-json body]", end="")'
+}
+
 check_status() {
     local response="$1"; local expected="$2"; local label="$3"
     local status
@@ -80,7 +101,7 @@ check_status() {
     if [ "$status" = "$expected" ]; then
         ok "$label → HTTP $status"
     else
-        echo "  Body: $body" >&2
+        echo "  Body: $(printf '%s' "$body" | redact_body)" >&2
         fail "$label → beklenen HTTP $expected, alınan $status"
     fi
     echo "$body"
@@ -119,7 +140,7 @@ MSG_ID=$(mailpit_latest_message_id "doğrulama kodu")
 TEXT=$(mailpit_get_text "$MSG_ID")
 CODE=$(echo "$TEXT" | grep -oP '\b\d{6}\b' | head -1)
 [ -n "$CODE" ] || fail "Mailpit email body'sinde 6 haneli kod bulunamadı"
-ok "Verification code alındı: $CODE"
+ok "Verification code alındı (redacted)"
 
 # ── 3. Yanlış kod dene ────────────────────────────────────────────────────
 info "3/8 Yanlış kod ile doğrulama (friendly error bekleniyor)..."
