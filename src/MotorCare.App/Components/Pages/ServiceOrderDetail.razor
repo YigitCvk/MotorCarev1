@@ -1,7 +1,9 @@
 @page "/service-orders/{Id:guid}"
 @using System.Globalization
 @using System.Net
+@using Microsoft.AspNetCore.WebUtilities
 @using MotorCare.Application.ServiceOrders
+@using MotorCare.App.Authorization
 @using ServiceOrderDetailModel = MotorCare.App.Models.ServiceOrders.ServiceOrderDetail
 @inject AuthService AuthService
 @inject ServiceOrdersService ServiceOrdersService
@@ -63,11 +65,20 @@
                 <button type="button" class="app-btn-secondary" @onclick="BackToList">Listeye Dön</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("operations-section"))">İşçilik</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("parts-section"))">Parça</button>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("discount-section"))">İndirim</button>
+                @if (CanManagePayments)
+                {
+                    <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("discount-section"))">İndirim</button>
+                }
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("consumables-section"))">Sarf Ürün</button>
                 <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("attachments-section"))">Dosyalar</button>
-                <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
-                <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
+                @if (CanManagePayments)
+                {
+                    <button type="button" class="app-btn-secondary" @onclick="@(() => ScrollToAsync("payments-section"))">Tahsilat</button>
+                }
+                @if (CanWriteOrder)
+                {
+                    <button type="button" class="app-btn-primary" @onclick="@(() => ScrollToAsync("status-section"))">Durum Güncelle</button>
+                }
             </div>
         </section>
 
@@ -181,6 +192,8 @@
                     <dd>@_order.RemainingTotal.ToString("N2") ₺</dd>
                 </dl>
 
+                @if (CanWriteOrder)
+                {
                 <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Yeni Durum</label>
                     <div class="inline-form-row">
@@ -201,6 +214,14 @@
                         <div class="text-muted small mt-1">En fazla 500 karakter.</div>
                     </div>
                 </div>
+                }
+                else
+                {
+                    <div class="empty-state compact">
+                        <strong>Durum güncelleme yetkisi yok</strong>
+                        <p>Bu rol servis durumu ve iş kalemleri üzerinde değişiklik yapamaz.</p>
+                    </div>
+                }
             </section>
         </section>
 
@@ -212,6 +233,8 @@
                 </div>
             </div>
 
+            @if (CanWriteOrder)
+            {
             <div class="service-order-attachments-form">
                 <div>
                     <label class="form-label fw-semibold">Dosya seç</label>
@@ -251,6 +274,7 @@
                     </button>
                 </div>
             </div>
+            }
 
             @if (!string.IsNullOrWhiteSpace(_attachmentsError))
             {
@@ -271,7 +295,7 @@
             {
                 <div class="empty-state compact mt-3">
                     <strong>Bu servis emrine henüz dosya eklenmemiş.</strong>
-                    <p>Fotoğraf veya evrak eklemek için yukarıdaki formu kullanın.</p>
+                    <p>@(CanWriteOrder ? "Fotoğraf veya evrak eklemek için yukarıdaki formu kullanın." : "Fotoğraf veya evrak eklendiğinde burada görünür.")</p>
                 </div>
             }
             else
@@ -309,12 +333,15 @@
                                 <div class="service-order-attachment-actions">
                                     <button type="button" class="app-btn-secondary" @onclick="() => ViewAttachmentAsync(attachment)">Görüntüle</button>
                                     <button type="button" class="app-btn-secondary" @onclick="() => DownloadAttachmentAsync(attachment)">İndir</button>
-                                    <button type="button"
-                                            class="app-btn-secondary danger-action"
-                                            @onclick="() => DeleteAttachmentAsync(attachment.Id)"
-                                            disabled="@(_isWorking || _deletingAttachmentId == attachment.Id)">
-                                        @(_deletingAttachmentId == attachment.Id ? "Siliniyor..." : "Sil")
-                                    </button>
+                                    @if (CanWriteOrder)
+                                    {
+                                        <button type="button"
+                                                class="app-btn-secondary danger-action"
+                                                @onclick="() => DeleteAttachmentAsync(attachment.Id)"
+                                                disabled="@(_isWorking || _deletingAttachmentId == attachment.Id)">
+                                            @(_deletingAttachmentId == attachment.Id ? "Siliniyor..." : "Sil")
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </article>
@@ -359,7 +386,10 @@
                                     </div>
                                     <div class="service-order-line-actions">
                                         <span class="fw-bold">@op.LineTotal.ToString("N2") ₺</span>
-                                        <button type="button" class="app-btn-secondary" @onclick="() => RemoveOperationAsync(op.Id)" disabled="@(_isWorking || !CanRemoveOperation(op))">Sil</button>
+                                        @if (CanWriteOrder)
+                                        {
+                                            <button type="button" class="app-btn-secondary" @onclick="() => RemoveOperationAsync(op.Id)" disabled="@(_isWorking || !CanRemoveOperation(op))">Sil</button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -367,6 +397,8 @@
                     }
                 </div>
 
+                @if (CanWriteOrder)
+                {
                 <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Operasyon Ekle</label>
                     <div class="form-grid compact-grid">
@@ -394,6 +426,7 @@
                         </div>
                     </div>
                 </div>
+                }
             </section>
 
             <section class="app-card" id="parts-section">
@@ -427,7 +460,10 @@
                                     </div>
                                     <div class="service-order-line-actions">
                                         <span class="fw-bold">@part.TotalPrice.ToString("N2") ₺</span>
-                                        <button type="button" class="app-btn-secondary" @onclick="() => RemovePartAsync(part.Id)" disabled="@(_isWorking || !CanRemovePart(part))">Sil</button>
+                                        @if (CanWriteOrder)
+                                        {
+                                            <button type="button" class="app-btn-secondary" @onclick="() => RemovePartAsync(part.Id)" disabled="@(_isWorking || !CanRemovePart(part))">Sil</button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -435,6 +471,8 @@
                     }
                 </div>
 
+                @if (CanWriteOrder)
+                {
                 <div class="inline-form sticky-mobile-action">
                     <label class="form-label fw-semibold">Parça Ekle</label>
                     <div class="form-grid compact-grid">
@@ -459,6 +497,7 @@
                         </div>
                     </div>
                 </div>
+                }
             </section>
         </section>
 
@@ -513,7 +552,10 @@
                                 </div>
                                 <div class="service-order-line-actions">
                                     <span class="fw-bold">@consumable.LineTotal.ToString("N2") ₺</span>
-                                    <button type="button" class="app-btn-secondary" @onclick="() => RemoveConsumableAsync(consumable.Id)" disabled="@(_isWorking || !CanRemoveConsumable(consumable))">Sil</button>
+                                    @if (CanWriteOrder)
+                                    {
+                                        <button type="button" class="app-btn-secondary" @onclick="() => RemoveConsumableAsync(consumable.Id)" disabled="@(_isWorking || !CanRemoveConsumable(consumable))">Sil</button>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -521,6 +563,8 @@
                 }
             </div>
 
+            @if (CanWriteOrder)
+            {
             <div class="inline-form sticky-mobile-action">
                 <label class="form-label fw-semibold">Sarf Ürün Ekle</label>
                 <div class="form-grid compact-grid">
@@ -549,6 +593,7 @@
                     </div>
                 </div>
             </div>
+            }
         </section>
 
         <section class="app-card">
@@ -686,15 +731,25 @@
                 </div>
             </div>
 
-            <div class="form-grid compact-grid sticky-mobile-action">
-                <div>
-                    <label class="form-label">İndirim Tutarı (₺)</label>
-                    <InputNumber class="form-control" @bind-Value="_discountAmount" />
+            @if (CanManagePayments)
+            {
+                <div class="form-grid compact-grid sticky-mobile-action">
+                    <div>
+                        <label class="form-label">İndirim Tutarı (₺)</label>
+                        <InputNumber class="form-control" @bind-Value="_discountAmount" />
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="app-btn-primary" @onclick="SetDiscountAsync" disabled="@_isWorking">İndirim Uygula</button>
+                    </div>
                 </div>
-                <div class="filter-actions">
-                    <button type="button" class="app-btn-primary" @onclick="SetDiscountAsync" disabled="@_isWorking">İndirim Uygula</button>
+            }
+            else
+            {
+                <div class="empty-state compact">
+                    <strong>İndirim yetkisi yok</strong>
+                    <p>Bu rol servis emrine indirim uygulayamaz.</p>
                 </div>
-            </div>
+            }
         </section>
 
         <section class="app-card service-order-payments-card" id="payments-section">
@@ -729,27 +784,37 @@
                 }
             </div>
 
-            <div class="form-grid compact-grid sticky-mobile-action">
-                <div>
-                    <label class="form-label">Tutar (₺)</label>
-                    <InputNumber class="form-control" @bind-Value="_paymentRequest.Amount" />
+            @if (CanManagePayments)
+            {
+                <div class="form-grid compact-grid sticky-mobile-action">
+                    <div>
+                        <label class="form-label">Tutar (₺)</label>
+                        <InputNumber class="form-control" @bind-Value="_paymentRequest.Amount" />
+                    </div>
+                    <div>
+                        <label class="form-label">Yöntem</label>
+                        <InputSelect class="form-select" @bind-Value="_paymentRequest.Method">
+                            <option value="Cash">Nakit</option>
+                            <option value="CreditCard">Kredi Kartı</option>
+                            <option value="BankTransfer">Havale / EFT</option>
+                        </InputSelect>
+                    </div>
+                    <div>
+                        <label class="form-label">Ödeme Tarihi</label>
+                        <InputDate class="form-control" @bind-Value="_paymentDate" />
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="app-btn-primary" @onclick="AddPaymentAsync" disabled="@_isWorking">Tahsilat Ekle</button>
+                    </div>
                 </div>
-                <div>
-                    <label class="form-label">Yöntem</label>
-                    <InputSelect class="form-select" @bind-Value="_paymentRequest.Method">
-                        <option value="Cash">Nakit</option>
-                        <option value="CreditCard">Kredi Kartı</option>
-                        <option value="BankTransfer">Havale / EFT</option>
-                    </InputSelect>
+            }
+            else
+            {
+                <div class="empty-state compact">
+                    <strong>Tahsilat yetkisi yok</strong>
+                    <p>Bu rol servis emrine ödeme hareketi ekleyemez.</p>
                 </div>
-                <div>
-                    <label class="form-label">Ödeme Tarihi</label>
-                    <InputDate class="form-control" @bind-Value="_paymentDate" />
-                </div>
-                <div class="filter-actions">
-                    <button type="button" class="app-btn-primary" @onclick="AddPaymentAsync" disabled="@_isWorking">Tahsilat Ekle</button>
-                </div>
-            </div>
+            }
         </section>
     }
 </div>
@@ -808,6 +873,10 @@
     private ServiceOrderAttachment? _previewAttachment;
     private DateTime? _paymentDate = DateTime.Today;
     private decimal _discountAmount;
+    private CurrentUserResponse? _currentUser;
+
+    private bool CanWriteOrder => AppRoleAccess.CanWriteServiceOrders(_currentUser?.Role);
+    private bool CanManagePayments => AppRoleAccess.CanManageServiceOrderPayments(_currentUser?.Role);
 
     private static readonly IReadOnlyList<AttachmentTypeOption> AttachmentTypeOptions =
     [
@@ -827,6 +896,19 @@
             if (!await AuthService.IsAuthenticatedAsync())
             {
                 NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            _currentUser = await AuthService.GetCurrentUserAsync();
+            if (_currentUser is null)
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            if (!AppRoleAccess.CanReadServiceOrders(_currentUser.Role))
+            {
+                NavigateToForbidden();
                 return;
             }
 
@@ -871,7 +953,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
             return;
         }
         catch (ApiException ex)
@@ -892,6 +974,12 @@
 
     private async Task UpdateStatusAsync()
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol servis durumunu güncelleyemez.";
+            return;
+        }
+
         await ExecuteActionAsync(
             () => ServiceOrdersService.UpdateStatusAsync(Id, _statusRequest),
             "Servis durumu güncellendi.");
@@ -914,7 +1002,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
         }
         catch
         {
@@ -964,7 +1052,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
         }
         catch (ApiException ex)
         {
@@ -999,6 +1087,12 @@
 
     private async Task UploadAttachmentAsync()
     {
+        if (!CanWriteOrder)
+        {
+            _attachmentsError = "Bu rol dosya yükleyemez.";
+            return;
+        }
+
         if (_selectedAttachmentFile is null)
         {
             _attachmentsError = "Lütfen bir dosya seçin.";
@@ -1040,7 +1134,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
         }
         catch (ApiException ex)
         {
@@ -1060,6 +1154,12 @@
 
     private async Task DeleteAttachmentAsync(Guid attachmentId)
     {
+        if (!CanWriteOrder)
+        {
+            _attachmentsError = "Bu rol dosya silemez.";
+            return;
+        }
+
         try
         {
             _deletingAttachmentId = attachmentId;
@@ -1073,7 +1173,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
         }
         catch (ApiException ex)
         {
@@ -1167,6 +1267,12 @@
 
     private async Task AddOperationAsync()
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol iş kalemi ekleyemez.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_operationRequest.Description))
         {
             _error = "İşlem açıklaması zorunludur.";
@@ -1204,6 +1310,12 @@
 
     private async Task RemoveOperationAsync(Guid operationId)
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol iş kalemi silemez.";
+            return;
+        }
+
         await ExecuteActionAsync(
             () => ServiceOrdersService.RemoveOperationAsync(Id, operationId),
             "Operasyon kaldırıldı.");
@@ -1211,6 +1323,12 @@
 
     private async Task AddPartAsync()
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol parça ekleyemez.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_partRequest.PartName))
         {
             _error = "Parça adı zorunludur.";
@@ -1235,6 +1353,12 @@
 
     private async Task RemovePartAsync(Guid partId)
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol parça silemez.";
+            return;
+        }
+
         await ExecuteActionAsync(
             () => ServiceOrdersService.RemovePartAsync(Id, partId),
             "Parça kaldırıldı.");
@@ -1242,6 +1366,12 @@
 
     private async Task AddConsumableAsync()
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol sarf ürünü ekleyemez.";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_consumableRequest.Category))
         {
             _error = "Kategori zorunludur.";
@@ -1273,6 +1403,12 @@
 
     private async Task RemoveConsumableAsync(Guid consumableId)
     {
+        if (!CanWriteOrder)
+        {
+            _error = "Bu rol sarf ürünü silemez.";
+            return;
+        }
+
         await ExecuteActionAsync(
             () => ServiceOrdersService.RemoveConsumableAsync(Id, consumableId),
             "Sarf ürünü kaldırıldı.");
@@ -1280,6 +1416,12 @@
 
     private async Task AddPaymentAsync()
     {
+        if (!CanManagePayments)
+        {
+            _error = "Bu rol tahsilat ekleyemez.";
+            return;
+        }
+
         if (_paymentRequest.Amount <= 0)
         {
             _error = "Tutar geçersiz.";
@@ -1301,6 +1443,12 @@
 
     private async Task SetDiscountAsync()
     {
+        if (!CanManagePayments)
+        {
+            _error = "Bu rol indirim uygulayamaz.";
+            return;
+        }
+
         if (_discountAmount < 0)
         {
             _error = "İndirim tutarı negatif olamaz.";
@@ -1327,7 +1475,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigateToAccessFailure(ex);
         }
         catch (ApiException ex)
         {
@@ -1343,6 +1491,35 @@
             _isWorking = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void NavigateToAccessFailure(ApiException exception)
+    {
+        if (exception.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            var loginUrl = QueryHelpers.AddQueryString("/login", "returnUrl", GetCurrentReturnUrl());
+            TryNavigateTo(loginUrl);
+            return;
+        }
+
+        NavigateToForbidden();
+    }
+
+    private void NavigateToForbidden()
+    {
+        var forbiddenUrl = QueryHelpers.AddQueryString("/forbidden", "returnUrl", GetCurrentReturnUrl());
+        TryNavigateTo(forbiddenUrl);
+    }
+
+    private string GetCurrentReturnUrl()
+    {
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        if (string.IsNullOrWhiteSpace(relative))
+        {
+            return "/";
+        }
+
+        return relative.StartsWith('/') ? relative : "/" + relative;
     }
 
     private void BackToList()

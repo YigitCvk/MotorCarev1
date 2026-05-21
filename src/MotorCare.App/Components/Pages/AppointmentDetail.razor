@@ -188,7 +188,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigationManager.NavigateTo(ex.StatusCode == HttpStatusCode.Unauthorized ? "/login" : "/forbidden");
             return;
         }
         catch (ApiException ex)
@@ -251,7 +251,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigationManager.NavigateTo(ex.StatusCode == HttpStatusCode.Unauthorized ? "/login" : "/forbidden");
         }
         catch (ApiException ex)
         {
@@ -285,7 +285,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigationManager.NavigateTo(ex.StatusCode == HttpStatusCode.Unauthorized ? "/login" : "/forbidden");
         }
         catch (ApiException ex)
         {

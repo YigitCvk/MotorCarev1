@@ -1,9 +1,14 @@
 @page "/dashboard"
 @using System.Globalization
 @using System.Net
+@using Microsoft.AspNetCore.WebUtilities
 @using MotorCare.App.Authorization
 @inject AuthService AuthService
 @inject DashboardService DashboardService
+@inject ServicesService ServicesService
+@inject TenantsService TenantsService
+@inject UsersService UsersService
+@inject ImportsService ImportsService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Dashboard - GarajPass</PageTitle>
@@ -55,6 +60,13 @@ else
                 </div>
             }
         </section>
+
+        <OnboardingChecklist User="_user"
+                             Summary="_summary"
+                             ServiceCatalogCount="_serviceCatalogCount"
+                             UserCount="_userCount"
+                             ImportBatchCount="_importBatchCount"
+                             HasBusinessProfile="_hasBusinessProfile" />
 
         <section class="metric-grid">
             <div class="metric-card mc-primary">
@@ -154,6 +166,10 @@ else
     private CurrentUserResponse? _user;
     private DailySummaryResponse? _summary;
     private DateTime _today;
+    private int? _serviceCatalogCount;
+    private int? _userCount;
+    private int? _importBatchCount;
+    private bool? _hasBusinessProfile;
     private IReadOnlyList<RecentServiceOrderResponse> RecentServiceOrders => _summary?.RecentServiceOrders ?? [];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -199,6 +215,10 @@ else
             {
                 _error = "Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin.";
             }
+            else
+            {
+                await LoadOnboardingSignalsAsync();
+            }
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -206,13 +226,7 @@ else
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Forbidden)
         {
-            if (_user is not null)
-            {
-                NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(_user.Role));
-                return;
-            }
-
-            _error = "Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin.";
+            NavigationManager.NavigateTo(QueryHelpers.AddQueryString("/forbidden", "returnUrl", "/dashboard"));
         }
         catch
         {
@@ -222,6 +236,58 @@ else
         {
             _isLoading = false;
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadOnboardingSignalsAsync()
+    {
+        var role = _user?.Role;
+
+        try
+        {
+            var profile = await TenantsService.GetCurrentProfileAsync();
+            _hasBusinessProfile = !string.IsNullOrWhiteSpace(profile?.Name);
+        }
+        catch
+        {
+            _hasBusinessProfile = null;
+        }
+
+        if (AppRoleAccess.CanReadServices(role))
+        {
+            try
+            {
+                var services = await ServicesService.GetServicesAsync(null, null, true, pageSize: 1);
+                _serviceCatalogCount = services?.TotalCount;
+            }
+            catch
+            {
+                _serviceCatalogCount = null;
+            }
+        }
+
+        if (AppRoleAccess.CanManageUsers(role))
+        {
+            try
+            {
+                _userCount = (await UsersService.GetUsersAsync())?.Count;
+            }
+            catch
+            {
+                _userCount = null;
+            }
+        }
+
+        if (AppRoleAccess.CanImport(role))
+        {
+            try
+            {
+                _importBatchCount = (await ImportsService.GetBatchesAsync())?.Count;
+            }
+            catch
+            {
+                _importBatchCount = null;
+            }
         }
     }
 

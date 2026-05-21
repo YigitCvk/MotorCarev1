@@ -7,11 +7,15 @@ namespace MotorCare.Api.Files;
 
 public sealed class LocalServiceOrderAttachmentStorage : IServiceOrderAttachmentStorage
 {
-    private readonly IWebHostEnvironment _environment;
+    private const string StoragePathConfigurationKey = "Storage:AttachmentsPath";
 
-    public LocalServiceOrderAttachmentStorage(IWebHostEnvironment environment)
+    private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
+
+    public LocalServiceOrderAttachmentStorage(IWebHostEnvironment environment, IConfiguration configuration)
     {
         _environment = environment;
+        _configuration = configuration;
     }
 
     public async Task<StoredAttachmentFile> SaveAsync(
@@ -103,13 +107,11 @@ public sealed class LocalServiceOrderAttachmentStorage : IServiceOrderAttachment
             throw new DomainException("Dosya yolu geçersiz.");
         }
 
-        var webRoot = string.IsNullOrWhiteSpace(_environment.WebRootPath)
-            ? Path.Combine(_environment.ContentRootPath, "wwwroot")
-            : _environment.WebRootPath;
+        var storageRoot = ResolveStorageRoot();
 
-        Directory.CreateDirectory(webRoot);
+        Directory.CreateDirectory(storageRoot);
 
-        var root = Path.GetFullPath(webRoot);
+        var root = Path.GetFullPath(storageRoot);
         var combined = Path.GetFullPath(Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar)));
         var rootWithSeparator = root.EndsWith(Path.DirectorySeparatorChar)
             ? root
@@ -121,6 +123,21 @@ public sealed class LocalServiceOrderAttachmentStorage : IServiceOrderAttachment
         }
 
         return combined;
+    }
+
+    private string ResolveStorageRoot()
+    {
+        var configuredPath = _configuration[StoragePathConfigurationKey];
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return Path.IsPathRooted(configuredPath)
+                ? configuredPath
+                : Path.Combine(_environment.ContentRootPath, configuredPath);
+        }
+
+        return string.IsNullOrWhiteSpace(_environment.WebRootPath)
+            ? Path.Combine(_environment.ContentRootPath, "wwwroot")
+            : _environment.WebRootPath;
     }
 
     private static string BuildSafeFileName(string originalFileName, string extension)

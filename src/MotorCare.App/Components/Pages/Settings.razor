@@ -1,4 +1,10 @@
 @page "/settings"
+@using MotorCare.App.Authorization
+@inject AuthService AuthService
+@inject TenantsService TenantsService
+@inject ServicesService ServicesService
+@inject UsersService UsersService
+@inject ImportsService ImportsService
 
 <PageTitle>Ayarlar</PageTitle>
 
@@ -12,10 +18,22 @@
             </p>
         </div>
         <div class="page-header-actions">
-            <a class="app-btn-secondary" href="/dashboard">Panele Dön</a>
-            <a class="app-btn-primary" href="/services">Hizmetleri Yönet</a>
+            @if (AppRoleAccess.CanReadDashboard(_currentUser?.Role))
+            {
+                <a class="app-btn-secondary" href="/dashboard">Panele Dön</a>
+            }
+            @if (AppRoleAccess.CanReadServices(_currentUser?.Role))
+            {
+                <a class="app-btn-primary" href="/services">Hizmetleri Yönet</a>
+            }
         </div>
     </section>
+
+    <OnboardingChecklist User="_currentUser"
+                         ServiceCatalogCount="_serviceCatalogCount"
+                         UserCount="_userCount"
+                         ImportBatchCount="_importBatchCount"
+                         HasBusinessProfile="_hasBusinessProfile" />
 
     <section class="metric-grid">
         <div class="metric-card mc-primary">
@@ -63,13 +81,15 @@
             </div>
         </article>
 
+        @if (AppRoleAccess.CanManageUsers(_currentUser?.Role))
+        {
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
                     <div class="section-title">Kullanicilar ve Roller</div>
                     <div class="section-subtitle">Owner, personel ve yetki dagilimi</div>
                 </div>
-                <span class="status-badge badge-progress">Planlandı</span>
+                <span class="status-badge badge-open">Aktif</span>
             </div>
             <p class="admin-card-copy">
                 Ekip uyeleri, rol bazli erişim ve operasyon yetkileri icin tenant yönetim alani.
@@ -83,6 +103,7 @@
                 <a class="app-btn-secondary" href="/settings/users">Duzenle</a>
             </div>
         </article>
+        }
 
         <article class="app-card admin-card">
             <div class="admin-card-top">
@@ -112,7 +133,7 @@
                     <div class="section-title">Randevu Tipleri</div>
                     <div class="section-subtitle">Bakım, onarım, yıkama ve kontrol tanımları</div>
                 </div>
-                <span class="status-badge badge-open">Aktif</span>
+                <span class="status-badge badge-progress">Planlandı</span>
             </div>
             <p class="admin-card-copy">
                 Kullanilan randevu tiplerini, operasyon karsiliklarini ve görünür etiketleri tenant bazinda yönetin.
@@ -123,11 +144,12 @@
                 <span class="type-badge">Yıkama</span>
             </div>
             <div class="admin-card-actions">
-                <a class="app-btn-primary" href="/settings/appointment-types">Yönet</a>
-                <a class="app-btn-secondary" href="/settings/appointment-types">Duzenle</a>
+                <a class="app-btn-secondary" href="/settings/appointment-types">Yakında</a>
             </div>
         </article>
 
+        @if (AppRoleAccess.CanReadServices(_currentUser?.Role))
+        {
         <article class="app-card admin-card">
             <div class="admin-card-top">
                 <div>
@@ -146,9 +168,13 @@
             </div>
             <div class="admin-card-actions">
                 <a class="app-btn-primary" href="/services">Yönet</a>
-                <a class="app-btn-secondary" href="/services/create">Yeni Hizmet</a>
+                @if (AppRoleAccess.CanWriteServices(_currentUser?.Role))
+                {
+                    <a class="app-btn-secondary" href="/services/create">Yeni Hizmet</a>
+                }
             </div>
         </article>
+        }
 
         <article class="app-card admin-card">
             <div class="admin-card-top">
@@ -162,8 +188,7 @@
                 Gunluk calisma saatleri, ozel tatil gunleri ve randevu kapasite pencereleri icin baslangic alani.
             </p>
             <div class="admin-card-actions">
-                <a class="app-btn-primary" href="/settings/working-hours">Yönet</a>
-                <a class="app-btn-secondary" href="/settings/working-hours">Duzenle</a>
+                <a class="app-btn-secondary" href="/settings/working-hours">Yakında</a>
             </div>
         </article>
 
@@ -200,3 +225,75 @@
         </article>
     </section>
 </div>
+
+@code {
+    private CurrentUserResponse? _currentUser;
+    private int? _serviceCatalogCount;
+    private int? _userCount;
+    private int? _importBatchCount;
+    private bool? _hasBusinessProfile;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _currentUser = await AuthService.GetCurrentUserAsync();
+        await LoadOnboardingSignalsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadOnboardingSignalsAsync()
+    {
+        var role = _currentUser?.Role;
+
+        try
+        {
+            var profile = await TenantsService.GetCurrentProfileAsync();
+            _hasBusinessProfile = !string.IsNullOrWhiteSpace(profile?.Name);
+        }
+        catch
+        {
+            _hasBusinessProfile = null;
+        }
+
+        if (AppRoleAccess.CanReadServices(role))
+        {
+            try
+            {
+                var services = await ServicesService.GetServicesAsync(null, null, true, pageSize: 1);
+                _serviceCatalogCount = services?.TotalCount;
+            }
+            catch
+            {
+                _serviceCatalogCount = null;
+            }
+        }
+
+        if (AppRoleAccess.CanManageUsers(role))
+        {
+            try
+            {
+                _userCount = (await UsersService.GetUsersAsync())?.Count;
+            }
+            catch
+            {
+                _userCount = null;
+            }
+        }
+
+        if (AppRoleAccess.CanImport(role))
+        {
+            try
+            {
+                _importBatchCount = (await ImportsService.GetBatchesAsync())?.Count;
+            }
+            catch
+            {
+                _importBatchCount = null;
+            }
+        }
+    }
+}

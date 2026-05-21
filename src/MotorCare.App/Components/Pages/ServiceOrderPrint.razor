@@ -107,6 +107,13 @@
                             <span>Parça</span>
                             <span>@_order.PartsTotal.ToString("N2") ₺</span>
                         </div>
+                        @if (_order.ConsumablesTotal > 0)
+                        {
+                            <div class="print-totals-row">
+                                <span>Sarf Ürün</span>
+                                <span>@_order.ConsumablesTotal.ToString("N2") ₺</span>
+                            </div>
+                        }
                         @if (_order.DiscountTotal > 0)
                         {
                             <div class="print-totals-row print-totals-row--discount">
@@ -211,6 +218,44 @@
                 </section>
             </div>
 
+            @if (_order.Consumables.Count > 0)
+            {
+                <section class="print-card">
+                    <h2>Kullanılan Sarf Ürünleri</h2>
+                    <div class="print-table">
+                        <div class="print-table-row print-table-head print-table-parts-head">
+                            <span>Ürün</span>
+                            <span>Adet</span>
+                            <span>Birim</span>
+                            <span>Toplam</span>
+                        </div>
+                        @foreach (var consumable in _order.Consumables)
+                        {
+                            <div class="print-table-row print-table-parts-row">
+                                <span>
+                                    @consumable.ProductName
+                                    @if (!string.IsNullOrWhiteSpace(consumable.Brand))
+                                    {
+                                        <small> (@consumable.Brand)</small>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(consumable.Notes))
+                                    {
+                                        <br /><small>Not: @consumable.Notes</small>
+                                    }
+                                </span>
+                                <span>@consumable.Quantity</span>
+                                <span>@consumable.UnitPrice.ToString("N2") ₺</span>
+                                <span>@consumable.LineTotal.ToString("N2") ₺</span>
+                            </div>
+                        }
+                        <div class="print-table-row print-table-subtotal">
+                            <span>Toplam</span>
+                            <span>@_order.ConsumablesTotal.ToString("N2") ₺</span>
+                        </div>
+                    </div>
+                </section>
+            }
+
             <section class="print-card">
                 <h2>Tahsilatlar</h2>
                 @if (_order.Payments.Count == 0)
@@ -312,7 +357,7 @@
         }
         catch (ApiException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            NavigationManager.NavigateTo("/login");
+            NavigationManager.NavigateTo(ex.StatusCode == HttpStatusCode.Unauthorized ? "/login" : "/forbidden");
             return;
         }
         catch (Exception ex)

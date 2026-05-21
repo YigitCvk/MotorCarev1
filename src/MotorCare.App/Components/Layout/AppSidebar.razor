@@ -1,6 +1,7 @@
 @using Microsoft.Extensions.Options
 @using MotorCare.App.Authorization
 @using MotorCare.App.Configuration
+@implements IDisposable
 @inject AuthService AuthService
 @inject IOptions<BuildInfoOptions> BuildInfo
 
@@ -28,6 +29,8 @@
             </NavLink>
             }
 
+            @if (AppRoleAccess.CanReadServiceOrders(_role))
+            {
             <NavLink class="app-sidebar__link" href="/appointments" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3.5" y="5" width="17" height="15" rx="2"></rect>
@@ -35,6 +38,7 @@
                 </svg>
                 <span>Randevular</span>
             </NavLink>
+            }
 
             @if (AppRoleAccess.CanReadServiceOrders(_role))
             {
@@ -93,6 +97,8 @@
         <div class="app-sidebar__group">
             <div class="app-sidebar__group-label">Yönetim</div>
 
+            @if (AppRoleAccess.CanReadServices(_role))
+            {
             <NavLink class="app-sidebar__link" href="/services" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m8 7 8 8"></path>
@@ -101,6 +107,7 @@
                 </svg>
                 <span>Hizmetler</span>
             </NavLink>
+            }
 
             @if (AppRoleAccess.CanReadInventory(_role))
             {
@@ -137,6 +144,8 @@
             </NavLink>
             }
 
+            @if (AppRoleAccess.CanReadDashboard(_role))
+            {
             <NavLink class="app-sidebar__link" href="/reports" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 19.5h14"></path>
@@ -146,7 +155,10 @@
                 </svg>
                 <span>Raporlar</span>
             </NavLink>
+            }
 
+            @if (AppRoleAccess.CanReadSettings(_role))
+            {
             <NavLink class="app-sidebar__link" href="/settings" Match="NavLinkMatch.Prefix">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
@@ -154,6 +166,7 @@
                 </svg>
                 <span>Ayarlar</span>
             </NavLink>
+            }
         </div>
     </nav>
 
@@ -165,10 +178,44 @@
 
 @code {
     private string? _role;
+    private bool _isDisposed;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        AuthService.AuthenticationStateChanged += HandleAuthenticationStateChanged;
+        await RefreshRoleAsync();
+    }
+
+    private void HandleAuthenticationStateChanged()
+    {
+        _ = RefreshRoleAsync();
+    }
+
+    private async Task RefreshRoleAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _role = (await AuthService.GetCurrentUserAsync())?.Role;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        AuthService.AuthenticationStateChanged -= HandleAuthenticationStateChanged;
     }
 
     private string FooterVersionText

@@ -541,7 +541,7 @@
         {
             if (!IsInactive(cancellationToken))
             {
-                TryNavigateTo("/login");
+                TryNavigateTo(ex.StatusCode == HttpStatusCode.Unauthorized ? "/login" : "/forbidden");
             }
         }
         catch (ApiException ex)

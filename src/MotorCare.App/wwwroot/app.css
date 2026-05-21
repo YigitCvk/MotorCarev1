@@ -4862,3 +4862,85 @@ h1:focus { outline: none; }
         min-height: auto;
     }
 }
+
+.auth-guard-state {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    background: var(--mc-bg);
+    color: var(--mc-text);
+    text-align: center;
+}
+
+.auth-guard-state p {
+    margin: 0.4rem 0 0;
+    color: var(--mc-text-muted);
+}
+
+.onboarding-card {
+    margin-bottom: 1.25rem;
+}
+
+.onboarding-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.onboarding-item {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border: 1px solid var(--mc-border);
+    border-radius: var(--mc-r-sm);
+    background: #fff;
+}
+
+.onboarding-check {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--mc-border);
+    background: var(--mc-bg);
+    color: var(--mc-text-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.onboarding-item.is-complete .onboarding-check {
+    border-color: rgba(22, 163, 74, 0.3);
+    background: var(--mc-success-bg);
+    color: var(--mc-success-text);
+}
+
+.onboarding-copy {
+    min-width: 0;
+    display: grid;
+    gap: 0.15rem;
+}
+
+.onboarding-copy strong {
+    color: var(--mc-text);
+}
+
+.onboarding-copy span {
+    color: var(--mc-text-muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+    .onboarding-item {
+        grid-template-columns: 2.25rem minmax(0, 1fr);
+    }
+
+    .onboarding-item > .status-badge,
+    .onboarding-item > .app-btn-secondary,
+    .onboarding-item > .type-badge {
+        grid-column: 2;
+        justify-self: start;
+    }
+}

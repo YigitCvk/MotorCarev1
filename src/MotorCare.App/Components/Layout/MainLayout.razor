@@ -112,10 +112,13 @@
             <span>Dashboard</span>
         </NavLink>
     }
-    <NavLink href="/appointments" Match="NavLinkMatch.Prefix">
-        <span class="nav-icon">RD</span>
-        <span>Randevu</span>
-    </NavLink>
+    @if (AppRoleAccess.CanReadServiceOrders(_currentUser?.Role))
+    {
+        <NavLink href="/appointments" Match="NavLinkMatch.Prefix">
+            <span class="nav-icon">RD</span>
+            <span>Randevu</span>
+        </NavLink>
+    }
     @if (AppRoleAccess.CanReadServiceOrders(_currentUser?.Role))
     {
         <NavLink href="/service-orders" Match="NavLinkMatch.Prefix">
@@ -123,14 +126,20 @@
             <span>İşler</span>
         </NavLink>
     }
-    <NavLink href="/vehicles" Match="NavLinkMatch.Prefix">
+    @if (AppRoleAccess.CanReadCustomers(_currentUser?.Role))
+    {
+        <NavLink href="/vehicles" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">AR</span>
         <span>Araçlar</span>
-    </NavLink>
-    <NavLink href="/settings" Match="NavLinkMatch.Prefix">
+        </NavLink>
+    }
+    @if (AppRoleAccess.CanReadSettings(_currentUser?.Role))
+    {
+        <NavLink href="/settings" Match="NavLinkMatch.Prefix">
         <span class="nav-icon">MN</span>
         <span>Menü</span>
-    </NavLink>
+        </NavLink>
+    }
 </nav>
 
 <div id="blazor-error-ui">
@@ -179,7 +188,7 @@
                 actions.Add(new("Yeni Servis", "Yeni servis emri aç", "/service-orders/create"));
             }
 
-            if (AppRoleAccess.CanWriteCustomers(role))
+            if (AppRoleAccess.CanWriteServices(role))
             {
                 actions.Add(new("Yeni Müşteri", "Yeni müşteri kartı oluştur", "/customers/create"));
                 actions.Add(new("Yeni Araç", "Yeni araç veya motosiklet ekle", "/vehicles/create"));

@@ -1,0 +1,108 @@
+@using MotorCare.App.Authorization
+
+<section class="app-card onboarding-card">
+    <div class="section-header">
+        <div>
+            <div class="section-title">İlk Kurulum</div>
+            <div class="section-subtitle">İşletmeyi canlı kullanıma almak için temel adımlar</div>
+        </div>
+        <span class="status-badge status-info">@CompletedCount/@Items.Count</span>
+    </div>
+
+    <div class="onboarding-list">
+        @foreach (var item in Items)
+        {
+            <article class="onboarding-item @(item.IsComplete ? "is-complete" : null)">
+                <div class="onboarding-check" aria-hidden="true">@(item.IsComplete ? "OK" : string.Empty)</div>
+                <div class="onboarding-copy">
+                    <strong>@item.Title</strong>
+                    <span>@item.Description</span>
+                </div>
+                <span class="status-badge @(item.IsComplete ? "badge-open" : "badge-progress")">
+                    @(item.IsComplete ? "Tamamlandı" : "Bekliyor")
+                </span>
+                @if (item.IsEnabled)
+                {
+                    <a class="app-btn-secondary" href="@item.Href">@item.ActionText</a>
+                }
+                else
+                {
+                    <span class="type-badge">Yetki gerekli</span>
+                }
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public CurrentUserResponse? User { get; set; }
+    [Parameter] public DailySummaryResponse? Summary { get; set; }
+    [Parameter] public int? ServiceCatalogCount { get; set; }
+    [Parameter] public int? UserCount { get; set; }
+    [Parameter] public int? ImportBatchCount { get; set; }
+    [Parameter] public bool? HasBusinessProfile { get; set; }
+
+    private string? Role => User?.Role;
+
+    private IReadOnlyList<OnboardingItem> Items =>
+    [
+        new(
+            "İşletme profili",
+            "Unvan, iletişim ve rapor üst bilgileri",
+            HasBusinessProfile == true,
+            "/settings/business",
+            "Profili aç",
+            AppRoleAccess.CanReadSettings(Role)),
+        new(
+            "Hizmet kataloğu",
+            "Servis kabulde kullanılacak standart hizmetler",
+            ServiceCatalogCount.GetValueOrDefault() > 0,
+            "/services",
+            "Hizmetleri aç",
+            AppRoleAccess.CanReadServices(Role)),
+        new(
+            "Kullanıcı daveti",
+            "Ekip üyeleri ve rol dağılımı",
+            UserCount.GetValueOrDefault() > 1,
+            "/settings/users",
+            "Davet et",
+            AppRoleAccess.CanManageUsers(Role)),
+        new(
+            "Import veya demo veri",
+            "Müşteri, araç veya servis geçmişi aktarımı",
+            HasImportedOrSeedData,
+            "/imports",
+            "Veri aktar",
+            AppRoleAccess.CanImport(Role)),
+        new(
+            "İlk servis emri",
+            "Operasyon akışını gerçek kayıtla başlatın",
+            HasFirstServiceOrder,
+            "/service-orders/create",
+            "Servis aç",
+            AppRoleAccess.CanWriteServiceOrders(Role))
+    ];
+
+    private int CompletedCount => Items.Count(x => x.IsComplete);
+
+    private bool HasImportedOrSeedData =>
+        ImportBatchCount.GetValueOrDefault() > 0 ||
+        Summary is { TotalCustomerCount: > 0 } ||
+        Summary is { TotalVehicleCount: > 0 };
+
+    private bool HasFirstServiceOrder =>
+        Summary is not null &&
+        (Summary.OpenServiceOrderCount > 0 ||
+         Summary.ActiveServiceOrdersCount > 0 ||
+         Summary.CompletedServiceCountThisMonth > 0 ||
+         Summary.TotalServiceOrdersToday > 0 ||
+         (Summary.RecentServiceOrders?.Count ?? 0) > 0);
+
+    private sealed record OnboardingItem(
+        string Title,
+        string Description,
+        bool IsComplete,
+        string Href,
+        string ActionText,
+        bool IsEnabled);
+}
