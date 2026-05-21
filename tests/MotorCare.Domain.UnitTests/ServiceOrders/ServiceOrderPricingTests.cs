@@ -146,6 +146,52 @@ public class ServiceOrderPricingTests
         Assert.Contains("Discount cannot exceed", ex.Message);
     }
 
+    [Fact]
+    public void AddOperation_WithQuantityAndUnitPrice_CalculatesLineTotal()
+    {
+        var order = CreateOrder();
+
+        order.AddOperation("Test Op", quantity: 2m, unitPrice: 500m);
+
+        var operation = Assert.Single(order.Operations);
+        Assert.Equal(1000m, operation.LineTotal);
+    }
+
+    [Fact]
+    public void AddOperation_WithPriceAlias_StillWorks()
+    {
+        var order = CreateOrder();
+
+        order.AddOperation("Test Op", price: 750m);
+
+        var operation = Assert.Single(order.Operations);
+        Assert.Equal(750m, operation.LineTotal);
+        Assert.Equal(1m, operation.Quantity);
+    }
+
+    [Fact]
+    public void AddOperation_WithDiscount_CalculatesLineTotal()
+    {
+        var order = CreateOrder();
+
+        order.AddOperation("Test Op", quantity: 3m, unitPrice: 200m, discount: 50m);
+
+        var operation = Assert.Single(order.Operations);
+        Assert.Equal(550m, operation.LineTotal);
+    }
+
+    [Fact]
+    public void AddOperation_WithCatalogItem_SetsServiceCatalogItemId()
+    {
+        var order = CreateOrder();
+        var catalogId = Guid.NewGuid();
+
+        order.AddOperation("Test Op", quantity: 1m, unitPrice: 100m, serviceCatalogItemId: catalogId);
+
+        var operation = Assert.Single(order.Operations);
+        Assert.Equal(catalogId, operation.ServiceCatalogItemId);
+    }
+
     private static ServiceOrder CreateOrder()
         => new("tenant-1", "SO-001", Guid.NewGuid(), Guid.NewGuid(), 15000, "Periyodik bakim");
 }
