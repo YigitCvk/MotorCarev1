@@ -347,9 +347,18 @@
                                 <div class="service-order-line-row">
                                     <div class="service-order-line-copy">
                                         <strong>@op.Description</strong>
+                                        <div class="text-muted small">@op.Quantity.ToString("N2") x @op.UnitPrice.ToString("N2") ₺</div>
+                                        @if (op.Discount > 0)
+                                        {
+                                            <div class="text-muted small">İndirim: @op.Discount.ToString("N2") ₺</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(op.Notes))
+                                        {
+                                            <div class="text-muted small">Not: @op.Notes</div>
+                                        }
                                     </div>
                                     <div class="service-order-line-actions">
-                                        <span class="fw-bold">@op.Price.ToString("N2") ₺</span>
+                                        <span class="fw-bold">@op.LineTotal.ToString("N2") ₺</span>
                                         <button type="button" class="app-btn-secondary" @onclick="() => RemoveOperationAsync(op.Id)" disabled="@(_isWorking || !CanRemoveOperation(op))">Sil</button>
                                     </div>
                                 </div>
@@ -365,8 +374,20 @@
                             <InputText class="form-control" @bind-Value="_operationRequest.Description" placeholder="Yapılan işçilik veya operasyon" />
                         </div>
                         <div>
-                            <label class="form-label">Fiyat (₺)</label>
-                            <InputNumber class="form-control" @bind-Value="_operationRequest.Price" />
+                            <label class="form-label">Miktar</label>
+                            <InputNumber class="form-control" @bind-Value="_operationRequest.Quantity" />
+                        </div>
+                        <div>
+                            <label class="form-label">Birim Fiyat (₺)</label>
+                            <InputNumber class="form-control" @bind-Value="_operationRequest.UnitPrice" />
+                        </div>
+                        <div>
+                            <label class="form-label">İndirim (₺)</label>
+                            <InputNumber class="form-control" @bind-Value="_operationRequest.Discount" />
+                        </div>
+                        <div class="full-span">
+                            <label class="form-label">Not</label>
+                            <InputText class="form-control" @bind-Value="_operationRequest.Notes" placeholder="Opsiyonel" />
                         </div>
                         <div class="filter-actions">
                             <button type="button" class="app-btn-primary" @onclick="AddOperationAsync" disabled="@_isWorking">Ekle</button>
@@ -1152,9 +1173,21 @@
             return;
         }
 
-        if (_operationRequest.Price < 0)
+        if (_operationRequest.Quantity <= 0)
+        {
+            _error = "İşçilik miktarı geçersiz.";
+            return;
+        }
+
+        if (_operationRequest.UnitPrice < 0)
         {
             _error = "Tutar geçersiz.";
+            return;
+        }
+
+        if (_operationRequest.Discount < 0 || _operationRequest.Discount > _operationRequest.Quantity * _operationRequest.UnitPrice)
+        {
+            _error = "İndirim tutarı geçersiz.";
             return;
         }
 
@@ -1163,7 +1196,10 @@
             "Operasyon eklendi.");
 
         _operationRequest.Description = string.Empty;
-        _operationRequest.Price = 0;
+        _operationRequest.Quantity = 1m;
+        _operationRequest.UnitPrice = 0m;
+        _operationRequest.Discount = 0m;
+        _operationRequest.Notes = null;
     }
 
     private async Task RemoveOperationAsync(Guid operationId)
@@ -1428,7 +1464,7 @@
         => exception is JSException or JSDisconnectedException or InvalidOperationException or ObjectDisposedException or TaskCanceledException or OperationCanceledException;
 
     private bool CanRemoveOperation(ServiceOrderOperation operation)
-        => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - operation.Price);
+        => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - operation.LineTotal);
 
     private bool CanRemovePart(ServiceOrderPart part)
         => _order is not null && _order.PaidTotal <= Math.Max(0, _order.GrandTotal - part.TotalPrice);

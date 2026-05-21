@@ -157,8 +157,17 @@
                             @foreach (var op in _order.Operations)
                             {
                                 <div class="print-table-row">
-                                    <span>@op.Description</span>
-                                    <span>@op.Price.ToString("N2") ₺</span>
+                                    <span>
+                                        @op.Description
+                                        <br />
+                                        <small>@op.Quantity.ToString("N2") x @op.UnitPrice.ToString("N2") ₺@(op.Discount > 0 ? $" - İndirim: {op.Discount:N2} ₺" : string.Empty)</small>
+                                        @if (!string.IsNullOrWhiteSpace(op.Notes))
+                                        {
+                                            <br />
+                                            <small>Not: @op.Notes</small>
+                                        }
+                                    </span>
+                                    <span>@op.LineTotal.ToString("N2") ₺</span>
                                 </div>
                             }
                             <div class="print-table-row print-table-subtotal">

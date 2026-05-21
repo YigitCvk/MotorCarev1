@@ -351,7 +351,16 @@ public sealed class ServiceOrdersModule : ICarterModule
 
         group.MapPost("/{id:guid}/operations", async (Guid id, AddOperationToOrderRequest request, IMediator mediator, CancellationToken ct) =>
         {
-            await mediator.Send(new AddOperationToOrderCommand(id, request.Description, request.EffectiveUnitPrice), ct);
+            await mediator.Send(
+                new AddOperationToOrderCommand(
+                    id,
+                    request.Description,
+                    request.EffectiveQuantity,
+                    request.EffectiveUnitPrice,
+                    request.Discount,
+                    request.Notes,
+                    request.ServiceCatalogItemId),
+                ct);
             return Results.NoContent();
         })
         .WithName("AddOperationToOrder")
@@ -471,7 +480,7 @@ public sealed class ServiceOrdersModule : ICarterModule
         // Backward-compatible alias for older clients.
         public decimal? Price { get; set; }
 
-        public decimal EffectiveQuantity => Quantity is > 0m ? Quantity.Value : 1m;
+        public decimal EffectiveQuantity => Quantity ?? 1m;
         public decimal EffectiveUnitPrice => UnitPrice is { } unitPrice ? unitPrice : Price ?? 0m;
     }
 

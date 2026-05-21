@@ -31,17 +31,25 @@ public class AddOperationToOrderCommandHandler : IRequestHandler<AddOperationToO
         var order = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
             ?? throw new NotFoundException(nameof(Domain.ServiceOrders.ServiceOrder), request.Id);
 
-        order.AddOperation(request.Description, request.Price);
+        order.AddOperation(
+            request.Description,
+            request.Quantity,
+            request.UnitPrice,
+            request.Discount,
+            request.Notes,
+            request.ServiceCatalogItemId);
 
         _repository.Update(order);
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             EventIdStore.ServiceOrder.OperationAdded,
-            "Operation added. ServiceOrderId={ServiceOrderId} Description={Description} Price={Price}",
+            "Operation added. ServiceOrderId={ServiceOrderId} Description={Description} Quantity={Quantity} UnitPrice={UnitPrice} Discount={Discount}",
             request.Id,
             request.Description,
-            request.Price);
+            request.Quantity,
+            request.UnitPrice,
+            request.Discount);
 
         return Unit.Value;
     }

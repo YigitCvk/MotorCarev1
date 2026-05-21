@@ -1166,8 +1166,10 @@
                         id,
                         new AddOperationRequest
                         {
+                            ServiceCatalogItemId = _selectedService.Id,
                             Description = _selectedService.Name,
-                            Price = _selectedService.Price
+                            Quantity = 1m,
+                            UnitPrice = _selectedService.Price
                         },
                         cancellationToken);
                 }
@@ -1199,7 +1201,8 @@
                             new AddOperationRequest
                             {
                                 Description = recommendation,
-                                Price = 0m
+                                Quantity = 1m,
+                                UnitPrice = 0m
                             },
                             cancellationToken);
                     }
