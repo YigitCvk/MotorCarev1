@@ -1,8 +1,41 @@
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-5}
+
+x-app-security: &app-security
+  init: true
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  pids_limit: 256
+
+x-tool-security: &tool-security
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  pids_limit: 256
+
 services:
   postgres:
     image: postgres:16
     container_name: motorcare-staging-postgres
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${POSTGRES_MEM_LIMIT:-768m}
+    cpus: ${POSTGRES_CPUS:-0.75}
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-motorcare_staging}
       POSTGRES_USER: ${POSTGRES_USER:-motorcare_user}
@@ -21,12 +54,22 @@ services:
     image: axllent/mailpit:latest
     container_name: motorcare-staging-mailpit
     restart: unless-stopped
+    init: true
+    logging: *default-logging
+    mem_limit: ${MAILPIT_MEM_LIMIT:-256m}
+    cpus: ${MAILPIT_CPUS:-0.25}
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "127.0.0.1:${MAILPIT_WEB_PORT:-8025}:8025"
     networks:
       - motorcare-staging
 
   api:
+    <<: *app-security
     image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:staging}
     build:
       context: .
@@ -34,9 +77,12 @@ services:
     pull_policy: always
     container_name: motorcare-staging-api
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${API_MEM_LIMIT:-768m}
+    cpus: ${API_CPUS:-1.00}
     depends_on:
-      migrator:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
       mailpit:
         condition: service_started
     environment:
@@ -55,6 +101,7 @@ services:
       Elastic__Password: ${ELASTIC_PASSWORD:-}
       Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-staging-{0:yyyy.MM}}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+      Storage__AttachmentsPath: ${Storage__AttachmentsPath:-/var/lib/motorcare/attachments}
       Email__Provider: ${Email__Provider:-Smtp}
       Email__FromEmail: ${Email__FromEmail:-no-reply@bakimsuite.com}
       Email__FromName: ${Email__FromName:-GarajPass}
@@ -69,6 +116,7 @@ services:
       Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection
+      - api_attachments:${Storage__AttachmentsPath:-/var/lib/motorcare/attachments}
     ports:
       - "127.0.0.1:${API_HOST_PORT:-5002}:8080"
     healthcheck:
@@ -80,6 +128,7 @@ services:
       - motorcare-staging
 
   app:
+    <<: *app-security
     image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-app:staging}
     build:
       context: .
@@ -87,6 +136,9 @@ services:
     pull_policy: always
     container_name: motorcare-staging-app
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${APP_MEM_LIMIT:-768m}
+    cpus: ${APP_CPUS:-1.00}
     depends_on:
       api:
         condition: service_healthy
@@ -115,12 +167,17 @@ services:
       - motorcare-staging
 
   migrator:
+    <<: *tool-security
+    profiles: ["tools"]
     image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/motorcare-migrator:staging}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile.migrator
     pull_policy: always
     container_name: motorcare-staging-migrator
+    logging: *default-logging
+    mem_limit: ${MIGRATOR_MEM_LIMIT:-768m}
+    cpus: ${MIGRATOR_CPUS:-1.00}
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
@@ -150,4 +207,5 @@ networks:
 volumes:
   postgres_data:
   api_dataprotection:
+  api_attachments:
   app_dataprotection:

@@ -38,8 +38,10 @@ services:
       Jwt__AccessTokenMinutes: 60
       Jwt__RefreshTokenDays: 7
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+      Storage__AttachmentsPath: /var/lib/motorcare/attachments
     volumes:
       - api-dataprotection:/var/lib/motorcare/dataprotection
+      - api-attachments:/var/lib/motorcare/attachments
     ports:
       - "5000:8080"
     networks:
@@ -92,4 +94,5 @@ networks:
 volumes:
   motorcare-postgres-data:
   api-dataprotection:
+  api-attachments:
   app-dataprotection:

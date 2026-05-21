@@ -8,6 +8,7 @@
 - [ ] `AppBaseUrl` production domainine ayarli.
 - [ ] Logging seviyesi production icin uygun; debug noise kapali.
 - [ ] `AllowedHosts` production domainleriyle sinirli.
+- [ ] `Storage__AttachmentsPath=/var/lib/motorcare/attachments` kalici volume'a bakiyor.
 - [ ] CORS varsa production origin listesi dogru.
 - [ ] `ASPNETCORE_ENVIRONMENT=Production`.
 
@@ -16,7 +17,7 @@
 - [ ] Tum migration'lar production DB'ye uygulanabilir.
 - [ ] Migration uygulama adimi deploy planinda net.
 - [ ] Otomatik backup plani var.
-- [ ] Backup/restore tatbikati yapildi ve sonucu kaydedildi.
+- [ ] DB dump ve attachment archive iceren backup/restore tatbikati yapildi ve sonucu kaydedildi.
 - [ ] Seed data production icin guvenli.
 - [ ] Default admin/test user temizlendi veya devre disi.
 - [ ] Postgres container recreate edilmeden app/api deploy edilebiliyor.
@@ -30,6 +31,7 @@
 - [ ] Password policy aktif.
 - [ ] Forgot/reset rate limit ve attempt limit calisiyor.
 - [ ] Upload varsa dosya tipi/boyut validation aktif.
+- [ ] Upload dosyalari container filesystem yerine kalici volume'da saklaniyor.
 - [ ] Sensitive log kontrolu: password, token, reset code, SMTP secret ve reset link loglanmiyor.
 
 ## 4. Observability
@@ -45,6 +47,7 @@
 
 - [ ] Docker Compose project name dogru.
 - [ ] Portainer recreate adimlari dokumante.
+- [ ] Compose log retention, resource limit ve no-new-privileges ayarlari aktif.
 - [ ] Postgres container'a dokunmama notu deploy runbook'ta var.
 - [ ] Rollback stratejisi: onceki image tag/commit ve env metadata geri alinabilir.
 - [ ] App/API recreate sonrasi health ve `/api/version` kontrol ediliyor.

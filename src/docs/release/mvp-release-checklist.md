@@ -42,10 +42,10 @@ Bu checklist staging ve production aday deploy'larında kullanılacak kısa kont
 
 ## 5. Backup
 
-- [x] Deploy öncesi staging veya production DB backup alındı.
+- [x] Deploy öncesi staging veya production DB + attachment backup alındı.
   - `/opt/motorcare-backups/motorcare-staging-20260510T140327Z.dump` (123K)
-- [x] Backup dosyası tarihli, erişimi sınırlı bir dizinde saklandı.
-- [ ] Backup restore edilebilirliği mümkünse ayrı restore-check DB üzerinde doğrulandı. *(tatbikat bekliyor)*
+- [x] Backup dosyaları tarihli, erişimi sınırlı bir dizinde saklandı.
+- [ ] Backup restore edilebilirliği mümkünse ayrı restore-check DB ve attachment dizini üzerinde doğrulandı. *(tatbikat bekliyor)*
 - Detaylı prosedür: `docs/ops/backup-restore.md`
 
 ## 6. Smoke Checklist

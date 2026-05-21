@@ -23,13 +23,14 @@ Non-secrets such as ports, image tags, issuer names, base URLs, and SEO settings
 - Use `deploy/portainer/*.env.example` only as templates; the required secret fields are intentionally blank.
 - Keep populated `.env*` files out of the repo, tickets, screenshots, shell history, and terminal transcripts.
 - Prefer `docker compose ... config --quiet` for validation. Plain `docker compose config` renders expanded env values and can leak secrets into output or temp files.
-- Database dumps are sensitive artifacts. Store them outside the checkout, restrict access, encrypt them when leaving the host, and apply retention.
+- Database dumps and attachment archives are sensitive artifacts. Store them outside the checkout, restrict access, encrypt them when leaving the host, and apply retention.
 
 ## Local Guardrails
 
 - `.gitignore` excludes populated env files and dump artifacts.
 - `.dockerignore` excludes populated env files and dump artifacts from build contexts.
-- Staging defaults `Email__SendEmails=false`; turn it on only after SMTP credentials and recipient expectations are reviewed.
+- Staging defaults to Mailpit for captured email smoke. Turn on real SMTP only after credentials and recipient expectations are reviewed.
+- `Storage__AttachmentsPath` points to a persistent Docker volume path in Compose. Do not point it at a repo checkout path or a temporary container directory.
 
 ## Rotation Notes
 
@@ -47,4 +48,5 @@ Before a deploy:
 2. Env examples still contain blanks, not real or reusable values.
 3. `docker compose ... config --quiet` passes for the target stack.
 4. Backup location is outside the repo and has restricted permissions.
-5. No secret values were copied into docs, chat, screenshots, or release notes.
+5. Attachment storage is mounted as a persistent volume and included in backup drills.
+6. No secret values were copied into docs, chat, screenshots, or release notes.
