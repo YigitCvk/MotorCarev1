@@ -48,6 +48,40 @@ public class InviteUserCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NormalizesEmail_AndScopesLookupToCurrentTenant()
+    {
+        const string mixedCaseEmail = " NewUser@Example.COM ";
+        _userRepo.GetByEmailWithSecurityTokensAsync(TenantId, Email, default).Returns((User?)null);
+
+        await _handler.Handle(new InviteUserCommand(mixedCaseEmail, UserRole.Technician), default);
+
+        await _userRepo.Received(1).GetByEmailWithSecurityTokensAsync(TenantId, Email, default);
+        await _userRepo.Received(1).AddAsync(
+            Arg.Is<User>(u => u.TenantId == TenantId && u.Email == Email),
+            default);
+        await _emailSender.Received(1).SendUserInvitationAsync(
+            Email,
+            TenantId,
+            Arg.Any<string>(),
+            Arg.Any<DateTime>(),
+            default);
+    }
+
+    [Fact]
+    public async Task Handle_ThrowsUnauthorized_AndDoesNotQueryUsers_WhenTenantContextMissing()
+    {
+        _tenantProvider.GetTenantId().Returns((string?)null);
+
+        var act = async () => await _handler.Handle(Command(), default);
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        await _userRepo.DidNotReceive().GetByEmailWithSecurityTokensAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_SendsInviteEmail_WhenNewUser()
     {
         _userRepo.GetByEmailWithSecurityTokensAsync(TenantId, Email, default).Returns((User?)null);

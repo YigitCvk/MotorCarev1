@@ -3,6 +3,7 @@ using MotorCare.Application.Auth.Commands.Login;
 using MotorCare.Application.Common.Errors;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
+using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
@@ -83,6 +84,48 @@ public class LoginCommandHandlerTests
 
         var ex = await act.Should().ThrowAsync<LoginException>();
         ex.Which.Code.Should().Be(ErrorCodes.LoginFailed);
+    }
+
+    [Fact]
+    public async Task Handle_LoadsUserFromResolvedTenantIdentifier_AndNormalizedEmail()
+    {
+        const string commandTenantIdentifier = "tenant-alias";
+        const string resolvedTenantIdentifier = "canonical-tenant";
+        const string mixedCaseEmail = " User@Example.COM ";
+
+        var tenant = new Tenant(resolvedTenantIdentifier, "Canonical Tenant");
+        var user = new User(resolvedTenantIdentifier, "Test User", Email, "hash", UserRole.Owner);
+        user.MarkEmailVerified();
+
+        _tenantRepo.GetByIdentifierAsync(commandTenantIdentifier, default).Returns(tenant);
+        _userRepo.GetByEmailAsync(resolvedTenantIdentifier, Email, default).Returns(user);
+        _passwordHasher.Verify(user.PasswordHash, Password).Returns(true);
+        _refreshTokenGenerator.Generate().Returns("refresh-token");
+        _jwtTokenGenerator.GenerateAccessToken(user, tenant).Returns("access-token");
+
+        var result = await _handler.Handle(new LoginCommand(commandTenantIdentifier, mixedCaseEmail, Password), default);
+
+        result.TenantIdentifier.Should().Be(resolvedTenantIdentifier);
+        result.Email.Should().Be(Email);
+        await _userRepo.Received(1).GetByEmailAsync(resolvedTenantIdentifier, Email, default);
+        await _userRepo.DidNotReceive().GetByEmailAsync(commandTenantIdentifier, Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_DoesNotCheckPassword_WhenEmailExistsOnlyInAnotherTenant()
+    {
+        var otherTenantUser = new User("other-tenant", "Other User", Email, "other-hash", UserRole.Owner);
+        otherTenantUser.MarkEmailVerified();
+
+        _tenantRepo.GetByIdentifierAsync(TenantIdentifier, default).Returns(MakeTenant());
+        _userRepo.GetByEmailAsync(TenantIdentifier, Email, default).Returns((User?)null);
+        _userRepo.GetByEmailAsync("other-tenant", Email, default).Returns(otherTenantUser);
+
+        var act = async () => await _handler.Handle(Command(), default);
+
+        var ex = await act.Should().ThrowAsync<LoginException>();
+        ex.Which.Code.Should().Be(ErrorCodes.LoginFailed);
+        _passwordHasher.DidNotReceive().Verify(Arg.Any<string>(), Arg.Any<string>());
     }
 
     [Fact]
