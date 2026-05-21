@@ -1,0 +1,153 @@
+@using System.Reflection
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.WebUtilities
+@using MotorCare.App.Authorization
+@using MotorCare.App.Components.Layout
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject ILogger<AppRouteGuard> Logger
+
+@if (_isPublicPage || _canRenderRoute)
+{
+    <RouteView RouteData="RouteData" DefaultLayout="DefaultLayout" />
+}
+else
+{
+    <div class="auth-guard-state">
+        <strong>Oturum kontrol ediliyor</strong>
+        <p>Lutfen bekleyin.</p>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public RouteData RouteData { get; set; } = default!;
+    [Parameter] public Type DefaultLayout { get; set; } = typeof(MainLayout);
+
+    private bool _isPublicPage;
+    private bool _canRenderRoute;
+    private bool _authCheckNeeded;
+    private string _currentPath = "/";
+    private string _currentRelativeUrl = "/";
+    private string? _checkedPath;
+
+    protected override void OnParametersSet()
+    {
+        _currentRelativeUrl = ToRelativeUrl(NavigationManager.Uri);
+        _currentPath = ToPath(_currentRelativeUrl);
+        _isPublicPage = IsPublicPage(RouteData.PageType, _currentPath);
+
+        if (_isPublicPage)
+        {
+            _canRenderRoute = true;
+            _authCheckNeeded = false;
+            _checkedPath = null;
+            return;
+        }
+
+        if (!string.Equals(_checkedPath, _currentPath, StringComparison.Ordinal))
+        {
+            _canRenderRoute = false;
+            _authCheckNeeded = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_authCheckNeeded)
+        {
+            return;
+        }
+
+        _authCheckNeeded = false;
+        await CheckAccessAsync();
+    }
+
+    private async Task CheckAccessAsync()
+    {
+        try
+        {
+            if (!await AuthService.IsAuthenticatedAsync())
+            {
+                NavigateToLogin();
+                return;
+            }
+
+            var user = await AuthService.GetCurrentUserAsync();
+            if (user is null)
+            {
+                NavigateToLogin();
+                return;
+            }
+
+            if (_currentPath != "/forbidden" && !AppRoleAccess.CanAccessRoute(user.Role, _currentPath))
+            {
+                NavigateToForbidden();
+                return;
+            }
+
+            _checkedPath = _currentPath;
+            _canRenderRoute = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or InvalidOperationException or JSDisconnectedException or TaskCanceledException or OperationCanceledException)
+        {
+            Logger.LogDebug("Route guard skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Route guard failed while checking access for {Path}.", _currentPath);
+            NavigateToLogin();
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        var target = QueryHelpers.AddQueryString("/login", "returnUrl", ToReturnUrl());
+        NavigationManager.NavigateTo(target, replace: true);
+    }
+
+    private void NavigateToForbidden()
+    {
+        var target = QueryHelpers.AddQueryString("/forbidden", "returnUrl", ToReturnUrl());
+        NavigationManager.NavigateTo(target, replace: true);
+    }
+
+    private string ToReturnUrl()
+    {
+        var relative = string.IsNullOrWhiteSpace(_currentRelativeUrl) ? "/" : _currentRelativeUrl;
+        return relative.StartsWith('/') ? relative : "/" + relative;
+    }
+
+    private static bool IsPublicPage(Type pageType, string path)
+    {
+        if (string.Equals(path, "/error", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var layout = pageType.GetCustomAttribute<LayoutAttribute>();
+        return layout?.LayoutType == typeof(PublicLayout);
+    }
+
+    private string ToRelativeUrl(string absoluteUri)
+    {
+        var relative = NavigationManager.ToBaseRelativePath(absoluteUri);
+        return string.IsNullOrWhiteSpace(relative) ? "/" : relative;
+    }
+
+    private static string ToPath(string relativeUrl)
+    {
+        var path = relativeUrl.Split('?', '#')[0].Trim();
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "/";
+        }
+
+        if (!path.StartsWith('/'))
+        {
+            path = "/" + path;
+        }
+
+        return path.Length == 1 ? path : path.TrimEnd('/');
+    }
+}

@@ -1,9 +1,11 @@
 using System.IO;
 using System.Text;
+using System.Threading.RateLimiting;
 using Carter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
@@ -17,6 +19,7 @@ using MotorCare.Application.Common.Interfaces;
 using MotorCare.Application.Common.Security;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
+using MotorCare.Infrastructure.Email;
 using MotorCare.Infrastructure.Persistence.Seed;
 using MotorCare.Infrastructure.Security;
 using Serilog;
@@ -30,6 +33,8 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .CreateBootstrapLogger();
+
+const string PublicAuthRateLimitPolicy = "PublicAuth";
 
 try
 {
@@ -117,6 +122,13 @@ try
 
     builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
 
+    var jwtOptions = builder.Configuration.GetRequiredSection(JwtOptions.SectionName).Get<JwtOptions>()
+        ?? throw new InvalidOperationException("Jwt configuration section is required.");
+    JwtOptions.ThrowIfInvalid(jwtOptions);
+
+    var emailOptions = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>();
+    EmailOptions.ThrowIfInvalidForEnvironment(emailOptions, builder.Environment.EnvironmentName);
+
     builder.Services.AddCarter();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
@@ -134,12 +146,25 @@ try
         options.OperationFilter<AuthorizeOperationFilter>();
     });
 
-    var authenticationBuilder = builder.Services.AddAuthentication();
-
-    var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-    if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
+    builder.Services.AddRateLimiter(options =>
     {
-        authenticationBuilder.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy(PublicAuthRateLimitPolicy, httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = 10,
+                    QueueLimit = 0,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    Window = TimeSpan.FromMinutes(1)
+                }));
+    });
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -153,7 +178,6 @@ try
                 ClockSkew = TimeSpan.FromMinutes(1)
             };
         });
-    }
 
     builder.Services.AddAuthorization(options =>
     {
@@ -244,6 +268,7 @@ try
     app.UseHttpsRedirection();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseRateLimiter();
     app.UseAuthentication();
     app.UseMiddleware<UserContextLoggingMiddleware>();
 

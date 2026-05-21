@@ -6,6 +6,7 @@ public sealed class ForgotPasswordCommandValidator : AbstractValidator<ForgotPas
 {
     public ForgotPasswordCommandValidator()
     {
+        RuleFor(x => x.TenantIdentifier).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
     }
 }

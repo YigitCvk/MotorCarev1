@@ -96,6 +96,7 @@
     [SupplyParameterFromQuery(Name = "tenant")] public string? TenantQuery { get; set; }
     [SupplyParameterFromQuery(Name = "email")] public string? EmailQuery { get; set; }
     [SupplyParameterFromQuery(Name = "message")] public string? MessageQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -140,7 +141,7 @@
                 return;
             }
 
-            NavigationManager.NavigateTo(AppRoleAccess.GetDefaultRoute(response.Role));
+            NavigationManager.NavigateTo(GetPostLoginRoute(response.Role));
         }
         catch (ApiException ex)
         {
@@ -189,5 +190,33 @@
         {
             _isSubmitting = false;
         }
+    }
+
+    private string GetPostLoginRoute(string role)
+    {
+        var safeReturnUrl = NormalizeLocalReturnUrl(ReturnUrl);
+        if (!string.IsNullOrWhiteSpace(safeReturnUrl) && AppRoleAccess.CanAccessRoute(role, safeReturnUrl))
+        {
+            return safeReturnUrl;
+        }
+
+        return AppRoleAccess.GetDefaultRoute(role);
+    }
+
+    private static string? NormalizeLocalReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return null;
+        }
+
+        var value = returnUrl.Trim();
+        if (value.StartsWith("//", StringComparison.Ordinal) ||
+            Uri.TryCreate(value, UriKind.Absolute, out _))
+        {
+            return null;
+        }
+
+        return value.StartsWith('/') ? value : "/" + value;
     }
 }

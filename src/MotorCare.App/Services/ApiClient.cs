@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using MotorCare.App.Models.Auth;
 
 namespace MotorCare.App.Services;
 
@@ -85,6 +86,26 @@ public sealed class ApiClient
         bool authorized,
         CancellationToken cancellationToken)
     {
+        using var response = await SendJsonRequestAsync(method, uri, request, authorized, cancellationToken);
+        if (authorized &&
+            response.StatusCode == HttpStatusCode.Unauthorized &&
+            await TryRefreshTokenAsync(cancellationToken))
+        {
+            response.Dispose();
+            using var retryResponse = await SendJsonRequestAsync(method, uri, request, authorized, cancellationToken);
+            return await ReadResponseAsync<TResponse>(retryResponse, uri, cancellationToken);
+        }
+
+        return await ReadResponseAsync<TResponse>(response, uri, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendJsonRequestAsync(
+        HttpMethod method,
+        string uri,
+        object? request,
+        bool authorized,
+        CancellationToken cancellationToken)
+    {
         using var message = new HttpRequestMessage(method, uri);
 
         if (request is not null)
@@ -92,16 +113,15 @@ public sealed class ApiClient
             message.Content = JsonContent.Create(request);
         }
 
-        if (authorized)
-        {
-            var accessToken = await _tokenStorageService.GetAccessTokenAsync();
-            if (!string.IsNullOrWhiteSpace(accessToken))
-            {
-                message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            }
-        }
+        await AttachAuthorizationAsync(message, authorized);
+        return await _httpClient.SendAsync(message, cancellationToken);
+    }
 
-        using var response = await _httpClient.SendAsync(message, cancellationToken);
+    private async Task<TResponse?> ReadResponseAsync<TResponse>(
+        HttpResponseMessage response,
+        string uri,
+        CancellationToken cancellationToken)
+    {
         if (!response.IsSuccessStatusCode)
         {
             throw await CreateApiExceptionAsync(response, uri, cancellationToken);
@@ -122,33 +142,117 @@ public sealed class ApiClient
         bool authorized,
         CancellationToken cancellationToken)
     {
+        var body = await content.ReadAsByteArrayAsync(cancellationToken);
+        var headers = SnapshotHeaders(content.Headers);
+
+        using var response = await SendBufferedContentRequestAsync(method, uri, body, headers, authorized, cancellationToken);
+        if (authorized &&
+            response.StatusCode == HttpStatusCode.Unauthorized &&
+            await TryRefreshTokenAsync(cancellationToken))
+        {
+            response.Dispose();
+            using var retryResponse = await SendBufferedContentRequestAsync(method, uri, body, headers, authorized, cancellationToken);
+            return await ReadResponseAsync<TResponse>(retryResponse, uri, cancellationToken);
+        }
+
+        return await ReadResponseAsync<TResponse>(response, uri, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> SendBufferedContentRequestAsync(
+        HttpMethod method,
+        string uri,
+        byte[] body,
+        IReadOnlyList<HeaderSnapshot> headers,
+        bool authorized,
+        CancellationToken cancellationToken)
+    {
         using var message = new HttpRequestMessage(method, uri)
         {
-            Content = content
+            Content = CreateBufferedContent(body, headers)
         };
 
-        if (authorized)
-        {
-            var accessToken = await _tokenStorageService.GetAccessTokenAsync();
-            if (!string.IsNullOrWhiteSpace(accessToken))
-            {
-                message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            }
-        }
-
-        using var response = await _httpClient.SendAsync(message, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw await CreateApiExceptionAsync(response, uri, cancellationToken);
-        }
-
-        if (typeof(TResponse) == typeof(object) || response.Content.Headers.ContentLength == 0)
-        {
-            return default;
-        }
-
-        return await response.Content.ReadFromJsonAsync<TResponse>(JsonOptions, cancellationToken);
+        await AttachAuthorizationAsync(message, authorized);
+        return await _httpClient.SendAsync(message, cancellationToken);
     }
+
+    private async Task AttachAuthorizationAsync(HttpRequestMessage message, bool authorized)
+    {
+        if (!authorized)
+        {
+            return;
+        }
+
+        var accessToken = await _tokenStorageService.GetAccessTokenAsync();
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+    }
+
+    private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
+    {
+        var refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var message = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh-token")
+            {
+                Content = JsonContent.Create(new RefreshTokenRequest { RefreshToken = refreshToken })
+            };
+
+            using var response = await _httpClient.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.UnprocessableEntity)
+                {
+                    await _tokenStorageService.ClearAsync();
+                }
+
+                return false;
+            }
+
+            var refreshed = await response.Content.ReadFromJsonAsync<LoginResponse>(JsonOptions, cancellationToken);
+            if (refreshed is null ||
+                string.IsNullOrWhiteSpace(refreshed.AccessToken) ||
+                string.IsNullOrWhiteSpace(refreshed.RefreshToken))
+            {
+                await _tokenStorageService.ClearAsync();
+                return false;
+            }
+
+            await _tokenStorageService.SetTokensAsync(refreshed.AccessToken, refreshed.RefreshToken);
+            return true;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static ByteArrayContent CreateBufferedContent(byte[] body, IReadOnlyList<HeaderSnapshot> headers)
+    {
+        var buffered = new ByteArrayContent(body);
+        foreach (var header in headers)
+        {
+            if (string.Equals(header.Name, "Content-Length", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            buffered.Headers.TryAddWithoutValidation(header.Name, header.Values);
+        }
+
+        return buffered;
+    }
+
+    private static IReadOnlyList<HeaderSnapshot> SnapshotHeaders(HttpContentHeaders headers)
+        => headers
+            .Select(header => new HeaderSnapshot(header.Key, header.Value.ToArray()))
+            .ToArray();
 
     private static async Task<ApiException> CreateApiExceptionAsync(
         HttpResponseMessage response,
@@ -234,4 +338,6 @@ public sealed class ApiClient
             return new ApiException(response.StatusCode, uri, fallback);
         }
     }
+
+    private sealed record HeaderSnapshot(string Name, string[] Values);
 }

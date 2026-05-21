@@ -6,6 +6,7 @@ public sealed class ResetPasswordCommandValidator : AbstractValidator<ResetPassw
 {
     public ResetPasswordCommandValidator()
     {
+        RuleFor(x => x.TenantIdentifier).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.Code)
             .NotEmpty()
