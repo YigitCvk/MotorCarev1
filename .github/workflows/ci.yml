@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  POSTGRES_PASSWORD: ci-postgres-password
+  JWT_KEY: ci-jwt-secret-key-change-before-production-32chars
+  Email__SmtpUsername: ci-smtp-user
+  Email__SmtpPassword: ci-smtp-password
+
+jobs:
+  build-test-containers:
+    name: Build, Test, Compose, Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Capture build metadata
+        run: echo "MOTORCARE_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      - name: Restore
+        run: dotnet restore src/MotorCare.sln
+
+      - name: Build Release
+        run: dotnet build src/MotorCare.sln --configuration Release --no-restore
+
+      - name: Test Release
+        run: dotnet test src/MotorCare.sln --configuration Release --no-build --verbosity normal
+
+      - name: Validate Docker Compose
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f src/docker-compose.staging.yml config --quiet
+          docker compose -f src/docker-compose.production.yml config --quiet
+
+      - name: Build API image
+        run: |
+          docker build \
+            --build-arg MOTORCARE_COMMIT_SHA="${GITHUB_SHA}" \
+            --build-arg MOTORCARE_BUILD_TIME="${MOTORCARE_BUILD_TIME}" \
+            --file src/MotorCare.Api/Dockerfile \
+            --tag motorcare-api:ci \
+            src
+
+      - name: Build App image
+        run: |
+          docker build \
+            --build-arg MOTORCARE_COMMIT_SHA="${GITHUB_SHA}" \
+            --build-arg MOTORCARE_BUILD_TIME="${MOTORCARE_BUILD_TIME}" \
+            --file src/MotorCare.App/Dockerfile \
+            --tag motorcare-app:ci \
+            src
+
+      - name: Build Migrator image
+        run: |
+          docker build \
+            --file src/MotorCare.Api/Dockerfile.migrator \
+            --tag motorcare-migrator:ci \
+            src
