@@ -125,7 +125,10 @@ response="$(
 expect_status "$response" "200" "old password before reset"
 
 mailpit_delete_all
-response="$(api_post "/api/auth/forgot-password" "{\"email\":\"${OWNER_EMAIL}\"}")"
+response="$(
+    api_post "/api/auth/forgot-password" \
+        "{\"tenantIdentifier\":\"${TENANT}\",\"email\":\"${OWNER_EMAIL}\"}"
+)"
 expect_status "$response" "200" "forgot password"
 
 reset_text="$(mailpit_latest_text)" || fail "reset email was not captured"
@@ -135,7 +138,7 @@ ok "reset email captured"
 
 response="$(
     api_post "/api/auth/reset-password" \
-        "{\"email\":\"${OWNER_EMAIL}\",\"code\":\"${reset_code}\",\"newPassword\":\"${NEW_PASSWORD}\",\"confirmPassword\":\"${NEW_PASSWORD}\"}"
+        "{\"tenantIdentifier\":\"${TENANT}\",\"email\":\"${OWNER_EMAIL}\",\"code\":\"${reset_code}\",\"newPassword\":\"${NEW_PASSWORD}\",\"confirmPassword\":\"${NEW_PASSWORD}\"}"
 )"
 expect_status "$response" "200" "reset password"
 
@@ -153,7 +156,7 @@ expect_status "$response" "200" "new password accepted"
 
 response="$(
     api_post "/api/auth/reset-password" \
-        "{\"email\":\"${OWNER_EMAIL}\",\"code\":\"${reset_code}\",\"newPassword\":\"${REUSE_PASSWORD}\",\"confirmPassword\":\"${REUSE_PASSWORD}\"}"
+        "{\"tenantIdentifier\":\"${TENANT}\",\"email\":\"${OWNER_EMAIL}\",\"code\":\"${reset_code}\",\"newPassword\":\"${REUSE_PASSWORD}\",\"confirmPassword\":\"${REUSE_PASSWORD}\"}"
 )"
 expect_status "$response" "401" "used reset code rejected"
 
