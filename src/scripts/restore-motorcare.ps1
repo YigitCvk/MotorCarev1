@@ -56,6 +56,17 @@ function Invoke-Docker {
     }
 }
 
+function Get-ContainerImage {
+    param([Parameter(Mandatory = $true)][string]$ContainerName)
+
+    $image = (& docker inspect -f "{{.Image}}" $ContainerName).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($image)) {
+        throw "Could not inspect image for container: $ContainerName"
+    }
+
+    return $image
+}
+
 Assert-ContainerPath -Path $liveAttachmentsPath
 Assert-ContainerPath -Path $AttachmentsRestorePath
 
@@ -79,35 +90,34 @@ if ((Get-Item -LiteralPath $AttachmentsArchive).Length -le 0) {
     throw "Attachment archive is empty: $AttachmentsArchive"
 }
 
-$timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
-$remoteAttachmentsPath = "/tmp/motorcare-attachments-restore-$timestamp.tar.gz"
-
-try {
-    Write-Host "Copying attachment archive into $ApiContainerName for validation"
-    Invoke-Docker cp $AttachmentsArchive "${ApiContainerName}:$remoteAttachmentsPath"
-    $entries = & docker exec $ApiContainerName sh -lc "tar -tzf '$remoteAttachmentsPath'"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Attachment archive validation failed: $AttachmentsArchive"
-    }
-
-    foreach ($entry in $entries) {
-        if ($entry.StartsWith("/", [StringComparison]::Ordinal) -or $entry -match '(^|/)\.\.(/|$)') {
-            throw "Attachment archive contains unsafe path: $entry"
-        }
-    }
-
-    & "$PSScriptRoot\restore-postgres.ps1" `
-        -Environment $Environment `
-        -BackupFile $BackupFile `
-        -TargetDatabase $TargetDatabase `
-        -ContainerName $PostgresContainerName
-
-    Write-Host "Extracting attachments into restore-check path: ${ApiContainerName}:$AttachmentsRestorePath"
-    Invoke-Docker exec $ApiContainerName sh -lc "mkdir -p '$AttachmentsRestorePath' && cd '$AttachmentsRestorePath' && tar -xzf '$remoteAttachmentsPath'"
-
-    Write-Host "Restore drill completed: $Environment/$TargetDatabase"
-    Write-Host "Attachment restore-check path retained for validation: $AttachmentsRestorePath"
+$attachmentsArchiveItem = Get-Item -LiteralPath $AttachmentsArchive
+$attachmentsArchiveDir = (Resolve-Path -LiteralPath $attachmentsArchiveItem.DirectoryName).Path
+$attachmentsArchiveName = $attachmentsArchiveItem.Name
+if ($attachmentsArchiveName -notmatch '^[A-Za-z0-9_.-]+$') {
+    throw "Attachment archive file name contains unsupported characters: $attachmentsArchiveName"
 }
-finally {
-    & docker exec $ApiContainerName rm -f $remoteAttachmentsPath 2>$null | Out-Null
+
+Write-Host "Validating attachment archive with $ApiContainerName volumes"
+$apiImage = Get-ContainerImage -ContainerName $ApiContainerName
+$entries = & docker run --rm --user 0:0 --volumes-from $ApiContainerName -v "${attachmentsArchiveDir}:/restore:ro" --entrypoint sh $apiImage -lc "tar -tzf '/restore/$attachmentsArchiveName'"
+if ($LASTEXITCODE -ne 0) {
+    throw "Attachment archive validation failed: $AttachmentsArchive"
 }
+
+foreach ($entry in $entries) {
+    if ($entry.StartsWith("/", [StringComparison]::Ordinal) -or $entry -match '(^|/)\.\.(/|$)') {
+        throw "Attachment archive contains unsafe path: $entry"
+    }
+}
+
+& "$PSScriptRoot\restore-postgres.ps1" `
+    -Environment $Environment `
+    -BackupFile $BackupFile `
+    -TargetDatabase $TargetDatabase `
+    -ContainerName $PostgresContainerName
+
+Write-Host "Extracting attachments into restore-check path: ${ApiContainerName}:$AttachmentsRestorePath"
+Invoke-Docker run --rm --user 0:0 --volumes-from $ApiContainerName -v "${attachmentsArchiveDir}:/restore:ro" --entrypoint sh $apiImage -lc "mkdir -p '$AttachmentsRestorePath' && cd '$AttachmentsRestorePath' && tar -xzf '/restore/$attachmentsArchiveName'"
+
+Write-Host "Restore drill completed: $Environment/$TargetDatabase"
+Write-Host "Attachment restore-check path retained for validation: $AttachmentsRestorePath"

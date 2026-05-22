@@ -13,6 +13,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
     private readonly ITenantRepository _tenantRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IRefreshTokenLifetimeProvider _refreshTokenLifetimeProvider;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
@@ -20,19 +21,24 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         ITenantRepository tenantRepository,
         IJwtTokenGenerator jwtTokenGenerator,
         IRefreshTokenGenerator refreshTokenGenerator,
+        IRefreshTokenLifetimeProvider refreshTokenLifetimeProvider,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _userRepository = userRepository;
         _tenantRepository = tenantRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
         _refreshTokenGenerator = refreshTokenGenerator;
+        _refreshTokenLifetimeProvider = refreshTokenLifetimeProvider;
         _logger = logger;
     }
 
     public async Task<AuthResponseDto> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         var tokenHash = LoginCommandHandler.HashToken(request.RefreshToken);
-        var user = await _userRepository.GetByRefreshTokenHashAsync(tokenHash, cancellationToken)
+        var now = DateTimeOffset.UtcNow;
+        var userId = await _userRepository.TryRevokeActiveRefreshTokenAsync(tokenHash, now, cancellationToken)
+            ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
             ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
         if (!user.IsActive)
@@ -48,18 +54,11 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
             throw new UnauthorizedAccessException("The tenant is inactive.");
         }
 
-        if (!user.HasActiveRefreshToken(tokenHash, DateTimeOffset.UtcNow))
-        {
-            throw new UnauthorizedAccessException("Refresh token is no longer active.");
-        }
-
-        user.RevokeRefreshToken(tokenHash, DateTimeOffset.UtcNow);
-
         var newRefreshToken = _refreshTokenGenerator.Generate();
         var newRefreshTokenEntity = user.AddRefreshToken(
             LoginCommandHandler.HashToken(newRefreshToken),
-            DateTimeOffset.UtcNow.AddDays(7),
-            DateTimeOffset.UtcNow);
+            _refreshTokenLifetimeProvider.GetExpiresAt(now),
+            now);
 
         _userRepository.Update(user);
         _userRepository.AddRefreshToken(newRefreshTokenEntity);

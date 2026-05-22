@@ -85,6 +85,28 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.RefreshTokens.Any(t => t.TokenHash == tokenHash), cancellationToken);
     }
 
+    public async Task<Guid?> TryRevokeActiveRefreshTokenAsync(string tokenHash, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
+    {
+        var token = await _context.RefreshTokens
+            .AsNoTracking()
+            .Where(t => t.TokenHash == tokenHash)
+            .Select(t => new { t.Id, t.UserId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (token is null)
+        {
+            return null;
+        }
+
+        var updated = await _context.RefreshTokens
+            .Where(t => t.Id == token.Id && t.RevokedAt == null && t.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(t => t.RevokedAt, revokedAt),
+                cancellationToken);
+
+        return updated == 1 ? token.UserId : null;
+    }
+
     public async Task<UserSecurityToken?> GetActiveSecurityTokenByHashAsync(string tokenHash, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;

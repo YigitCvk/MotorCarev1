@@ -45,6 +45,17 @@ function Invoke-Docker {
     }
 }
 
+function Get-ContainerImage {
+    param([Parameter(Mandatory = $true)][string]$ContainerName)
+
+    $image = (& docker inspect -f "{{.Image}}" $ContainerName).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($image)) {
+        throw "Could not inspect image for container: $ContainerName"
+    }
+
+    return $image
+}
+
 Assert-ContainerPath -Path $AttachmentsPath
 
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMddTHHmmssZ")
@@ -55,9 +66,9 @@ $dbArchivePath = Join-Path $BackupDir $dbArchiveName
 $attachmentsArchivePath = Join-Path $BackupDir $attachmentsArchiveName
 $manifestPath = Join-Path $BackupDir "$baseName.manifest.txt"
 $remoteDbPath = "/tmp/$dbArchiveName"
-$remoteAttachmentsPath = "/tmp/$attachmentsArchiveName"
 
 New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
+$backupRoot = (Resolve-Path -LiteralPath $BackupDir).Path
 
 try {
     Write-Host "Creating $Environment PostgreSQL backup from $PostgresContainerName"
@@ -71,9 +82,8 @@ try {
     }
 
     Write-Host "Creating $Environment attachment backup from ${ApiContainerName}:$AttachmentsPath"
-    Invoke-Docker exec $ApiContainerName sh -lc "if [ -d '$AttachmentsPath' ]; then cd '$AttachmentsPath'; else mkdir -p /tmp/motorcare-empty-attachments && cd /tmp/motorcare-empty-attachments; fi; tar -czf '$remoteAttachmentsPath' ."
-    Invoke-Docker exec $ApiContainerName sh -lc "test -s '$remoteAttachmentsPath' && tar -tzf '$remoteAttachmentsPath' >/dev/null"
-    Invoke-Docker cp "${ApiContainerName}:$remoteAttachmentsPath" $attachmentsArchivePath
+    $apiImage = Get-ContainerImage -ContainerName $ApiContainerName
+    Invoke-Docker run --rm --user 0:0 --volumes-from $ApiContainerName -v "${backupRoot}:/backup" --entrypoint sh $apiImage -lc "if [ -d '$AttachmentsPath' ]; then cd '$AttachmentsPath'; else mkdir -p /tmp/motorcare-empty-attachments && cd /tmp/motorcare-empty-attachments; fi; tar -czf '/backup/$attachmentsArchiveName' . && test -s '/backup/$attachmentsArchiveName' && tar -tzf '/backup/$attachmentsArchiveName' >/dev/null"
 
     $attachmentsArchive = Get-Item -LiteralPath $attachmentsArchivePath
     if ($attachmentsArchive.Length -le 0) {
@@ -102,5 +112,4 @@ try {
 }
 finally {
     & docker exec $PostgresContainerName rm -f $remoteDbPath 2>$null | Out-Null
-    & docker exec $ApiContainerName rm -f $remoteAttachmentsPath 2>$null | Out-Null
 }

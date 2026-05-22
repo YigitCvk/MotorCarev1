@@ -6,6 +6,7 @@ public sealed class TokenStorageService
 {
     public const string AccessTokenKey = "motorcare.accessToken";
     private const string RefreshTokenKey = "motorcare.refreshToken";
+    private const string ClientRateLimitKey = "motorcare.clientRateLimitKey";
 
     private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<TokenStorageService> _logger;
@@ -50,6 +51,19 @@ public sealed class TokenStorageService
         catch (Exception ex) when (IsRecoverableStorageException(ex))
         {
             _logger.LogDebug("Browser storage read skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
+            return null;
+        }
+    }
+
+    public async ValueTask<string?> GetClientRateLimitKeyAsync()
+    {
+        try
+        {
+            return await _jsRuntime.InvokeAsync<string?>("motorCareStorage.getOrCreate", ClientRateLimitKey);
+        }
+        catch (Exception ex) when (IsRecoverableStorageException(ex))
+        {
+            _logger.LogDebug("Browser storage client key read skipped because the circuit is disconnected. ExceptionType={ExceptionType}", ex.GetType().Name);
             return null;
         }
     }

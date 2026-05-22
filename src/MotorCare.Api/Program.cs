@@ -35,6 +35,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateBootstrapLogger();
 
 const string PublicAuthRateLimitPolicy = "PublicAuth";
+const string PublicAuthClientKeyHeader = "X-MotorCare-Client-Key";
 
 try
 {
@@ -150,16 +151,21 @@ try
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         options.AddPolicy(PublicAuthRateLimitPolicy, httpContext =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        {
+            var partitionKey = GetPublicAuthRateLimitPartitionKey(httpContext, PublicAuthClientKeyHeader);
+            var permitLimit = GetPublicAuthPermitLimit(httpContext.Request.Path);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
                 _ => new FixedWindowRateLimiterOptions
                 {
                     AutoReplenishment = true,
-                    PermitLimit = 10,
+                    PermitLimit = permitLimit,
                     QueueLimit = 0,
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     Window = TimeSpan.FromMinutes(1)
-                }));
+                });
+        });
     });
 
     builder.Services
@@ -285,4 +291,51 @@ catch (Exception ex) when (ex is not HostAbortedException)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static string GetPublicAuthRateLimitPartitionKey(HttpContext httpContext, string clientKeyHeader)
+{
+    var path = httpContext.Request.Path.Value ?? "/api/auth";
+    var clientKey = httpContext.Request.Headers[clientKeyHeader].FirstOrDefault();
+    if (IsSafeRateLimitKey(clientKey))
+    {
+        return $"{path}:client:{clientKey}";
+    }
+
+    var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    var forwardedIp = forwardedFor?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(forwardedIp))
+    {
+        return $"{path}:xff:{forwardedIp}";
+    }
+
+    return $"{path}:ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+}
+
+static int GetPublicAuthPermitLimit(PathString path)
+{
+    if (path.StartsWithSegments("/api/auth/refresh-token", StringComparison.OrdinalIgnoreCase))
+    {
+        return 120;
+    }
+
+    return 30;
+}
+
+static bool IsSafeRateLimitKey(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value) || value.Length > 128)
+    {
+        return false;
+    }
+
+    foreach (var c in value)
+    {
+        if (!char.IsLetterOrDigit(c) && c is not '-' and not '_')
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

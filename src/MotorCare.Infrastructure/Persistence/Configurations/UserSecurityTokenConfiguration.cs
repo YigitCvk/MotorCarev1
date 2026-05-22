@@ -23,8 +23,7 @@ public sealed class UserSecurityTokenConfiguration : IEntityTypeConfiguration<Us
         builder.Property(x => x.FailedAttemptCount)
             .IsRequired();
 
-        builder.HasIndex(x => x.TokenHash)
-            .IsUnique();
+        builder.HasIndex(x => new { x.TokenHash, x.Purpose });
 
         builder.HasIndex(x => new { x.UserId, x.Purpose, x.CreatedAt });
 

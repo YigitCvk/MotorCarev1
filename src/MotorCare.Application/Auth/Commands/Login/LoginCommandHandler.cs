@@ -18,6 +18,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IRefreshTokenLifetimeProvider _refreshTokenLifetimeProvider;
     private readonly IEmailSender _emailSender;
     private readonly ISecurityTokenFactory _securityTokenFactory;
     private readonly ILogger<LoginCommandHandler> _logger;
@@ -30,6 +31,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         IRefreshTokenGenerator refreshTokenGenerator,
+        IRefreshTokenLifetimeProvider refreshTokenLifetimeProvider,
         IEmailSender emailSender,
         ISecurityTokenFactory securityTokenFactory,
         ILogger<LoginCommandHandler> logger)
@@ -39,6 +41,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _refreshTokenGenerator = refreshTokenGenerator;
+        _refreshTokenLifetimeProvider = refreshTokenLifetimeProvider;
         _emailSender = emailSender;
         _securityTokenFactory = securityTokenFactory;
         _logger = logger;
@@ -135,7 +138,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponseDto
         var now = DateTimeOffset.UtcNow;
         var refreshTokenHash = HashToken(refreshToken);
         user.MarkLogin(now);
-        var refreshTokenEntity = user.AddRefreshToken(refreshTokenHash, now.AddDays(7), now);
+        var refreshTokenEntity = user.AddRefreshToken(refreshTokenHash, _refreshTokenLifetimeProvider.GetExpiresAt(now), now);
         _userRepository.Update(user);
         _userRepository.AddRefreshToken(refreshTokenEntity);
         await _userRepository.SaveChangesAsync(cancellationToken);

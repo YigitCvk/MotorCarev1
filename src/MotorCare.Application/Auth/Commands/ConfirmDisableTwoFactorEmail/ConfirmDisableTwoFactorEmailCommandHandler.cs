@@ -30,13 +30,12 @@ public sealed class ConfirmDisableTwoFactorEmailCommandHandler : IRequestHandler
         }
 
         var codeHash = _securityTokenFactory.Hash(request.Code);
-        var otp = await _userRepository.GetActiveSecurityTokenByHashAsync(codeHash, UserSecurityTokenPurpose.TwoFactorDisableEmailOtp, cancellationToken);
-        if (otp is null || otp.UserId != user.Id)
+        var otp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorDisableEmailOtp, cancellationToken);
+        if (otp is null || !string.Equals(otp.TokenHash, codeHash, StringComparison.Ordinal))
         {
-            var latest = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorDisableEmailOtp, cancellationToken);
-            if (latest is not null)
+            if (otp is not null)
             {
-                user.RegisterSecurityTokenFailedAttempt(latest.TokenHash, DateTimeOffset.UtcNow);
+                user.RegisterSecurityTokenFailedAttempt(otp.TokenHash, DateTimeOffset.UtcNow);
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync(cancellationToken);
             }
@@ -44,7 +43,7 @@ public sealed class ConfirmDisableTwoFactorEmailCommandHandler : IRequestHandler
             throw new UnauthorizedAccessException("Doğrulama kodu geçersiz.");
         }
 
-        user.ConsumeSecurityToken(codeHash, DateTimeOffset.UtcNow);
+        user.ConsumeSecurityToken(otp.TokenHash, DateTimeOffset.UtcNow);
         user.SetTwoFactor(false, null);
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync(cancellationToken);

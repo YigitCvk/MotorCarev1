@@ -17,6 +17,7 @@ public class LoginCommandHandlerTests
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly IJwtTokenGenerator _jwtTokenGenerator = Substitute.For<IJwtTokenGenerator>();
     private readonly IRefreshTokenGenerator _refreshTokenGenerator = Substitute.For<IRefreshTokenGenerator>();
+    private readonly IRefreshTokenLifetimeProvider _refreshTokenLifetimeProvider = Substitute.For<IRefreshTokenLifetimeProvider>();
     private readonly IEmailSender _emailSender = Substitute.For<IEmailSender>();
     private readonly ISecurityTokenFactory _tokenFactory = Substitute.For<ISecurityTokenFactory>();
     private readonly ILogger<LoginCommandHandler> _logger = Substitute.For<ILogger<LoginCommandHandler>>();
@@ -31,7 +32,10 @@ public class LoginCommandHandlerTests
     {
         _handler = new LoginCommandHandler(
             _tenantRepo, _userRepo, _passwordHasher, _jwtTokenGenerator,
-            _refreshTokenGenerator, _emailSender, _tokenFactory, _logger);
+            _refreshTokenGenerator, _refreshTokenLifetimeProvider, _emailSender, _tokenFactory, _logger);
+
+        _refreshTokenLifetimeProvider.GetExpiresAt(Arg.Any<DateTimeOffset>())
+            .Returns(call => call.Arg<DateTimeOffset>().AddDays(7));
     }
 
     private static LoginCommand Command() => new(TenantIdentifier, Email, Password);

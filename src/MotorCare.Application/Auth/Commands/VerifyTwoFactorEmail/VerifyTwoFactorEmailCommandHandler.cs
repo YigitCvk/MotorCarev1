@@ -11,6 +11,7 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
     private readonly ITenantRepository _tenantRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IRefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IRefreshTokenLifetimeProvider _refreshTokenLifetimeProvider;
     private readonly ISecurityTokenFactory _securityTokenFactory;
 
     public VerifyTwoFactorEmailCommandHandler(
@@ -18,12 +19,14 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
         ITenantRepository tenantRepository,
         IJwtTokenGenerator jwtTokenGenerator,
         IRefreshTokenGenerator refreshTokenGenerator,
+        IRefreshTokenLifetimeProvider refreshTokenLifetimeProvider,
         ISecurityTokenFactory securityTokenFactory)
     {
         _userRepository = userRepository;
         _tenantRepository = tenantRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
         _refreshTokenGenerator = refreshTokenGenerator;
+        _refreshTokenLifetimeProvider = refreshTokenLifetimeProvider;
         _securityTokenFactory = securityTokenFactory;
     }
 
@@ -37,13 +40,12 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
             ?? throw new UnauthorizedAccessException("Doğrulama oturumu geçersiz veya süresi dolmuş.");
 
         var otpHash = _securityTokenFactory.Hash(request.Code);
-        var otp = await _userRepository.GetActiveSecurityTokenByHashAsync(otpHash, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
-        if (otp is null || otp.UserId != user.Id)
+        var otp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
+        if (otp is null || !string.Equals(otp.TokenHash, otpHash, StringComparison.Ordinal))
         {
-            var latestOtp = await _userRepository.GetLatestActiveSecurityTokenAsync(user.Id, UserSecurityTokenPurpose.TwoFactorEmailOtp, cancellationToken);
-            if (latestOtp is not null)
+            if (otp is not null)
             {
-                user.RegisterSecurityTokenFailedAttempt(latestOtp.TokenHash, DateTimeOffset.UtcNow);
+                user.RegisterSecurityTokenFailedAttempt(otp.TokenHash, DateTimeOffset.UtcNow);
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync(cancellationToken);
             }
@@ -60,7 +62,10 @@ public sealed class VerifyTwoFactorEmailCommandHandler : IRequestHandler<VerifyT
 
         var refreshToken = _refreshTokenGenerator.Generate();
         user.MarkLogin(now);
-        var refreshTokenEntity = user.AddRefreshToken(_securityTokenFactory.Hash(refreshToken), now.AddDays(7), now);
+        var refreshTokenEntity = user.AddRefreshToken(
+            _securityTokenFactory.Hash(refreshToken),
+            _refreshTokenLifetimeProvider.GetExpiresAt(now),
+            now);
 
         _userRepository.Update(user);
         _userRepository.AddRefreshToken(refreshTokenEntity);

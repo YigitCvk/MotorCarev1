@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<IRefreshTokenLifetimeProvider, JwtRefreshTokenLifetimeProvider>();
         services.AddScoped<ISecurityTokenFactory, SecurityTokenFactory>();
         services.AddScoped<IAuthLinkBuilder, AuthLinkBuilder>();
         services.AddScoped<IPublicRecordAccessService, PublicRecordAccessService>();

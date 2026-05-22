@@ -10,9 +10,11 @@ namespace MotorCare.App.Services;
 public sealed class ApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const string ClientRateLimitHeader = "X-MotorCare-Client-Key";
 
     private readonly HttpClient _httpClient;
     private readonly TokenStorageService _tokenStorageService;
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     public ApiClient(HttpClient httpClient, TokenStorageService tokenStorageService)
     {
@@ -177,32 +179,42 @@ public sealed class ApiClient
 
     private async Task AttachAuthorizationAsync(HttpRequestMessage message, bool authorized)
     {
-        if (!authorized)
+        if (authorized)
         {
-            return;
+            var accessToken = await _tokenStorageService.GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
         }
 
-        var accessToken = await _tokenStorageService.GetAccessTokenAsync();
-        if (!string.IsNullOrWhiteSpace(accessToken))
+        var clientRateLimitKey = await _tokenStorageService.GetClientRateLimitKeyAsync();
+        if (!string.IsNullOrWhiteSpace(clientRateLimitKey))
         {
-            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            message.Headers.TryAddWithoutValidation(ClientRateLimitHeader, clientRateLimitKey);
         }
     }
 
     private async Task<bool> TryRefreshTokenAsync(CancellationToken cancellationToken)
     {
-        var refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
-        if (string.IsNullOrWhiteSpace(refreshToken))
-        {
-            return false;
-        }
-
+        await _refreshLock.WaitAsync(cancellationToken);
         try
         {
+            var refreshToken = await _tokenStorageService.GetRefreshTokenAsync();
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return false;
+            }
+
             using var message = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh-token")
             {
                 Content = JsonContent.Create(new RefreshTokenRequest { RefreshToken = refreshToken })
             };
+            var clientRateLimitKey = await _tokenStorageService.GetClientRateLimitKeyAsync();
+            if (!string.IsNullOrWhiteSpace(clientRateLimitKey))
+            {
+                message.Headers.TryAddWithoutValidation(ClientRateLimitHeader, clientRateLimitKey);
+            }
 
             using var response = await _httpClient.SendAsync(message, cancellationToken);
             if (!response.IsSuccessStatusCode)
@@ -230,6 +242,10 @@ public sealed class ApiClient
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
         {
             return false;
+        }
+        finally
+        {
+            _refreshLock.Release();
         }
     }
 
