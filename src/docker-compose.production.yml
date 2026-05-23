@@ -114,6 +114,8 @@ services:
     <<: *app-security
     cap_add:
       - CHOWN
+      - SETGID
+      - SETUID
     image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-web:production}
     build:
       context: .
