@@ -131,6 +131,8 @@ services:
 
   app:
     <<: *app-security
+    cap_add:
+      - CHOWN
     image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-web:staging}
     build:
       context: .
