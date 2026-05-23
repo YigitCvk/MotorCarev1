@@ -443,10 +443,34 @@ export class SettingsUsersComponent implements OnInit {
   invite(): void {
     if (this.form.invalid) return;
     this.loading = true;
-    this.api.post('/api/users/invite', this.form.getRawValue()).pipe(finalize(() => (this.loading = false))).subscribe({
+    const raw = this.form.getRawValue();
+    this.api.post('/api/users/invite', { ...raw, role: roleValue(raw.role) }).pipe(finalize(() => (this.loading = false))).subscribe({
       next: () => { this.message = 'Davet e-postası gönderildi.'; this.form.reset({ role: 'Technician', fullName: '', email: '' }); this.load(); },
       error: (err) => (this.error = friendlyError(err, 'Davet gönderilemedi.'))
     });
+  }
+}
+
+function roleValue(role: string): number {
+  switch (role) {
+    case 'Owner':
+      return 1;
+    case 'Admin':
+      return 2;
+    case 'Receptionist':
+      return 3;
+    case 'Technician':
+      return 4;
+    case 'Manager':
+      return 5;
+    case 'Inspector':
+      return 6;
+    case 'Accountant':
+      return 7;
+    case 'ReadOnly':
+      return 8;
+    default:
+      return 4;
   }
 }
 
