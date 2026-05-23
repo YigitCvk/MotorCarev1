@@ -50,19 +50,11 @@ services:
   app:
     build:
       context: ./src
-      dockerfile: MotorCare.App/Dockerfile
+      dockerfile: MotorCare.Web/Dockerfile
     container_name: motorcare-app
     restart: unless-stopped
     depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://0.0.0.0:8080
-      ApiBaseUrl: http://api:8080
-      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
-    volumes:
-      - app-dataprotection:/var/lib/motorcare/dataprotection
+      - api
     ports:
       - "5001:8080"
     networks:
@@ -95,4 +87,3 @@ volumes:
   motorcare-postgres-data:
   api-dataprotection:
   api-attachments:
-  app-dataprotection:

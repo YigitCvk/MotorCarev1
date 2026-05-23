@@ -25,4 +25,7 @@ publish-ssl/
 *.sqlite
 *.nupkg
 node_modules/
+**/node_modules/
+**/.angular/
+**/dist/
 tests/

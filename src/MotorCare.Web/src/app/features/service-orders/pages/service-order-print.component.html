@@ -1,0 +1,184 @@
+<section class="print-page">
+  <header class="screen-actions">
+    <a routerLink="../">Detaya Dön</a>
+    <button type="button" (click)="print()">Yazdır</button>
+  </header>
+
+  <p class="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="empty-state" *ngIf="loading">Yükleniyor...</p>
+
+  <article class="print-sheet" *ngIf="order as current">
+    <header class="document-header">
+      <div>
+        <p>Servis Emri</p>
+        <h1>{{ current.orderNo }}</h1>
+      </div>
+      <div class="document-meta">
+        <span>{{ statusLabel(current.status) }}</span>
+        <strong>{{ current.openedAt | date: 'dd.MM.yyyy HH:mm' }}</strong>
+      </div>
+    </header>
+
+    <section class="party-grid">
+      <div>
+        <span>Müşteri</span>
+        <strong>{{ current.customerName || '-' }}</strong>
+      </div>
+      <div>
+        <span>Araç</span>
+        <strong>{{ current.vehiclePlate || '-' }}</strong>
+        <p>{{ current.vehicleDisplay || '-' }}</p>
+      </div>
+      <div>
+        <span>Km</span>
+        <strong>{{ current.vehicleKm }}</strong>
+      </div>
+      <div>
+        <span>Kalan</span>
+        <strong>{{ money(current.remainingTotal) }}</strong>
+      </div>
+    </section>
+
+    <section class="note-block">
+      <span>Şikayet</span>
+      <p>{{ current.complaint || '-' }}</p>
+    </section>
+
+    <section>
+      <h2>İşçilikler</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Açıklama</th>
+            <th class="numeric">Miktar</th>
+            <th class="numeric">Birim</th>
+            <th class="numeric">İndirim</th>
+            <th class="numeric">Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of current.operations">
+            <td>{{ item.description }}</td>
+            <td class="numeric">{{ item.quantity }}</td>
+            <td class="numeric">{{ money(item.unitPrice) }}</td>
+            <td class="numeric">{{ money(item.discount) }}</td>
+            <td class="numeric">{{ money(item.lineTotal) }}</td>
+          </tr>
+          <tr *ngIf="current.operations.length === 0">
+            <td colspan="5">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Parçalar</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Parça</th>
+            <th class="numeric">Adet</th>
+            <th class="numeric">Birim</th>
+            <th class="numeric">İndirim</th>
+            <th class="numeric">Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of current.parts">
+            <td>{{ item.partName }} {{ item.partNumber ? '(' + item.partNumber + ')' : '' }}</td>
+            <td class="numeric">{{ item.quantity }}</td>
+            <td class="numeric">{{ money(item.unitPrice) }}</td>
+            <td class="numeric">{{ money(item.discount) }}</td>
+            <td class="numeric">{{ money(item.lineTotal) }}</td>
+          </tr>
+          <tr *ngIf="current.parts.length === 0">
+            <td colspan="5">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Sarflar</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Ürün</th>
+            <th>Kategori</th>
+            <th class="numeric">Adet</th>
+            <th class="numeric">Birim</th>
+            <th class="numeric">Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of current.consumables">
+            <td>{{ item.productName }} {{ item.brand ? '(' + item.brand + ')' : '' }}</td>
+            <td>{{ item.category }}</td>
+            <td class="numeric">{{ item.quantity }}</td>
+            <td class="numeric">{{ money(item.unitPrice) }}</td>
+            <td class="numeric">{{ money(item.lineTotal) }}</td>
+          </tr>
+          <tr *ngIf="current.consumables.length === 0">
+            <td colspan="5">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="bottom-grid">
+      <div>
+        <h2>Ödemeler</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Yöntem</th>
+              <th class="numeric">Tutar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of current.payments">
+              <td>{{ payment.paymentDate | date: 'dd.MM.yyyy' }}</td>
+              <td>{{ paymentLabel(payment.method) }}</td>
+              <td class="numeric">{{ money(payment.amount) }}</td>
+            </tr>
+            <tr *ngIf="current.payments.length === 0">
+              <td colspan="3">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <dl class="totals">
+        <div>
+          <dt>İşçilik</dt>
+          <dd>{{ money(current.laborTotal) }}</dd>
+        </div>
+        <div>
+          <dt>Parça</dt>
+          <dd>{{ money(current.partsTotal) }}</dd>
+        </div>
+        <div>
+          <dt>Sarf</dt>
+          <dd>{{ money(current.consumablesTotal) }}</dd>
+        </div>
+        <div>
+          <dt>İndirim</dt>
+          <dd>{{ money(current.discountTotal) }}</dd>
+        </div>
+        <div class="grand">
+          <dt>Genel Toplam</dt>
+          <dd>{{ money(current.grandTotal) }}</dd>
+        </div>
+        <div>
+          <dt>Ödenen</dt>
+          <dd>{{ money(current.paidTotal) }}</dd>
+        </div>
+        <div>
+          <dt>Kalan</dt>
+          <dd>{{ money(current.remainingTotal) }}</dd>
+        </div>
+      </dl>
+    </section>
+  </article>
+</section>

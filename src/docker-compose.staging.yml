@@ -13,6 +13,8 @@ x-app-security: &app-security
     - ALL
   tmpfs:
     - /tmp:rw,noexec,nosuid,size=64m
+    - /var/cache/nginx:rw,noexec,nosuid,size=64m
+    - /var/run:rw,noexec,nosuid,size=8m
   pids_limit: 256
 
 x-tool-security: &tool-security
@@ -129,10 +131,10 @@ services:
 
   app:
     <<: *app-security
-    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-app:staging}
+    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-web:staging}
     build:
       context: .
-      dockerfile: MotorCare.App/Dockerfile
+      dockerfile: MotorCare.Web/Dockerfile
     pull_policy: always
     container_name: motorcare-staging-app
     restart: unless-stopped
@@ -142,24 +144,10 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: Staging
-      ASPNETCORE_URLS: http://0.0.0.0:8080
-      MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
-      MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
-      ApiBaseUrl: ${APP_INTERNAL_API_BASE_URL:-http://api:8080}
-      PublicReports__BaseUrl: ${PublicReports__BaseUrl:-https://staging.bakimsuite.com}
-      Seo__SiteName: ${Seo__SiteName:-GarajPass}
-      Seo__SiteBaseUrl: ${Seo__SiteBaseUrl:-http://46.225.166.254}
-      Seo__RobotsIndexEnabled: ${Seo__RobotsIndexEnabled:-false}
-      Seo__OgImageUrl: ${Seo__OgImageUrl:-/images/og-garajpass.svg}
-      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
-    volumes:
-      - app_dataprotection:/var/lib/motorcare/dataprotection
     ports:
       - "127.0.0.1:${APP_HOST_PORT:-5001}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 10
@@ -208,4 +196,3 @@ volumes:
   postgres_data:
   api_dataprotection:
   api_attachments:
-  app_dataprotection:

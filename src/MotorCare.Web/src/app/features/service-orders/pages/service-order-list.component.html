@@ -1,0 +1,92 @@
+<section class="service-orders-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Servis</p>
+      <h1>Servis Emirleri</h1>
+    </div>
+    <a class="primary-action" routerLink="new">Yeni Servis Emri</a>
+  </header>
+
+  <form class="filters" [formGroup]="filters">
+    <label>
+      <span>Arama</span>
+      <input type="search" formControlName="q" placeholder="Emir no, müşteri, plaka" />
+    </label>
+
+    <label>
+      <span>Durum</span>
+      <select formControlName="status">
+        <option value="">Tümü</option>
+        <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Açılış Başlangıç</span>
+      <input type="date" formControlName="openedFrom" />
+    </label>
+
+    <label>
+      <span>Açılış Bitiş</span>
+      <input type="date" formControlName="openedTo" />
+    </label>
+
+    <button type="button" class="secondary-action" (click)="clearFilters()">Temizle</button>
+  </form>
+
+  <p class="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="table-shell">
+    <table>
+      <thead>
+        <tr>
+          <th>Emir No</th>
+          <th>Müşteri</th>
+          <th>Araç</th>
+          <th>Durum</th>
+          <th>Açılış</th>
+          <th class="numeric">Toplam</th>
+          <th class="numeric">Kalan</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="8" class="empty-state">Yükleniyor...</td>
+        </tr>
+        <tr *ngIf="!loading && serviceOrders.length === 0">
+          <td colspan="8" class="empty-state">Kayıt bulunamadı.</td>
+        </tr>
+        <tr *ngFor="let order of serviceOrders">
+          <td>
+            <a class="order-link" [routerLink]="[order.id]">{{ order.orderNo }}</a>
+          </td>
+          <td>{{ order.customerName || '-' }}</td>
+          <td>
+            <strong>{{ order.vehiclePlate || '-' }}</strong>
+            <span>{{ order.vehicleDisplay || '' }}</span>
+          </td>
+          <td>
+            <span class="status-pill" [attr.data-status]="order.status">{{ statusLabel(order.status) }}</span>
+          </td>
+          <td>{{ order.openedAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+          <td class="numeric">{{ money(order.grandTotal) }}</td>
+          <td class="numeric">{{ money(order.remainingTotal) }}</td>
+          <td class="row-actions">
+            <a [routerLink]="[order.id]">Detay</a>
+            <a [routerLink]="[order.id, 'print']">Yazdır</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="pager">
+    <span>{{ totalCount }} kayıt</span>
+    <div>
+      <button type="button" (click)="previousPage()" [disabled]="!hasPreviousPage">Önceki</button>
+      <span>{{ pageNumber }} / {{ totalPages || 1 }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="!hasNextPage">Sonraki</button>
+    </div>
+  </footer>
+</section>

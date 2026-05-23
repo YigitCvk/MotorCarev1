@@ -1,0 +1,283 @@
+.feature-header,
+.header-actions,
+.metric-grid,
+.content-grid,
+.card-grid,
+.tab-bar {
+  display: flex;
+  gap: 16px;
+}
+
+.feature-header {
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.header-actions {
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  color: #52616f;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+h1 {
+  color: #17202a;
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+
+p {
+  margin: 0;
+}
+
+.muted,
+.feature-header p {
+  color: #52616f;
+}
+
+.panel,
+.state-panel,
+.metric-grid article {
+  background: #fff;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.state-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.state-panel.error {
+  background: #fff5f5;
+  border-color: #f1b8b8;
+  color: #8a1f1f;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.metric-grid article {
+  display: grid;
+  gap: 6px;
+}
+
+.metric-grid span {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.metric-grid strong {
+  color: #17202a;
+  font-size: 1.5rem;
+}
+
+.tab-bar {
+  border-bottom: 1px solid #d8e0e7;
+  margin-bottom: 18px;
+  overflow-x: auto;
+}
+
+.tab-bar button {
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: #52616f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 4px;
+  white-space: nowrap;
+}
+
+.tab-bar button.active {
+  border-color: #116466;
+  color: #116466;
+}
+
+.content-grid {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.section-title {
+  color: #17202a;
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+form {
+  display: grid;
+  gap: 14px;
+}
+
+label span {
+  color: #334155;
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+input,
+textarea {
+  background: #fff;
+  border: 1px solid #bcc8d3;
+  border-radius: 6px;
+  color: #17202a;
+  font: inherit;
+  padding: 9px 10px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+small {
+  color: #a32929;
+  display: block;
+  margin-top: 6px;
+}
+
+.primary-action,
+.secondary-action {
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  text-decoration: none;
+}
+
+.primary-action.compact,
+.secondary-action.compact {
+  min-height: 34px;
+  padding: 6px 10px;
+  width: fit-content;
+}
+
+.primary-action {
+  background: #116466;
+  border: 1px solid #116466;
+  color: #fff;
+}
+
+.secondary-action {
+  background: #fff;
+  border: 1px solid #bcc8d3;
+  color: #26323d;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.inline-message.success {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.list-item,
+.order-row {
+  border-top: 1px solid #e6edf3;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.list-item:first-of-type,
+.order-row:first-of-type {
+  border-top: 0;
+}
+
+.list-item div,
+.vehicle-card,
+.order-row div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.badge {
+  background: #eef4f8;
+  border-radius: 999px;
+  color: #334155;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  width: fit-content;
+}
+
+.badge.open,
+.badge.done {
+  background: #e6f5ef;
+  color: #0f766e;
+}
+
+.badge.progress,
+.badge.waiting {
+  background: #fff7db;
+  color: #8a5a00;
+}
+
+.badge.cancelled {
+  background: #fde8e8;
+  color: #991b1b;
+}
+
+.plate {
+  color: #17202a;
+  font-size: 1.4rem;
+}
+
+.order-totals {
+  align-content: start;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  min-width: 140px;
+}
+
+@media (max-width: 900px) {
+  .feature-header,
+  .list-item,
+  .order-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metric-grid,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-totals {
+    justify-items: start;
+  }
+}

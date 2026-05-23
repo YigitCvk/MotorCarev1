@@ -1,0 +1,154 @@
+<section class="state-panel" *ngIf="isLoading">
+  <strong>Müşteri bilgileri yükleniyor</strong>
+  <span>Lütfen bekleyin.</span>
+</section>
+
+<section class="state-panel error" *ngIf="!isLoading && errorMessage">
+  <strong>Müşteri bilgisi alınamadı</strong>
+  <span>{{ errorMessage }}</span>
+  <a class="secondary-action compact" routerLink="/customers">Müşteri Listesi</a>
+</section>
+
+<ng-container *ngIf="!isLoading && summary">
+  <section class="feature-header">
+    <div>
+      <span class="eyebrow">Müşteri 360</span>
+      <h1>{{ summary.fullName }}</h1>
+      <p>
+        {{ summary.phone || 'Telefon yok' }}
+        <ng-container *ngIf="summary.email"> · {{ summary.email }}</ng-container>
+        <ng-container *ngIf="summary.whatsapp"> · WhatsApp: {{ summary.whatsapp }}</ng-container>
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a class="secondary-action" routerLink="/customers">Geri</a>
+      <a class="secondary-action" [routerLink]="['/vehicles/create']" [queryParams]="{ customerId: summary.id }">
+        Araç Ekle
+      </a>
+    </div>
+  </section>
+
+  <section class="metric-grid">
+    <article>
+      <span>Araç Sayısı</span>
+      <strong>{{ summary.vehicles.length }}</strong>
+    </article>
+    <article>
+      <span>Açık Servis</span>
+      <strong>{{ openServiceOrderCount() }}</strong>
+    </article>
+    <article>
+      <span>Toplam İşlem</span>
+      <strong>{{ summary.serviceOrders.length }}</strong>
+    </article>
+    <article>
+      <span>Toplam Harcama</span>
+      <strong>{{ totalSpent() | number: '1.0-0' }} TL</strong>
+    </article>
+  </section>
+
+  <nav class="tab-bar" aria-label="Müşteri detay sekmeleri">
+    <button type="button" [class.active]="activeTab === 'overview'" (click)="setTab('overview')">Genel Bakış</button>
+    <button type="button" [class.active]="activeTab === 'vehicles'" (click)="setTab('vehicles')">Araçlar</button>
+    <button type="button" [class.active]="activeTab === 'serviceOrders'" (click)="setTab('serviceOrders')">
+      Servis Geçmişi
+    </button>
+    <button type="button" [class.active]="activeTab === 'notes'" (click)="setTab('notes')">Notlar</button>
+  </nav>
+
+  <section class="content-grid" *ngIf="activeTab === 'overview'">
+    <form class="panel" [formGroup]="form" (ngSubmit)="saveCustomer()">
+      <div class="section-title">Müşteri Bilgileri</div>
+
+      <label>
+        <span>Ad Soyad *</span>
+        <input type="text" formControlName="fullName" maxlength="150" />
+        <small *ngIf="isInvalid('fullName')">Ad Soyad zorunludur.</small>
+      </label>
+
+      <label>
+        <span>Telefon *</span>
+        <input type="tel" formControlName="phone" maxlength="20" />
+        <small *ngIf="isInvalid('phone')">Telefon numarası zorunludur.</small>
+      </label>
+
+      <label>
+        <span>E-posta</span>
+        <input type="email" formControlName="email" maxlength="150" />
+        <small *ngIf="isInvalid('email')">Geçerli bir e-posta adresi girin.</small>
+      </label>
+
+      <label>
+        <span>WhatsApp</span>
+        <input type="tel" formControlName="whatsapp" maxlength="20" />
+      </label>
+
+      <label>
+        <span>İç Not</span>
+        <textarea rows="4" formControlName="notes" maxlength="1000"></textarea>
+      </label>
+
+      <div class="inline-message success" *ngIf="saveMessage">{{ saveMessage }}</div>
+      <button type="submit" class="primary-action" [disabled]="isSaving">
+        {{ isSaving ? 'Kaydediliyor...' : 'Bilgileri Kaydet' }}
+      </button>
+    </form>
+
+    <div class="panel">
+      <div class="section-title">Son Randevular</div>
+      <p class="muted" *ngIf="summary.appointments.length === 0">Randevu geçmişi bulunamadı.</p>
+      <div class="list-item" *ngFor="let appointment of summary.appointments.slice(0, 5)">
+        <div>
+          <strong>{{ appointment.typeText }}</strong>
+          <span>{{ appointment.startAt | date: 'dd.MM.yyyy HH:mm' }}</span>
+        </div>
+        <span class="badge">{{ appointment.statusText }}</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card-grid" *ngIf="activeTab === 'vehicles'">
+    <div class="state-panel" *ngIf="summary.vehicles.length === 0">
+      <strong>Bu müşteriye ait araç bulunamadı.</strong>
+      <a class="primary-action compact" [routerLink]="['/vehicles/create']" [queryParams]="{ customerId: summary.id }">
+        Araç Ekle
+      </a>
+    </div>
+
+    <article class="panel vehicle-card" *ngFor="let vehicle of summary.vehicles">
+      <strong class="plate">{{ vehicle.plate }}</strong>
+      <span>{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }})</span>
+      <span class="muted" *ngIf="vehicle.currentKm">{{ vehicle.currentKm | number: '1.0-0' }} km</span>
+      <span class="muted" *ngIf="vehicle.lastServiceDate">Son servis: {{ vehicle.lastServiceDate | date: 'dd.MM.yyyy' }}</span>
+      <a class="secondary-action compact" [routerLink]="['/vehicles', vehicle.id, 'history']">Servis Geçmişi</a>
+    </article>
+  </section>
+
+  <section class="panel" *ngIf="activeTab === 'serviceOrders'">
+    <div class="section-title">Servis Geçmişi</div>
+    <p class="muted" *ngIf="summary.serviceOrders.length === 0">Servis geçmişi bulunamadı.</p>
+
+    <article class="order-row" *ngFor="let order of summary.serviceOrders">
+      <div>
+        <strong>{{ order.orderNo }}</strong>
+        <span class="muted">
+          {{ order.openedAt | date: 'dd.MM.yyyy' }}
+          <ng-container *ngIf="order.vehiclePlate"> · {{ order.vehiclePlate }}</ng-container>
+        </span>
+        <p *ngIf="order.complaint">{{ order.complaint }}</p>
+      </div>
+      <div class="order-totals">
+        <span class="badge" [class]="statusClass(order.status)">{{ order.statusText }}</span>
+        <strong>{{ order.grandTotal | number: '1.2-2' }} TL</strong>
+        <small *ngIf="remainingTotal(order) > 0">Kalan: {{ remainingTotal(order) | number: '1.2-2' }} TL</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel" *ngIf="activeTab === 'notes'">
+    <div class="section-title">Müşteri Notları</div>
+    <p class="muted" *ngIf="!summary.notes">Bu müşteri için not bulunmuyor.</p>
+    <p *ngIf="summary.notes">{{ summary.notes }}</p>
+  </section>
+</ng-container>

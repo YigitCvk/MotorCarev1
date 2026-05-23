@@ -1,0 +1,346 @@
+<section class="detail-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Servis Emri</p>
+      <h1>{{ order?.orderNo || 'Yükleniyor...' }}</h1>
+      <p *ngIf="order">{{ order.customerName || '-' }} · {{ order.vehiclePlate || '-' }} · {{ order.vehicleKm }} km</p>
+    </div>
+    <nav>
+      <a routerLink="../">Liste</a>
+      <a *ngIf="order" [routerLink]="['print']">Yazdır</a>
+    </nav>
+  </header>
+
+  <p class="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+  <p class="empty-state" *ngIf="loading">Yükleniyor...</p>
+
+  <ng-container *ngIf="order as current">
+    <section class="summary-grid">
+      <div>
+        <span>Durum</span>
+        <strong class="status-pill" [attr.data-status]="current.status">{{ statusLabel(current.status) }}</strong>
+      </div>
+      <div>
+        <span>İşçilik</span>
+        <strong>{{ money(current.laborTotal) }}</strong>
+      </div>
+      <div>
+        <span>Parça</span>
+        <strong>{{ money(current.partsTotal) }}</strong>
+      </div>
+      <div>
+        <span>Sarf</span>
+        <strong>{{ money(current.consumablesTotal) }}</strong>
+      </div>
+      <div>
+        <span>İndirim</span>
+        <strong>{{ money(current.discountTotal) }}</strong>
+      </div>
+      <div>
+        <span>Genel Toplam</span>
+        <strong>{{ money(current.grandTotal) }}</strong>
+      </div>
+      <div>
+        <span>Ödenen</span>
+        <strong>{{ money(current.paidTotal) }}</strong>
+      </div>
+      <div>
+        <span>Kalan</span>
+        <strong>{{ money(current.remainingTotal) }}</strong>
+      </div>
+    </section>
+
+    <section class="info-grid">
+      <div>
+        <span>Araç</span>
+        <strong>{{ current.vehicleDisplay || current.vehiclePlate || '-' }}</strong>
+      </div>
+      <div>
+        <span>Açılış</span>
+        <strong>{{ current.openedAt | date: 'dd.MM.yyyy HH:mm' }}</strong>
+      </div>
+      <div>
+        <span>Kapanış</span>
+        <strong>{{ current.closedAt ? (current.closedAt | date: 'dd.MM.yyyy HH:mm') : '-' }}</strong>
+      </div>
+      <div class="wide">
+        <span>Şikayet</span>
+        <p>{{ current.complaint || '-' }}</p>
+      </div>
+    </section>
+
+    <section class="actions-grid">
+      <form [formGroup]="statusForm" (ngSubmit)="updateStatus()">
+        <h2>Durum</h2>
+        <label>
+          <span>Yeni Durum</span>
+          <select formControlName="status">
+            <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Not</span>
+          <input type="text" maxlength="250" formControlName="note" />
+        </label>
+        <button type="submit" [disabled]="savingTarget === 'status'">
+          {{ savingTarget === 'status' ? 'Kaydediliyor...' : 'Durumu Güncelle' }}
+        </button>
+      </form>
+
+      <form [formGroup]="discountForm" (ngSubmit)="setDiscount()">
+        <h2>İndirim</h2>
+        <label>
+          <span>İndirim Tutarı</span>
+          <input type="number" min="0" step="0.01" formControlName="discount" [disabled]="isLocked" />
+        </label>
+        <small *ngIf="fieldInvalid(discountForm, 'discount')">İndirim geçerli bir tutar olmalıdır.</small>
+        <small *ngIf="discountForm.controls.discount.hasError('overSubtotal')">İndirim ara toplamı aşamaz.</small>
+        <button type="submit" [disabled]="isLocked || savingTarget === 'discount'">
+          {{ savingTarget === 'discount' ? 'Kaydediliyor...' : 'İndirimi Kaydet' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="workbench" [class.locked]="isLocked">
+      <form [formGroup]="operationForm" (ngSubmit)="addOperation()">
+        <h2>İşçilik</h2>
+        <label class="wide">
+          <span>Açıklama</span>
+          <input type="text" maxlength="500" formControlName="description" [disabled]="isLocked" />
+          <small *ngIf="fieldInvalid(operationForm, 'description')">İşçilik adı zorunludur.</small>
+        </label>
+        <label>
+          <span>Miktar</span>
+          <input type="number" min="0.01" step="0.01" formControlName="quantity" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Birim Fiyat</span>
+          <input type="number" min="0" step="0.01" formControlName="unitPrice" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>İndirim</span>
+          <input type="number" min="0" step="0.01" formControlName="discount" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Not</span>
+          <input type="text" maxlength="250" formControlName="notes" [disabled]="isLocked" />
+        </label>
+        <small *ngIf="hasLineDiscountError(operationForm)">İndirim satır toplamını aşamaz.</small>
+        <div class="form-total">Satır: {{ money(operationPreviewTotal) }}</div>
+        <button type="submit" [disabled]="isLocked || savingTarget === 'operation'">İşçilik Ekle</button>
+      </form>
+
+      <form [formGroup]="partForm" (ngSubmit)="addPart()">
+        <h2>Parça</h2>
+        <label class="wide">
+          <span>Parça Adı</span>
+          <input type="text" maxlength="200" formControlName="partName" [disabled]="isLocked" />
+          <small *ngIf="fieldInvalid(partForm, 'partName')">Parça adı zorunludur.</small>
+        </label>
+        <label>
+          <span>Parça No</span>
+          <input type="text" maxlength="100" formControlName="partNumber" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Birim Fiyat</span>
+          <input type="number" min="0.01" step="0.01" formControlName="unitPrice" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Adet</span>
+          <input type="number" min="1" step="1" formControlName="quantity" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>İndirim</span>
+          <input type="number" min="0" step="0.01" formControlName="discount" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Not</span>
+          <input type="text" maxlength="250" formControlName="notes" [disabled]="isLocked" />
+        </label>
+        <small *ngIf="hasLineDiscountError(partForm)">İndirim satır toplamını aşamaz.</small>
+        <div class="form-total">Satır: {{ money(partPreviewTotal) }}</div>
+        <button type="submit" [disabled]="isLocked || savingTarget === 'part'">Parça Ekle</button>
+      </form>
+
+      <form [formGroup]="consumableForm" (ngSubmit)="addConsumable()">
+        <h2>Sarf</h2>
+        <label>
+          <span>Kategori</span>
+          <input type="text" maxlength="64" formControlName="category" [disabled]="isLocked" />
+          <small *ngIf="fieldInvalid(consumableForm, 'category')">Kategori zorunludur.</small>
+        </label>
+        <label>
+          <span>Marka</span>
+          <input type="text" maxlength="80" formControlName="brand" [disabled]="isLocked" />
+        </label>
+        <label class="wide">
+          <span>Ürün</span>
+          <input type="text" maxlength="160" formControlName="productName" [disabled]="isLocked" />
+          <small *ngIf="fieldInvalid(consumableForm, 'productName')">Ürün adı zorunludur.</small>
+        </label>
+        <label>
+          <span>Alt Kategori</span>
+          <input type="text" maxlength="100" formControlName="subCategory" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Özellik</span>
+          <input type="text" maxlength="160" formControlName="specification" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Birim Fiyat</span>
+          <input type="number" min="0" step="0.01" formControlName="unitPrice" [disabled]="isLocked" />
+        </label>
+        <label>
+          <span>Adet</span>
+          <input type="number" min="1" step="1" formControlName="quantity" [disabled]="isLocked" />
+        </label>
+        <label class="wide">
+          <span>Not</span>
+          <input type="text" maxlength="250" formControlName="notes" [disabled]="isLocked" />
+        </label>
+        <div class="form-total">Satır: {{ money(consumablePreviewTotal) }}</div>
+        <button type="submit" [disabled]="isLocked || savingTarget === 'consumable'">Sarf Ekle</button>
+      </form>
+
+      <form [formGroup]="paymentForm" (ngSubmit)="addPayment()">
+        <h2>Ödeme</h2>
+        <label>
+          <span>Tutar</span>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="amount"
+            [max]="current.remainingTotal"
+            [disabled]="!canAcceptPayment"
+          />
+        </label>
+        <small *ngIf="paymentForm.controls.amount.hasError('overRemaining')">Ödeme kalan tutarı aşamaz.</small>
+        <label>
+          <span>Yöntem</span>
+          <select formControlName="method" [disabled]="!canAcceptPayment">
+            <option *ngFor="let option of paymentMethodOptions" [ngValue]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Tarih</span>
+          <input type="date" formControlName="paymentDate" [disabled]="!canAcceptPayment" />
+        </label>
+        <button type="submit" [disabled]="!canAcceptPayment || savingTarget === 'payment'">Ödeme Ekle</button>
+      </form>
+    </section>
+
+    <section class="lines-grid">
+      <div class="line-panel">
+        <h2>İşçilikler</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Açıklama</th>
+              <th class="numeric">Miktar</th>
+              <th class="numeric">Birim</th>
+              <th class="numeric">İndirim</th>
+              <th class="numeric">Tutar</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of current.operations">
+              <td>{{ item.description }}</td>
+              <td class="numeric">{{ item.quantity }}</td>
+              <td class="numeric">{{ money(item.unitPrice) }}</td>
+              <td class="numeric">{{ money(item.discount) }}</td>
+              <td class="numeric">{{ money(item.lineTotal) }}</td>
+              <td><button type="button" [disabled]="isLocked" (click)="removeOperation(item.id)">Sil</button></td>
+            </tr>
+            <tr *ngIf="current.operations.length === 0">
+              <td colspan="6" class="empty-state">İşçilik yok.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="line-panel">
+        <h2>Parçalar</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Parça</th>
+              <th class="numeric">Adet</th>
+              <th class="numeric">Birim</th>
+              <th class="numeric">İndirim</th>
+              <th class="numeric">Tutar</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of current.parts">
+              <td>{{ item.partName }} <span>{{ item.partNumber || '' }}</span></td>
+              <td class="numeric">{{ item.quantity }}</td>
+              <td class="numeric">{{ money(item.unitPrice) }}</td>
+              <td class="numeric">{{ money(item.discount) }}</td>
+              <td class="numeric">{{ money(item.lineTotal) }}</td>
+              <td><button type="button" [disabled]="isLocked" (click)="removePart(item.id)">Sil</button></td>
+            </tr>
+            <tr *ngIf="current.parts.length === 0">
+              <td colspan="6" class="empty-state">Parça yok.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="line-panel">
+        <h2>Sarflar</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Ürün</th>
+              <th>Kategori</th>
+              <th class="numeric">Adet</th>
+              <th class="numeric">Birim</th>
+              <th class="numeric">Tutar</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of current.consumables">
+              <td>{{ item.productName }} <span>{{ item.brand || '' }}</span></td>
+              <td>{{ item.category }}</td>
+              <td class="numeric">{{ item.quantity }}</td>
+              <td class="numeric">{{ money(item.unitPrice) }}</td>
+              <td class="numeric">{{ money(item.lineTotal) }}</td>
+              <td><button type="button" [disabled]="isLocked" (click)="removeConsumable(item.id)">Sil</button></td>
+            </tr>
+            <tr *ngIf="current.consumables.length === 0">
+              <td colspan="6" class="empty-state">Sarf yok.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="line-panel">
+        <h2>Ödemeler</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Yöntem</th>
+              <th class="numeric">Tutar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let payment of current.payments">
+              <td>{{ payment.paymentDate | date: 'dd.MM.yyyy HH:mm' }}</td>
+              <td>{{ paymentLabel(payment.method) }}</td>
+              <td class="numeric">{{ money(payment.amount) }}</td>
+            </tr>
+            <tr *ngIf="current.payments.length === 0">
+              <td colspan="3" class="empty-state">Ödeme yok.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </ng-container>
+</section>

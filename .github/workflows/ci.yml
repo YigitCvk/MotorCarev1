@@ -34,6 +34,13 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: src/MotorCare.Web/package-lock.json
+
       - name: Capture build metadata
         run: echo "MOTORCARE_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
@@ -45,6 +52,12 @@ jobs:
 
       - name: Test Release
         run: dotnet test src/MotorCare.sln --configuration Release --no-build --verbosity normal
+
+      - name: Build Angular frontend
+        working-directory: src/MotorCare.Web
+        run: |
+          npm ci
+          npm run build
 
       - name: Validate Docker Compose
         run: |
@@ -61,13 +74,13 @@ jobs:
             --tag motorcare-api:ci \
             src
 
-      - name: Build App image
+      - name: Build Web image
         run: |
           docker build \
             --build-arg MOTORCARE_COMMIT_SHA="${GITHUB_SHA}" \
             --build-arg MOTORCARE_BUILD_TIME="${MOTORCARE_BUILD_TIME}" \
-            --file src/MotorCare.App/Dockerfile \
-            --tag motorcare-app:ci \
+            --file src/MotorCare.Web/Dockerfile \
+            --tag motorcare-web:ci \
             src
 
       - name: Build Migrator image

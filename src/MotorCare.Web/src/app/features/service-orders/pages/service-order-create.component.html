@@ -1,0 +1,65 @@
+<section class="create-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Servis</p>
+      <h1>Yeni Servis Emri</h1>
+    </div>
+    <a routerLink="../">Listeye Dön</a>
+  </header>
+
+  <p class="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <form class="create-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-section">
+      <h2>Müşteri ve Araç</h2>
+
+      <label>
+        <span>Müşteri Ara</span>
+        <input type="search" [formControl]="customerSearch" placeholder="Ad, telefon veya e-posta" />
+      </label>
+
+      <label>
+        <span>Müşteri</span>
+        <select formControlName="customerId" [class.invalid]="fieldInvalid('customerId')">
+          <option value="">{{ loadingCustomers ? 'Yükleniyor...' : 'Müşteri seçin' }}</option>
+          <option *ngFor="let customer of customers" [value]="customer.id">
+            {{ customer.fullName }}{{ customer.phone ? ' - ' + customer.phone : '' }}
+          </option>
+        </select>
+        <small *ngIf="fieldInvalid('customerId')">Müşteri zorunludur.</small>
+      </label>
+
+      <label>
+        <span>Araç</span>
+        <select formControlName="vehicleId" [class.invalid]="fieldInvalid('vehicleId')">
+          <option value="">{{ loadingVehicles ? 'Yükleniyor...' : 'Araç seçin' }}</option>
+          <option *ngFor="let vehicle of vehicles" [value]="vehicle.id">
+            {{ vehicle.vehicleDisplay || vehicle.plateOriginal + ' - ' + vehicle.brand + ' ' + vehicle.model }}
+          </option>
+        </select>
+        <small *ngIf="fieldInvalid('vehicleId')">Araç zorunludur.</small>
+      </label>
+    </div>
+
+    <div class="form-section">
+      <h2>Servis Bilgisi</h2>
+
+      <label>
+        <span>Km</span>
+        <input type="number" min="0" step="1" formControlName="vehicleKm" [class.invalid]="fieldInvalid('vehicleKm')" />
+        <small *ngIf="fieldInvalid('vehicleKm')">Km negatif olamaz.</small>
+      </label>
+
+      <label class="wide">
+        <span>Şikayet</span>
+        <textarea rows="5" maxlength="1000" formControlName="complaint" [class.invalid]="fieldInvalid('complaint')"></textarea>
+        <small *ngIf="fieldInvalid('complaint')">Şikayet en fazla 1000 karakter olabilir.</small>
+      </label>
+    </div>
+
+    <footer class="form-actions">
+      <a routerLink="../">Vazgeç</a>
+      <button type="submit" [disabled]="saving">{{ saving ? 'Kaydediliyor...' : 'Servis Emri Oluştur' }}</button>
+    </footer>
+  </form>
+</section>
