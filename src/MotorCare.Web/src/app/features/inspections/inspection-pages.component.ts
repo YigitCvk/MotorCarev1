@@ -78,17 +78,26 @@ export class InspectionsComponent implements OnInit {
     </section>
 
     <form class="form-grid panel" [formGroup]="form" (ngSubmit)="submit()">
-      <label>Müşteri ID<input formControlName="customerId" placeholder="Müşteri seçimi" /></label>
-      <label>Araç ID<input formControlName="vehicleId" placeholder="Araç seçimi" /></label>
-      <label>KM<input formControlName="vehicleKm" type="number" /></label>
-      <label>Sonuç
-        <select formControlName="result">
-          <option value="Passed">Uygun</option>
-          <option value="AttentionRequired">Dikkat Gerekiyor</option>
-          <option value="Critical">Kritik</option>
+      <label>Müşteri adı<input formControlName="customerName" /></label>
+      <label>Telefon<input formControlName="phone" /></label>
+      <label>Plaka<input formControlName="plate" /></label>
+      <label>Marka<input formControlName="brand" /></label>
+      <label>Model<input formControlName="model" /></label>
+      <label>Yıl<input formControlName="year" type="number" /></label>
+      <label>KM<input formControlName="mileage" type="number" /></label>
+      <label>Paket
+        <select formControlName="packageType">
+          <option [ngValue]="1">Standart</option>
+          <option [ngValue]="2">Detaylı</option>
+          <option [ngValue]="3">Premium</option>
+          <option [ngValue]="4">Ekspertiz</option>
         </select>
       </label>
-      <label class="wide">Notlar<textarea formControlName="notes"></textarea></label>
+      <label class="wide">5664 sorgusu<textarea formControlName="query5664"></textarea></label>
+      <label class="wide">KM sorgusu<textarea formControlName="mileageQuery"></textarea></label>
+      <label class="wide">Genel notlar<textarea formControlName="generalNotes"></textarea></label>
+      <label class="wide">Test sürüşü notları<textarea formControlName="testRideNotes"></textarea></label>
+      <label class="wide">Kozmetik notlar<textarea formControlName="cosmeticNotes"></textarea></label>
       <p class="error wide" *ngIf="error">{{ error }}</p>
       <button class="primary-button" [disabled]="form.invalid || loading">Expertiz Oluştur</button>
     </form>
@@ -98,11 +107,21 @@ export class InspectionFormComponent {
   loading = false;
   error = '';
   readonly form = this.fb.nonNullable.group({
-    customerId: ['', Validators.required],
-    vehicleId: ['', Validators.required],
-    vehicleKm: [0, [Validators.required, Validators.min(0)]],
-    result: ['Passed'],
-    notes: ['']
+    customerName: ['', Validators.required],
+    phone: ['', Validators.required],
+    plate: ['', Validators.required],
+    brand: [''],
+    model: [''],
+    year: [new Date().getFullYear()],
+    mileage: [0, [Validators.required, Validators.min(0)]],
+    chassisNumber: [''],
+    engineNumber: [''],
+    query5664: [''],
+    mileageQuery: [''],
+    packageType: [4, Validators.required],
+    generalNotes: [''],
+    testRideNotes: [''],
+    cosmeticNotes: ['']
   });
 
   constructor(private readonly fb: FormBuilder, private readonly api: ApiService, private readonly router: Router) {}
@@ -116,10 +135,17 @@ export class InspectionFormComponent {
     this.loading = true;
     const raw = this.form.getRawValue();
     this.api
-      .post<string>('/api/inspections', { ...raw, vehicleKm: Number(raw.vehicleKm), items: [] })
+      .post<{ id: string }>('/api/inspections', {
+        ...raw,
+        customerId: null,
+        vehicleId: null,
+        year: Number(raw.year) || null,
+        mileage: Number(raw.mileage) || null,
+        packageType: Number(raw.packageType)
+      })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: (id) => void this.router.navigate(['/inspections', id]),
+        next: (response) => void this.router.navigate(['/inspections', response.id]),
         error: (err) => (this.error = friendlyError(err, 'Expertiz oluşturulamadı.'))
       });
   }
@@ -193,7 +219,7 @@ export class InspectionDetailComponent implements OnInit {
   }
 
   complete(): void {
-    this.api.post(`/api/inspections/${this.id}/complete`, {}).subscribe({
+    this.api.put(`/api/inspections/${this.id}/complete`, {}).subscribe({
       next: () => this.load(),
       error: (err) => (this.error = friendlyError(err, 'Expertiz tamamlanamadı.'))
     });
