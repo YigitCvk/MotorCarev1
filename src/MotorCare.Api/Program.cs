@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
@@ -36,6 +37,7 @@ Log.Logger = new LoggerConfiguration()
 
 const string PublicAuthRateLimitPolicy = "PublicAuth";
 const string PublicAuthClientKeyHeader = "X-MotorCare-Client-Key";
+const string FrontendCorsPolicy = "ConfiguredFrontendOrigins";
 
 try
 {
@@ -146,6 +148,21 @@ try
 
         options.OperationFilter<AuthorizeOperationFilter>();
     });
+
+    var corsAllowedOrigins = GetConfiguredCorsOrigins(builder.Configuration);
+    if (corsAllowedOrigins.Length > 0)
+    {
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(FrontendCorsPolicy, policy =>
+            {
+                policy
+                    .WithOrigins(corsAllowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+    }
 
     builder.Services.AddRateLimiter(options =>
     {
@@ -275,6 +292,11 @@ try
 
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseRateLimiter();
+    if (corsAllowedOrigins.Length > 0)
+    {
+        app.UseCors(FrontendCorsPolicy);
+    }
+
     app.UseAuthentication();
     app.UseMiddleware<UserContextLoggingMiddleware>();
 
@@ -338,4 +360,28 @@ static bool IsSafeRateLimitKey(string? value)
     }
 
     return true;
+}
+
+static string[] GetConfiguredCorsOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? [];
+
+    var scalarOrigins = configuration["Cors:AllowedOrigins"]?
+        .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+
+    return configuredOrigins
+        .Concat(scalarOrigins)
+        .Select(origin => origin.Trim().TrimEnd('/'))
+        .Where(IsHttpOrigin)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
+static bool IsHttpOrigin(string origin)
+{
+    return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+           (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+           !string.IsNullOrWhiteSpace(uri.Host);
 }

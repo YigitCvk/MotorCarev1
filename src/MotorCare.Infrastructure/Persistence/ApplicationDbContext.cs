@@ -136,6 +136,7 @@ public class ApplicationDbContext : DbContext
     {
         NormalizeNewOwnedEntries<ServiceOperationItem>();
         NormalizeNewOwnedEntries<ServicePartItem>();
+        NormalizeNewOwnedEntries<ServiceConsumableItem>();
         NormalizeNewOwnedEntries<ServicePayment>();
     }
 

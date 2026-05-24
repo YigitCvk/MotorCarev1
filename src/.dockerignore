@@ -4,6 +4,7 @@
 **/.idea/
 **/.vscode/
 .codex-temp/
+.claude/
 .tmpapi/
 .tmpobj/
 .env
@@ -27,5 +28,9 @@ publish-ssl/
 node_modules/
 **/node_modules/
 **/.angular/
+**/.vite/
 **/dist/
+**/build/
+**/coverage/
+*.lscache
 tests/

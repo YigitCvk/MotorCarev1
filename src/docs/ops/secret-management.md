@@ -16,6 +16,7 @@ Optional secrets when the integration is enabled:
 - registry or CI credentials such as `GITHUB_TOKEN`
 
 Non-secrets such as ports, image tags, issuer names, base URLs, and SEO settings stay in env templates so deploys remain reviewable.
+`CORS_ALLOWED_ORIGINS` is also non-secret; keep it explicit so new frontend origins are reviewed during deploy.
 
 ## Storage Rules
 
@@ -31,6 +32,7 @@ Non-secrets such as ports, image tags, issuer names, base URLs, and SEO settings
 - `.dockerignore` excludes populated env files and dump artifacts from build contexts.
 - Staging defaults to Mailpit for captured email smoke. Turn on real SMTP only after credentials and recipient expectations are reviewed.
 - `Storage__AttachmentsPath` points to a persistent Docker volume path in Compose. Do not point it at a repo checkout path or a temporary container directory.
+- Frontend code is no longer part of this repo. New frontend deployments must set their public origin in `CORS_ALLOWED_ORIGINS` before calling the API from browsers.
 
 ## Rotation Notes
 
@@ -50,3 +52,4 @@ Before a deploy:
 4. Backup location is outside the repo and has restricted permissions.
 5. Attachment storage is mounted as a persistent volume and included in backup drills.
 6. No secret values were copied into docs, chat, screenshots, or release notes.
+7. `CORS_ALLOWED_ORIGINS` contains only reviewed HTTP/HTTPS origins for the active frontend applications.

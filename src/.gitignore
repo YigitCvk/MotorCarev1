@@ -44,6 +44,18 @@ backups/
 
 # Package managers
 node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.angular/
+**/.angular/
+.vite/
+**/.vite/
+coverage/
+**/coverage/
+*.lscache
 
 # OS files
 .DS_Store

@@ -3,6 +3,8 @@ bin/
 obj/
 out/
 publish/
+build/
+**/build/
 *.nupkg
 *.snupkg
 
@@ -40,13 +42,15 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-## Node / Angular
+## Frontend package/build artifacts
 node_modules/
 **/node_modules/
 dist/
 **/dist/
 .angular/
 **/.angular/
+.vite/
+**/.vite/
 
 ## Test results
 TestResults/
@@ -80,19 +84,8 @@ secrets.json
 ## Logs
 logs/
 *.log
+*.tmp
 Serilog*.log
-
-## MAUI / Mobile
-*.apk
-*.aab
-*.ipa
-*.msix
-*.appx
-*.p12
-*.mobileprovision
-/platforms/android/assets/
-/platforms/android/Resources/
-/platforms/ios/Resources/
 
 ## OS
 .DS_Store
@@ -108,8 +101,12 @@ desktop.ini
 .antigravity/cache/
 
 ## Claude Code
-.claude/settings.local.json
+.claude/
 **/settings.local.json
+
+## Codex / agent temp
+.codex-temp/
+**/.codex-temp/
 
 ## Markdown (docs)
 *.md

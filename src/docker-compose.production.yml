@@ -13,8 +13,6 @@ x-app-security: &app-security
     - ALL
   tmpfs:
     - /tmp:rw,noexec,nosuid,size=64m
-    - /var/cache/nginx:rw,noexec,nosuid,size=64m
-    - /var/run:rw,noexec,nosuid,size=8m
   pids_limit: 256
 
 x-tool-security: &tool-security
@@ -72,13 +70,14 @@ services:
       ASPNETCORE_URLS: http://0.0.0.0:8080
       MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
       MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
-      AllowedHosts: ${ALLOWED_HOSTS:-garajpass.com;www.garajpass.com}
+      AllowedHosts: ${ALLOWED_HOSTS:-api.garajpass.com;garajpass.com;www.garajpass.com}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
       Jwt__Issuer: ${JWT_ISSUER:-GarajPass}
       Jwt__Audience: ${JWT_AUDIENCE:-GarajPass.Client}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-60}
       Jwt__RefreshTokenDays: ${JWT_REFRESH_TOKEN_DAYS:-7}
+      Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS:-https://garajpass.com;https://www.garajpass.com}
       Elastic__Uri: ${ELASTIC_URI:-}
       Elastic__Username: ${ELASTIC_USERNAME:-}
       Elastic__Password: ${ELASTIC_PASSWORD:-}
@@ -104,35 +103,6 @@ services:
       - "127.0.0.1:${API_HOST_PORT:-5002}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
-    networks:
-      - motorcare-production
-
-  app:
-    <<: *app-security
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
-    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-web:production}
-    build:
-      context: .
-      dockerfile: MotorCare.Web/Dockerfile
-    pull_policy: always
-    container_name: motorcare-production-app
-    restart: unless-stopped
-    logging: *default-logging
-    mem_limit: ${APP_MEM_LIMIT:-1g}
-    cpus: ${APP_CPUS:-1.50}
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:${APP_HOST_PORT:-5001}:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 10

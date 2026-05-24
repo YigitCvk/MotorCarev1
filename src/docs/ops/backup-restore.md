@@ -94,7 +94,7 @@ Minimum checks after a restore drill or approved live restore:
 3. Dashboard load
 4. Service order list
 5. Appointment list
-6. Inspection print route
+6. Inspection detail/public report API endpoint
 7. Logs checked for unexpected `500`, `password`, `token`, reset code, or SMTP secret exposure
 
 ## Related Secret Handling

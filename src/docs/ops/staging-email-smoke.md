@@ -1,5 +1,7 @@
 # Staging Email Smoke Guide
 
+Backend-only note: this repo no longer contains frontend code. `Email__AppBaseUrl` should point to the separately deployed frontend URL, while these smoke commands call backend API endpoints directly.
+
 ## Genel Bakış
 
 Staging ortamında email tabanlı auth akışlarını (verification code, invite, password reset) doğrulayabilmek için **Mailpit** email capture servisi kullanılır.
