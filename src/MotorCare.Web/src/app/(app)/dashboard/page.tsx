@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import apiClient from '@/core/api/client';
 import { StatCard } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
-import { PageLoading, InlineLoading } from '@/components/ui/loading';
+import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { ServiceOrderStatusBadge } from '@/components/ui/badge';
 import { money, dateText } from '@/shared/utils/format';
@@ -80,7 +80,7 @@ export default function DashboardPage() {
     return (
       <div>
         <PageHeader title="Dashboard" subtitle="Günlük operasyon özeti" />
-        <ErrorState message="Dashboard verileri yüklenemedi." onRetry={() => void refetch()} />
+        <ErrorState message="Dashboard bilgileri şu anda yüklenemedi. Lütfen tekrar deneyin." onRetry={() => void refetch()} />
       </div>
     );
   }
@@ -126,8 +126,6 @@ export default function DashboardPage() {
 
   const recentOrders = safeArr(data?.recentServiceOrders ?? data?.serviceOrders ?? data?.orders);
   const appointments = safeArr(data?.todayAppointmentsList ?? data?.appointments ?? data?.todayAppointments as unknown);
-  const criticalInspections = safeArr(data?.criticalInspections ?? data?.inspections);
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -216,7 +214,7 @@ export default function DashboardPage() {
         <div className="card p-0 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Bugünkü Randevular</h2>
-            <a href="/appointments" className="text-xs text-brand-600 hover:text-brand-700">Tümünü gör →</a>
+            <Link href="/appointments" className="text-xs text-brand-600 hover:text-brand-700">Tümünü gör →</Link>
           </div>
           {appointments.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-slate-400">Bugün randevu yok.</div>

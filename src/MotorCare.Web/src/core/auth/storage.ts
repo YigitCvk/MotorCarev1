@@ -1,5 +1,5 @@
 // src/core/auth/storage.ts
-// Storage adapter pattern — web uses localStorage, future mobile can swap
+// Storage adapter pattern: web uses localStorage, future mobile can swap.
 
 export interface StorageAdapter {
   get(key: string): string | null;

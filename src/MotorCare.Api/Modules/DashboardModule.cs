@@ -2,7 +2,9 @@ using Carter;
 using MediatR;
 using System.Security.Claims;
 using MotorCare.Api.Authorization;
+using MotorCare.Application.Common.Interfaces;
 using MotorCare.Application.Dashboard.Queries.GetDailySummary;
+using MotorCare.Application.Dashboard.Queries.GetMonthlyRevenue;
 using MotorCare.Application.ServiceOrders.Queries.GetOpenBalances;
 using MotorCare.Application.ServiceOrders.Queries.GetPaymentSummary;
 using MotorCare.Infrastructure.Security;
@@ -47,6 +49,17 @@ public sealed class DashboardModule : ICarterModule
         .WithName("GetDailySummary")
         .RequireAuthorization(AuthorizationPolicies.DashboardRead)
         .Produces<DailySummaryDto>()
+        .ProducesProblem(StatusCodes.Status403Forbidden)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/monthly", async (IMediator mediator, CancellationToken ct) =>
+        {
+            var result = await mediator.Send(new GetMonthlyRevenueQuery(), ct);
+            return Results.Ok(result);
+        })
+        .WithName("GetMonthlyRevenue")
+        .RequireAuthorization(AuthorizationPolicies.DashboardRead)
+        .Produces<List<MonthlyRevenueStat>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status401Unauthorized);
 

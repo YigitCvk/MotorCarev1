@@ -6,15 +6,17 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { useAuth } from '@/core/auth/auth.context';
 import { friendlyError } from '@/core/api/errors';
+import { useAuth } from '@/core/auth/auth.context';
+import { authService } from '@/core/auth/auth.service';
 import { loginSchema, type LoginFormData } from '@/core/auth/schemas';
+import { appConfig } from '@/shared/config/env';
 
 function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('from') ?? undefined;
+  const redirectTo = sanitizeRedirect(searchParams.get('from'));
 
   const {
     register,
@@ -31,28 +33,19 @@ function LoginForm() {
         router.push(`/two-factor?ticket=${encodeURIComponent(response.twoFactorToken ?? '')}`);
         return;
       }
-      const landing = (() => {
-        switch (response.role) {
-          case 'Technician': return '/service-orders';
-          case 'Inspector': return '/inspections';
-          default: return '/dashboard';
-        }
-      })();
-      router.replace(redirectTo ?? landing);
+      router.replace(redirectTo ?? authService.roleLanding(response.role));
     } catch (err) {
-      const message = friendlyError(err, 'Giriş yapılamadı. Bilgileri kontrol edip tekrar deneyin.');
-      toast.error(message);
+      toast.error(friendlyError(err, 'Giriş yapılamadı. Bilgileri kontrol edip tekrar deneyin.'));
     }
   }
 
   return (
     <div className="card p-8 w-full max-w-md shadow-2xl">
-      {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
           <span className="text-white font-bold">B</span>
         </div>
-        <span className="font-bold text-xl text-slate-900">BakımSuite</span>
+        <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
       </div>
 
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Giriş Yap</h1>
@@ -122,6 +115,12 @@ function LoginForm() {
       </p>
     </div>
   );
+}
+
+function sanitizeRedirect(value: string | null): string | undefined {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return undefined;
+  if (value.startsWith('/login') || value.startsWith('/register')) return undefined;
+  return value;
 }
 
 export default function LoginPage() {

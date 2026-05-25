@@ -6,9 +6,10 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { authService } from '@/core/auth/auth.service';
 import { friendlyError } from '@/core/api/errors';
+import { authService } from '@/core/auth/auth.service';
 import { registerSchema, type RegisterFormData } from '@/core/auth/schemas';
+import { appConfig } from '@/shared/config/env';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function RegisterPage() {
         ownerEmail: data.email,
         ownerPassword: data.password,
       });
-      toast.success('Hesap oluşturuldu! E-postanızı doğrulayın.');
+      toast.success('Hesap oluşturuldu. E-postanıza gelen kodla doğrulama yapın.');
       router.push(
         `/verify-email?tenant=${encodeURIComponent(data.tenantIdentifier)}&email=${encodeURIComponent(data.email)}`,
       );
@@ -49,7 +50,7 @@ export default function RegisterPage() {
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
           <span className="text-white font-bold">B</span>
         </div>
-        <span className="font-bold text-xl text-slate-900">BakımSuite</span>
+        <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
       </div>
 
       <h1 className="text-2xl font-bold text-slate-900 mb-1">İşletme Oluştur</h1>
@@ -62,7 +63,8 @@ export default function RegisterPage() {
           <label className="label">İşletme Kodu <span className="text-red-500">*</span></label>
           <input
             className="input"
-            placeholder="kucuk-harf-tire-izin-veriliyor"
+            placeholder="ornek-garaj"
+            autoComplete="organization"
             {...register('tenantIdentifier')}
           />
           <p className="text-xs text-slate-400 mt-1">Giriş yaparken kullanılır. Sonradan değiştirilemez.</p>
@@ -88,6 +90,7 @@ export default function RegisterPage() {
           <input
             className="input"
             placeholder="Ahmet Yılmaz"
+            autoComplete="name"
             {...register('fullName')}
           />
           {errors.fullName && (
@@ -101,6 +104,7 @@ export default function RegisterPage() {
             type="email"
             className="input"
             placeholder="ahmet@ornekservis.com"
+            autoComplete="email"
             {...register('email')}
           />
           {errors.email && (
@@ -114,6 +118,7 @@ export default function RegisterPage() {
             type="password"
             className="input"
             placeholder="En az 8 karakter"
+            autoComplete="new-password"
             {...register('password')}
           />
           {errors.password && (
@@ -127,6 +132,7 @@ export default function RegisterPage() {
             type="password"
             className="input"
             placeholder="Şifreyi tekrar girin"
+            autoComplete="new-password"
             {...register('confirmPassword')}
           />
           {errors.confirmPassword && (

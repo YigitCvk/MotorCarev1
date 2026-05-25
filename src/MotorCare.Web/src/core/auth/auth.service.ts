@@ -63,7 +63,7 @@ export const authService = {
   },
 
   async validateInvite(token: string): Promise<{ email: string; fullName?: string; role: string; isValid: boolean }> {
-    const { data } = await apiClient.get(`/api/users/invitations/${token}/validate`);
+    const { data } = await apiClient.get(`/api/users/invitations/${encodeURIComponent(token)}/validate`);
     return data as { email: string; fullName?: string; role: string; isValid: boolean };
   },
 
@@ -76,9 +76,13 @@ export const authService = {
     await apiClient.post('/api/auth/accept-invite', body);
   },
 
-  async verifyTwoFactor(body: { twoFactorToken: string; code: string }): Promise<CurrentUser> {
+  async verifyTwoFactor(body: { ticket: string; code: string }): Promise<CurrentUser> {
     const { data } = await apiClient.post<LoginResponse>('/api/auth/two-factor/verify', body);
     return applyLoginResponse(data);
+  },
+
+  async resendTwoFactorCode(body: { ticket: string }): Promise<void> {
+    await apiClient.post('/api/auth/two-factor/resend', body);
   },
 
   async loadCurrentUser(): Promise<CurrentUser | null> {
@@ -105,6 +109,10 @@ export const authService = {
         return '/service-orders';
       case 'Inspector':
         return '/inspections';
+      case 'Accountant':
+        return '/dashboard';
+      case 'ReadOnly':
+        return '/dashboard';
       default:
         return '/dashboard';
     }

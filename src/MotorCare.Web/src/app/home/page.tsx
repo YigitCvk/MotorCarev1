@@ -1,117 +1,117 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import {
-  ClipboardList, Car, Package, FileSearch, QrCode, Users,
-  CheckCircle, ArrowRight, Star, Shield, Zap, BarChart3,
-  TrendingUp, Wrench, CalendarCheck,
+  ArrowRight,
+  BarChart3,
+  CalendarCheck,
+  Car,
+  CheckCircle,
+  ClipboardList,
+  FileSearch,
+  Package,
+  QrCode,
+  Shield,
+  Star,
+  TrendingUp,
+  Users,
+  Wrench,
+  Zap,
 } from 'lucide-react';
-import { MobileMenuButton } from './MobileMenuButton';
+import { appConfig } from '@/shared/config/env';
 import { FaqItem } from './FaqItem';
+import { MobileMenuButton } from './MobileMenuButton';
 
 export const metadata: Metadata = {
-  title: 'BakımSuite – Servis, Araç ve Expertiz Yönetimi',
-  description: 'Oto servis, araç ve expertiz yönetimini tek panelden yönetin. Müşteri, stok, ödeme ve raporlama hepsi bir arada.',
+  title: 'Oto Servis, Araç ve Expertiz Yönetimi',
+  description: 'Servis emri, müşteri, araç, stok, ödeme ve expertiz süreçlerini tek panelden yönetin.',
+  alternates: { canonical: '/home' },
+  openGraph: {
+    title: `${appConfig.appName} - Oto Servis Yönetim Platformu`,
+    description: 'Oto servis, motosiklet servisleri ve expertiz firmaları için modern işletme paneli.',
+    url: `${appConfig.publicAppUrl}/home`,
+    type: 'website',
+  },
 };
-
-// ---- Section data ----
 
 const FEATURES = [
   {
     icon: ClipboardList,
     title: 'Servis Emri Yönetimi',
-    description: 'İşçilik, parça ve sarf ürünlerini tek ekranda takip edin. Gerçek zamanlı maliyet hesaplama.',
+    description: 'İşçilik, parça ve sarf ürünlerini tek ekranda takip edin. Maliyet ve durum bilgisi anlık güncellenir.',
   },
   {
     icon: Car,
     title: 'Müşteri ve Araç Takibi',
-    description: 'Her müşteri ve aracın tam geçmişi. Plakadan anında servis geçmişine ulaşın.',
+    description: 'Plakadan araç geçmişine, müşteri notlarına ve önceki işlemlere saniyeler içinde ulaşın.',
   },
   {
     icon: Package,
     title: 'Stok ve Parça Yönetimi',
-    description: 'Kritik stok uyarıları, parça kullanım takibi ve otomatik stok güncellemesi.',
+    description: 'Kritik stok uyarıları, parça kullanım takibi ve servis emrine bağlı otomatik düşümler.',
   },
   {
     icon: FileSearch,
     title: 'Dijital Expertiz Raporu',
-    description: 'Araç kontrol listesi, hasar tespiti ve profesyonel PDF raporu oluşturun.',
+    description: 'Kontrol listeleri, fotoğraflar ve paylaşılabilir raporlarla expertiz sürecini standartlaştırın.',
   },
   {
     icon: QrCode,
-    title: 'QR ile Anlık Paylaşım',
-    description: 'Servis kaydı ve expertiz raporunu QR kodu ile müşteriye anında iletin.',
+    title: 'QR ile Paylaşım',
+    description: 'Servis kaydı ve expertiz raporunu müşteriye güvenli bağlantıyla hızlıca iletin.',
   },
   {
     icon: Users,
     title: 'Ekip ve Rol Yönetimi',
-    description: 'Teknisyen, muhasebe ve yönetici rolleriyle erişim kontrolü sağlayın.',
+    description: 'Yönetici, teknisyen, eksper ve muhasebe rolleriyle erişimleri doğru seviyede tutun.',
   },
 ];
 
 const STEPS = [
-  { step: '01', title: 'İşletme Hesabı Oluşturun', description: 'Dakikalar içinde kayıt olun, işletme kodunuzu belirleyin.' },
-  { step: '02', title: 'Müşteri ve Araç Ekleyin', description: 'Müşteri bilgilerini ve araç detaylarını sisteme kaydedin.' },
-  { step: '03', title: 'Servis Emri Açın', description: 'Araç kabulünde servis emri oluşturun, şikayeti kaydedin.' },
-  { step: '04', title: 'İşçilik ve Parça Ekleyin', description: 'Yapılan işleri, kullanılan parçaları ve fiyatları girin.' },
-  { step: '05', title: 'Ödeme Alın ve Paylaşın', description: 'Faturayı onaylayın, QR ile müşteriye dijital kaydı gönderin.' },
-];
-
-const SECTORS = [
-  { title: 'Oto Servisler', desc: 'Bağımsız ve zincir oto servis işletmeleri' },
-  { title: 'Motosiklet Servisleri', desc: 'Motor ve scooter bakım atölyeleri' },
-  { title: 'Ekspertiz Firmaları', desc: 'Araç inspeksiyon ve değerleme şirketleri' },
-  { title: 'Özel Servis Zincirleri', desc: 'Çok şubeli servis ağları' },
+  { step: '01', title: 'İşletme hesabı oluşturun', description: 'Dakikalar içinde kayıt olun ve işletme kodunuzu belirleyin.' },
+  { step: '02', title: 'Müşteri ve araç ekleyin', description: 'Plaka, iletişim ve geçmiş bilgilerini tek profilde toplayın.' },
+  { step: '03', title: 'Servis emri açın', description: 'Araç kabulünde şikayet, işçilik ve parça kalemlerini kaydedin.' },
+  { step: '04', title: 'İşi yönetin', description: 'Teknisyen, stok, ödeme ve durum bilgisini aynı akışta takip edin.' },
+  { step: '05', title: 'Kaydı paylaşın', description: 'Tamamlanan işi QR bağlantısıyla müşteriye dijital olarak gönderin.' },
 ];
 
 const FAQS = [
   {
     q: 'Ücretsiz deneme var mı?',
-    a: "Evet. Pilot dönemde seçili işletmelerle ücretsiz çalışıyoruz. Demo talep formunu doldurun, size ulaşalım.",
+    a: 'Evet. Pilot dönemde seçili işletmelerle ücretsiz çalışıyoruz. İşletme hesabı oluşturduktan sonra ekibimiz sizinle iletişime geçer.',
   },
   {
-    q: 'Verilerim güvende mi?',
-    a: "Tüm veriler Türkiye'de barındırılan sunucularda, şifreli bağlantılar üzerinden saklanır.",
+    q: 'Hangi servis tipleri için uygun?',
+    a: 'Oto servisler, motosiklet servisleri, özel servis zincirleri ve expertiz firmaları için uygundur.',
   },
   {
     q: 'Kaç kullanıcı ekleyebilirim?',
-    a: 'Teknisyen, muhasebeci ve yönetici dahil birden fazla kullanıcı ekleyebilirsiniz. Rol bazlı erişim kontrolü mevcuttur.',
+    a: 'Teknisyen, eksper, muhasebe ve yönetici dahil birden fazla kullanıcı ekleyebilirsiniz. Yetkiler rol bazlı yönetilir.',
   },
   {
-    q: 'Mobil uygulama var mı?',
-    a: 'Web versiyonu mobil uyumludur. Native mobil uygulama geliştirme yol haritamızda yer almaktadır.',
-  },
-  {
-    q: 'Entegrasyon yapılabilir mi?',
-    a: 'REST API sunan açık bir mimarimiz var. Muhasebe ve e-fatura entegrasyonları için bizimle iletişime geçin.',
+    q: 'Mobilde kullanılabilir mi?',
+    a: 'Web uygulaması mobil uyumludur. Ekipler servis kabul, takip ve rapor görüntüleme işlerini telefondan yapabilir.',
   },
 ];
-
-// ---- Dashboard preview stat cards ----
 
 const PREVIEW_STATS = [
-  { icon: TrendingUp, label: 'Toplam Gelir', value: '₺12.450', color: 'text-brand-600', bg: 'bg-brand-50' },
-  { icon: Wrench, label: 'Aktif Servis', value: '8', color: 'text-amber-600', bg: 'bg-amber-50' },
-  { icon: CalendarCheck, label: 'Bugün Tamamlanan', value: '5', color: 'text-green-600', bg: 'bg-green-50' },
+  { icon: TrendingUp, label: 'Aylık Gelir', value: '₺128.450', color: 'text-brand-600', bg: 'bg-brand-50' },
+  { icon: Wrench, label: 'Aktif Servis', value: '18', color: 'text-amber-600', bg: 'bg-amber-50' },
+  { icon: CalendarCheck, label: 'Bugün Tamamlanan', value: '7', color: 'text-green-600', bg: 'bg-green-50' },
 ];
-
-// ---- Page ----
 
 export default function LandingPage() {
   return (
     <div className="bg-white">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-100">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-100">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
+            <Link href="/home" className="flex items-center gap-2" aria-label={`${appConfig.appName} ana sayfa`}>
               <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center">
                 <span className="text-white font-bold text-sm">B</span>
               </div>
-              <span className="font-bold text-lg text-slate-900">BakımSuite</span>
-            </div>
+              <span className="font-bold text-lg text-slate-900">{appConfig.appName}</span>
+            </Link>
 
-            {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-6">
               <a href="#features" className="text-sm text-slate-600 hover:text-slate-900">Özellikler</a>
               <a href="#how-it-works" className="text-sm text-slate-600 hover:text-slate-900">Nasıl Çalışır</a>
@@ -119,7 +119,6 @@ export default function LandingPage() {
               <a href="#faq" className="text-sm text-slate-600 hover:text-slate-900">SSS</a>
             </nav>
 
-            {/* Desktop CTAs + mobile hamburger */}
             <div className="flex items-center gap-2 sm:gap-3">
               <Link href="/login" className="hidden sm:inline text-sm font-medium text-slate-700 hover:text-slate-900">
                 Giriş Yap
@@ -130,309 +129,179 @@ export default function LandingPage() {
               >
                 Ücretsiz Başla
               </Link>
-              {/* Mobile hamburger — client component */}
               <MobileMenuButton />
             </div>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-800 via-brand-700 to-brand-600 text-white">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-32 lg:px-8">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 mb-6 border border-white/20">
-              <Zap size={12} />
-              Pilot program açık — ücretsiz deneyin
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl leading-tight">
-              Servis, araç ve expertizi<br />
-              <span className="text-brand-200">tek panelden</span> yönetin.
-            </h1>
-            <p className="mt-6 text-base sm:text-lg text-brand-100 max-w-2xl leading-relaxed">
-              BakımSuite; müşteri, araç, servis emri, stok, ödeme ve expertiz süreçlerini
-              dijitalleştiren modern servis yönetim platformudur.
-            </p>
-            <div className="mt-8 sm:mt-10 flex flex-col xs:flex-row sm:flex-row gap-3 sm:gap-4">
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 sm:px-6 sm:py-3.5 text-sm sm:text-base font-semibold text-brand-700 shadow-lg hover:bg-brand-50 transition-colors"
-              >
-                Ücretsiz Demo İste
-                <ArrowRight size={18} />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-5 py-3 sm:px-6 sm:py-3.5 text-sm sm:text-base font-semibold text-white hover:bg-white/10 transition-colors"
-              >
-                Hesabım Var, Giriş Yap
-              </Link>
-            </div>
-            <div className="mt-8 sm:mt-10 flex flex-wrap gap-4 sm:gap-6 text-xs sm:text-sm text-brand-200">
-              <div className="flex items-center gap-1.5"><CheckCircle size={14} /> Kurulum gerektirmez</div>
-              <div className="flex items-center gap-1.5"><CheckCircle size={14} /> Kredi kartı gerekmez</div>
-              <div className="flex items-center gap-1.5"><CheckCircle size={14} /> 5 dakikada hazır</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Dashboard Preview */}
-      <section className="py-16 sm:py-20 bg-slate-50">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Paneli önizleyin</h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-500">
-              Tüm servis verileriniz tek ekranda, gerçek zamanlı olarak.
-            </p>
-          </div>
-
-          {/* Browser-frame widget */}
-          <div className="rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-            {/* Browser chrome */}
-            <div className="bg-slate-100 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-red-400" />
-                <div className="h-3 w-3 rounded-full bg-amber-400" />
-                <div className="h-3 w-3 rounded-full bg-green-400" />
-              </div>
-              <div className="flex-1 mx-3 sm:mx-6">
-                <div className="bg-white rounded-md px-3 py-1 text-xs text-slate-400 text-center truncate border border-slate-200">
-                  app.bakimsuite.com/dashboard
+      <main>
+        <section className="bg-slate-950 text-white">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[1fr_480px] lg:items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-brand-100 mb-6 border border-white/15">
+                  <Zap size={12} />
+                  Pilot program açık, kredi kartı gerekmez
                 </div>
-              </div>
-              <div className="w-12 sm:w-16" />
-            </div>
-
-            {/* Dashboard body */}
-            <div className="bg-white px-4 sm:px-6 py-6 sm:py-8">
-              {/* Top bar */}
-              <div className="flex flex-col xs:flex-row sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">Genel Bakış</h3>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Bugün, 25 Mayıs 2026</p>
+                <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl leading-tight">
+                  Servis, araç ve expertiz yönetimini tek panelde toplayın.
+                </h1>
+                <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
+                  {appConfig.appName}; servis emri, müşteri, araç, stok, ödeme ve expertiz süreçlerini
+                  sahadaki ekiplerin hızlı kullanabileceği modern bir panele taşır.
+                </p>
+                <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm sm:text-base font-semibold text-slate-950 shadow-lg hover:bg-slate-100 transition-colors"
+                  >
+                    Ücretsiz Demo İste
+                    <ArrowRight size={18} />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-5 py-3 text-sm sm:text-base font-semibold text-white hover:bg-white/10 transition-colors"
+                  >
+                    Hesabım Var
+                  </Link>
                 </div>
-                <div className="flex items-center gap-2 bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
-                  <span className="h-1.5 w-1.5 rounded-full bg-green-300 inline-block" />
-                  Çevrimiçi
+                <div className="mt-8 flex flex-wrap gap-4 text-xs sm:text-sm text-slate-300">
+                  <div className="flex items-center gap-1.5"><CheckCircle size={14} /> Kurulum gerektirmez</div>
+                  <div className="flex items-center gap-1.5"><CheckCircle size={14} /> Rol bazlı erişim</div>
+                  <div className="flex items-center gap-1.5"><CheckCircle size={14} /> Mobil uyumlu</div>
                 </div>
               </div>
 
-              {/* Stat cards */}
-              <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {PREVIEW_STATS.map(({ icon: Icon, label, value, color, bg }) => (
-                  <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-4 sm:p-5">
-                    <div className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg ${bg} flex items-center justify-center mb-3`}>
-                      <Icon size={16} className={color} />
-                    </div>
-                    <p className="text-xs text-slate-500 mb-1">{label}</p>
-                    <p className={`text-xl sm:text-2xl font-bold ${color}`}>{value}</p>
+              <div className="rounded-2xl border border-white/10 bg-white text-slate-900 shadow-2xl overflow-hidden">
+                <div className="bg-slate-100 border-b border-slate-200 px-4 py-3 flex items-center gap-2">
+                  <div className="flex gap-1.5" aria-hidden>
+                    <div className="h-3 w-3 rounded-full bg-red-400" />
+                    <div className="h-3 w-3 rounded-full bg-amber-400" />
+                    <div className="h-3 w-3 rounded-full bg-green-400" />
                   </div>
-                ))}
-              </div>
-
-              {/* Mock recent orders table */}
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
-                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Son Servis Emirleri</span>
+                  <div className="flex-1 mx-3 rounded-md border border-slate-200 bg-white px-3 py-1 text-center text-xs text-slate-400 truncate">
+                    app.bakimsuite.com/dashboard
+                  </div>
                 </div>
-                <div className="divide-y divide-slate-50">
-                  {[
-                    { plate: '34 ABC 123', owner: 'Ahmet Y.', status: 'Devam Ediyor', statusColor: 'bg-amber-100 text-amber-700' },
-                    { plate: '06 XYZ 456', owner: 'Mehmet K.', status: 'Tamamlandı', statusColor: 'bg-green-100 text-green-700' },
-                    { plate: '35 DEF 789', owner: 'Fatma S.', status: 'Beklemede', statusColor: 'bg-slate-100 text-slate-600' },
-                  ].map(({ plate, owner, status, statusColor }) => (
-                    <div key={plate} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-7 w-7 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
-                          <Car size={13} className="text-brand-600" />
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-3 mb-6">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">Genel Bakış</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Canlı servis operasyonu</p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Çevrimiçi
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    {PREVIEW_STATS.map(({ icon: Icon, label, value, color, bg }) => (
+                      <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                        <div className={`h-8 w-8 rounded-lg ${bg} flex items-center justify-center mb-3`}>
+                          <Icon size={16} className={color} />
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-semibold text-slate-800 truncate">{plate}</p>
-                          <p className="text-xs text-slate-400 truncate">{owner}</p>
-                        </div>
+                        <p className="text-xs text-slate-500 mb-1">{label}</p>
+                        <p className={`text-xl font-bold ${color}`}>{value}</p>
                       </div>
-                      <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
-                        {status}
-                      </span>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100">
+                      <span className="text-xs font-semibold text-slate-600 uppercase">Son Servis Emirleri</span>
                     </div>
-                  ))}
+                    {[
+                      { plate: '34 ABC 123', owner: 'Ahmet Y.', status: 'Devam Ediyor', style: 'bg-amber-100 text-amber-700' },
+                      { plate: '06 XYZ 456', owner: 'Mehmet K.', status: 'Tamamlandı', style: 'bg-green-100 text-green-700' },
+                      { plate: '35 DEF 789', owner: 'Fatma S.', status: 'Beklemede', style: 'bg-slate-100 text-slate-600' },
+                    ].map((order) => (
+                      <div key={order.plate} className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-50 last:border-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-7 w-7 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
+                            <Car size={13} className="text-brand-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{order.plate}</p>
+                            <p className="text-xs text-slate-400 truncate">{order.owner}</p>
+                          </div>
+                        </div>
+                        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${order.style}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Problem/Solution */}
-      <section className="py-16 sm:py-20 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-start lg:items-center">
-            <div>
-              <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Sorun</p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">Dağınık süreçler, kaçırılan gelir</h2>
-              <div className="space-y-4">
-                {[
-                  'Kağıt tabanlı servis kayıtları kaybolabiliyor',
-                  'Araç geçmişi bulunması zaman alıyor',
-                  'Manuel stok takibinde hatalar oluyor',
-                  'Ödeme ve tahsilat takibi karışıyor',
-                  'Müşteri iletişimi telefon notlarında kalıyor',
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <div className="mt-0.5 h-5 w-5 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                      <span className="text-red-600 text-xs font-bold">✕</span>
+        <section id="features" className="py-16 sm:py-20 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mb-10 sm:mb-12">
+              <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Özellikler</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Servis akışının tüm kritik parçaları</h2>
+              <p className="mt-4 text-base text-slate-600">
+                Dağınık evrak, ayrı tablolar ve manuel takip yerine tek bir operasyon ekranı kullanın.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+              {FEATURES.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 hover:border-brand-300 hover:shadow-md transition-all">
+                  <div className="h-10 w-10 rounded-lg bg-brand-50 flex items-center justify-center mb-4">
+                    <Icon size={20} className="text-brand-600" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 mb-2">{title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="py-16 sm:py-20 bg-slate-50">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[360px_1fr]">
+              <div>
+                <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Nasıl Çalışır</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">5 adımda dijital servis operasyonu</h2>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {STEPS.map(({ step, title, description }) => (
+                  <div key={step} className="rounded-xl border border-slate-200 bg-white p-5">
+                    <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+                      {step}
                     </div>
-                    <span className="text-sm sm:text-base text-slate-600">{item}</span>
+                    <h3 className="font-semibold text-slate-900 mb-1">{title}</h3>
+                    <p className="text-sm text-slate-600">{description}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Çözüm</p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6">Her şey tek panelde, gerçek zamanlı</h2>
-              <div className="space-y-4">
-                {[
-                  'Dijital servis emri, plakadan saniyede açılır',
-                  'Araç ve müşteri geçmişi anında erişilebilir',
-                  'Stok otomatik güncellenir, kritik uyarı alırsınız',
-                  'Ödeme takibi ve kalan borç her an görünür',
-                  'QR linkle müşteriye otomatik bildirim yapılır',
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <div className="mt-0.5 h-5 w-5 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                      <CheckCircle size={12} className="text-green-600" />
-                    </div>
-                    <span className="text-sm sm:text-base text-slate-600">{item}</span>
-                  </div>
-                ))}
-              </div>
+          </div>
+        </section>
+
+        <section id="pricing" className="py-16 sm:py-20 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-xl text-center">
+              <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Fiyatlandırma</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Pilot dönemde ücretsiz</h2>
+              <p className="mt-4 text-base text-slate-600">
+                Seçili işletmelerle pilot program yürütüyoruz. Hesap oluşturun, demo ve kurulum için size ulaşalım.
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-16 sm:py-20 bg-slate-50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Özellikler</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 sm:text-4xl">
-              İhtiyacınız olan her şey burada
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
-              Karmaşık kurulum yok. Modüler yapısıyla ihtiyaçlarınıza göre büyüyen bir platform.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
-            {FEATURES.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="group rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 hover:border-brand-300 hover:shadow-md transition-all">
-                <div className="h-10 w-10 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:bg-brand-100 transition-colors">
-                  <Icon size={20} className="text-brand-600" />
-                </div>
-                <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-2">{title}</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-16 sm:py-20 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Nasıl Çalışır</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 sm:text-4xl">5 adımda dijital servise geçin</h2>
-          </div>
-          <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6">
-            {STEPS.map(({ step, title, description }) => (
-              <div key={step} className="flex gap-4 sm:gap-6 items-start">
-                <div className="shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md">
-                  {step}
-                </div>
-                <div className="pt-1">
-                  <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-1">{title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-600">{description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-16 sm:py-20 bg-brand-700">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center text-white">
-            {[
-              { value: '10+', label: 'Pilot işletme' },
-              { value: '500+', label: 'Servis kaydı' },
-              { value: '%60', label: 'Daha az kağıt işi' },
-              { value: '5dk', label: 'Kurulum süresi' },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <div className="text-3xl sm:text-4xl font-bold text-white">{value}</div>
-                <div className="mt-1 text-brand-200 text-xs sm:text-sm">{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Sectors */}
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Kimler Kullanıyor?</h2>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {SECTORS.map(({ title, desc }) => (
-              <div key={title} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 text-center hover:border-brand-300 transition-colors">
-                <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-1 sm:mb-2">{title}</h3>
-                <p className="text-xs sm:text-sm text-slate-500">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-16 sm:py-20 bg-slate-50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-12">
-            <p className="text-sm font-semibold text-brand-600 uppercase tracking-wide mb-3">Fiyatlandırma</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Pilot dönemde ücretsiz</h2>
-            <p className="mt-4 text-base sm:text-lg text-slate-600">
-              Şu anda seçili işletmelerle pilot program yürütüyoruz.
-              <br />Demo talep edin, sizinle iletişime geçelim.
-            </p>
-          </div>
-          <div className="max-w-md mx-auto">
-            <div className="rounded-2xl border-2 border-brand-600 bg-white p-6 sm:p-8 text-center shadow-xl">
+            <div className="max-w-md mx-auto mt-10 rounded-2xl border-2 border-brand-600 bg-white p-6 sm:p-8 text-center shadow-xl">
               <div className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 mb-4">
                 <Star size={12} />
                 Pilot Program
               </div>
               <div className="text-4xl sm:text-5xl font-bold text-slate-900 mb-2">Ücretsiz</div>
-              <p className="text-slate-500 mb-6 sm:mb-8 text-sm sm:text-base">Pilot süresince tüm özellikler dahil</p>
-              <ul className="text-left space-y-3 mb-6 sm:mb-8">
-                {[
-                  'Sınırsız servis kaydı',
-                  'Stok ve parça yönetimi',
-                  'Expertiz modülü',
-                  'QR paylaşım',
-                  'Öncelikli destek',
-                  'Kurulum ve eğitim yardımı',
-                ].map((item) => (
+              <p className="text-slate-500 mb-6 text-sm sm:text-base">Pilot süresince tüm ana modüller dahil</p>
+              <ul className="text-left space-y-3 mb-6">
+                {['Servis emri ve araç yönetimi', 'Stok ve parça takibi', 'Expertiz raporu', 'QR paylaşım', 'Rol bazlı ekip yönetimi'].map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-slate-700">
                     <CheckCircle size={16} className="text-brand-600 shrink-0" />
                     {item}
@@ -441,96 +310,93 @@ export default function LandingPage() {
               </ul>
               <Link
                 href="/register"
-                className="block w-full rounded-xl bg-brand-600 py-3 sm:py-3.5 text-center text-sm sm:text-base font-semibold text-white hover:bg-brand-700 transition-colors"
+                className="block w-full rounded-xl bg-brand-600 py-3 text-center text-sm sm:text-base font-semibold text-white hover:bg-brand-700 transition-colors"
               >
                 Demo Talep Et
               </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-16 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Sık Sorulan Sorular</h2>
+        <section id="faq" className="py-16 sm:py-20 bg-slate-50">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Sık Sorulan Sorular</h2>
+            </div>
+            <div className="space-y-3">
+              {FAQS.map(({ q, a }) => (
+                <FaqItem key={q} q={q} a={a} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            {FAQS.map(({ q, a }) => (
-              <FaqItem key={q} q={q} a={a} />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA */}
-      <section className="py-16 sm:py-20 bg-gradient-to-r from-brand-700 to-brand-600">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center text-white">
-          <h2 className="text-2xl sm:text-3xl font-bold sm:text-4xl mb-4">Servisinizi dijitalleştirmeye hazır mısınız?</h2>
-          <p className="text-brand-200 mb-6 sm:mb-8 text-base sm:text-lg">
-            Dakikalar içinde başlayın. Pilot program kapsamında ücretsiz.
-          </p>
-          <div className="flex flex-col xs:flex-row sm:flex-row gap-3 sm:gap-4 justify-center">
-            <Link
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-brand-700 hover:bg-brand-50 transition-colors"
-            >
-              Hemen Başla
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/30 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              Hesabım Var
-            </Link>
+        <section className="py-16 sm:py-20 bg-slate-950">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Servisinizi dijitalleştirmeye hazır mısınız?</h2>
+            <p className="text-slate-300 mb-8 text-base sm:text-lg">
+              Dakikalar içinde başlayın. Pilot program kapsamında ücretsiz demo alın.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm sm:text-base font-semibold text-slate-950 hover:bg-slate-100 transition-colors"
+              >
+                Hemen Başla
+                <ArrowRight size={18} />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-6 py-3 text-sm sm:text-base font-semibold text-white hover:bg-white/10 transition-colors"
+              >
+                Hesabım Var
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 py-10 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            <div className="col-span-2 sm:col-span-1">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
+            <div className="col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-7 w-7 rounded-lg bg-brand-600 flex items-center justify-center">
                   <span className="text-white font-bold text-xs">B</span>
                 </div>
-                <span className="font-semibold text-white">BakımSuite</span>
+                <span className="font-semibold text-white">{appConfig.appName}</span>
               </div>
-              <p className="text-xs sm:text-sm leading-relaxed">Modern servis yönetim platformu.</p>
+              <p className="text-sm leading-relaxed">Modern servis yönetim platformu.</p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-3 text-xs sm:text-sm">Ürün</h4>
-              <ul className="space-y-2 text-xs sm:text-sm">
+              <h3 className="text-white font-semibold mb-3 text-sm">Ürün</h3>
+              <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="hover:text-white transition-colors">Özellikler</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Fiyatlar</a></li>
                 <li><a href="#faq" className="hover:text-white transition-colors">SSS</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-3 text-xs sm:text-sm">Hesap</h4>
-              <ul className="space-y-2 text-xs sm:text-sm">
+              <h3 className="text-white font-semibold mb-3 text-sm">Hesap</h3>
+              <ul className="space-y-2 text-sm">
                 <li><Link href="/login" className="hover:text-white transition-colors">Giriş Yap</Link></li>
                 <li><Link href="/register" className="hover:text-white transition-colors">Kayıt Ol</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-3 text-xs sm:text-sm">Güvenlik</h4>
-              <div className="flex items-center gap-2 text-xs sm:text-sm mb-1">
+              <h3 className="text-white font-semibold mb-3 text-sm">Güvenlik</h3>
+              <div className="flex items-center gap-2 text-sm mb-2">
                 <Shield size={14} />
-                <span>SSL Şifreli</span>
+                <span>SSL şifreli bağlantı</span>
               </div>
-              <div className="flex items-center gap-2 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 text-sm">
                 <BarChart3 size={14} />
-                <span>Türkiye Sunucuları</span>
+                <span>Rol bazlı erişim</span>
               </div>
             </div>
           </div>
-          <div className="border-t border-slate-800 pt-5 sm:pt-6 text-center text-xs text-slate-500">
-            © {new Date().getFullYear()} BakımSuite. Tüm hakları saklıdır.
+          <div className="border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
+            © {new Date().getFullYear()} {appConfig.appName}. Tüm hakları saklıdır.
           </div>
         </div>
       </footer>

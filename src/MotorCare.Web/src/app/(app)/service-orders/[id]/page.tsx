@@ -18,6 +18,7 @@ import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { friendlyError } from '@/core/api/errors';
 import { money, dateText, dateTimeText, todayInputValue } from '@/shared/utils/format';
+import type { PagedResult } from '@/shared/types/api.types';
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,30 @@ interface ServicePaymentDto {
   amount: number;
   method: string;
   paymentDate: string;
+}
+
+interface ServiceCatalogOptionDto {
+  id: string;
+  name: string;
+  categoryText?: string | null;
+  defaultDurationMinutes?: number;
+  price: number;
+  defaultPrice?: number;
+  currency?: string;
+  isActive: boolean;
+}
+
+interface InventoryOptionDto {
+  id: string;
+  name: string;
+  sku: string | null;
+  barcode: string | null;
+  category: string | null;
+  brand: string | null;
+  unit: string;
+  unitPrice: number;
+  stockQuantity: number;
+  isActive: boolean;
 }
 
 interface ServiceOrderDto {
@@ -146,6 +171,7 @@ type TabKey = 'operations' | 'parts' | 'consumables' | 'payments';
 // ─── Add-form state shapes ────────────────────────────────────────────────────
 
 interface OperationForm {
+  serviceCatalogItemId: string;
   description: string;
   quantity: string;
   unitPrice: string;
@@ -154,6 +180,7 @@ interface OperationForm {
 }
 
 interface PartForm {
+  inventoryItemId: string;
   partName: string;
   partNumber: string;
   unitPrice: string;
@@ -177,6 +204,7 @@ interface PaymentForm {
 }
 
 const defaultOperationForm = (): OperationForm => ({
+  serviceCatalogItemId: '',
   description: '',
   quantity: '1',
   unitPrice: '',
@@ -185,6 +213,7 @@ const defaultOperationForm = (): OperationForm => ({
 });
 
 const defaultPartForm = (): PartForm => ({
+  inventoryItemId: '',
   partName: '',
   partNumber: '',
   unitPrice: '',
@@ -256,6 +285,28 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
     },
   });
 
+  const { data: serviceCatalogOptions } = useQuery<PagedResult<ServiceCatalogOptionDto>>({
+    queryKey: ['service-catalog-options'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PagedResult<ServiceCatalogOptionDto>>('/api/services', {
+        params: { pageSize: 100, isActive: true },
+      });
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: inventoryOptions } = useQuery<PagedResult<InventoryOptionDto>>({
+    queryKey: ['inventory-options'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<PagedResult<InventoryOptionDto>>('/api/inventory', {
+        params: { pageSize: 100, isActive: true },
+      });
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (data) {
       setStatusValue(data.status);
@@ -266,9 +317,33 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
   function invalidate(): void {
     void qc.invalidateQueries({ queryKey: ['service-order', id] });
     void qc.invalidateQueries({ queryKey: ['service-orders'] });
+    void qc.invalidateQueries({ queryKey: ['inventory-options'] });
   }
 
   // ── Mutations ──────────────────────────────────────────────────────────────
+
+  function handleCatalogSelection(serviceCatalogItemId: string): void {
+    const selected = serviceCatalogOptions?.items.find((item) => item.id === serviceCatalogItemId);
+
+    setOpForm((previous) => ({
+      ...previous,
+      serviceCatalogItemId,
+      description: selected ? selected.name : previous.description,
+      unitPrice: selected ? String(selected.price ?? selected.defaultPrice ?? 0) : previous.unitPrice,
+    }));
+  }
+
+  function handleInventorySelection(inventoryItemId: string): void {
+    const selected = inventoryOptions?.items.find((item) => item.id === inventoryItemId);
+
+    setPartForm((previous) => ({
+      ...previous,
+      inventoryItemId,
+      partName: selected ? selected.name : previous.partName,
+      partNumber: selected ? selected.sku ?? selected.barcode ?? '' : previous.partNumber,
+      unitPrice: selected ? String(selected.unitPrice ?? 0) : previous.unitPrice,
+    }));
+  }
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ status, note }: { status: string; note: string | null }) => {
@@ -338,6 +413,7 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
       partNumber: string | null;
       unitPrice: number;
       quantity: number;
+      inventoryItemId: string | null;
       discount: number;
       notes: string | null;
     }) => {
@@ -424,15 +500,18 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
     if (!opForm.description.trim()) { setOpError('Açıklama zorunludur.'); return; }
     const qty = Number(opForm.quantity);
     const price = Number(opForm.unitPrice);
+    const discount = Number(opForm.discount) || 0;
     if (isNaN(qty) || qty <= 0) { setOpError('Geçerli bir miktar girin.'); return; }
     if (isNaN(price) || price < 0) { setOpError('Geçerli bir birim fiyat girin.'); return; }
+    if (discount < 0) { setOpError('İndirim negatif olamaz.'); return; }
+    if (discount > qty * price) { setOpError('İndirim satır toplamından büyük olamaz.'); return; }
     addOperationMutation.mutate({
       description: opForm.description.trim(),
       quantity: qty,
       unitPrice: price,
-      discount: Number(opForm.discount) || 0,
+      discount,
       notes: opForm.notes.trim() || null,
-      serviceCatalogItemId: null,
+      serviceCatalogItemId: opForm.serviceCatalogItemId || null,
     });
   }
 
@@ -442,14 +521,18 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
     if (!partForm.partName.trim()) { setPartError('Parça adı zorunludur.'); return; }
     const qty = Number(partForm.quantity);
     const price = Number(partForm.unitPrice);
-    if (isNaN(qty) || qty <= 0) { setPartError('Geçerli bir miktar girin.'); return; }
-    if (isNaN(price) || price < 0) { setPartError('Geçerli bir birim fiyat girin.'); return; }
+    const discount = Number(partForm.discount) || 0;
+    if (isNaN(qty) || qty <= 0 || !Number.isInteger(qty)) { setPartError('Geçerli bir tam sayı miktar girin.'); return; }
+    if (isNaN(price) || price <= 0) { setPartError('Geçerli bir birim fiyat girin.'); return; }
+    if (discount < 0) { setPartError('İndirim negatif olamaz.'); return; }
+    if (discount > qty * price) { setPartError('İndirim satır toplamından büyük olamaz.'); return; }
     addPartMutation.mutate({
       partName: partForm.partName.trim(),
       partNumber: partForm.partNumber.trim() || null,
       unitPrice: price,
       quantity: qty,
-      discount: Number(partForm.discount) || 0,
+      inventoryItemId: partForm.inventoryItemId || null,
+      discount,
       notes: partForm.notes.trim() || null,
     });
   }
@@ -461,7 +544,7 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
     if (!consumableForm.productName.trim()) { setConsumableError('Ürün adı zorunludur.'); return; }
     const qty = Number(consumableForm.quantity);
     const price = Number(consumableForm.unitPrice);
-    if (isNaN(qty) || qty <= 0) { setConsumableError('Geçerli bir miktar girin.'); return; }
+    if (isNaN(qty) || qty <= 0 || !Number.isInteger(qty)) { setConsumableError('Geçerli bir tam sayı miktar girin.'); return; }
     if (isNaN(price) || price < 0) { setConsumableError('Geçerli bir birim fiyat girin.'); return; }
     addConsumableMutation.mutate({
       category: consumableForm.category.trim(),
@@ -740,6 +823,21 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
               {opError && <p className="error-text mb-2">{opError}</p>}
               <form onSubmit={handleAddOperation} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="form-group col-span-2 sm:col-span-4">
+                  <label className="label">Katalog Hizmeti</label>
+                  <select
+                    className="input"
+                    value={opForm.serviceCatalogItemId}
+                    onChange={(e) => handleCatalogSelection(e.target.value)}
+                  >
+                    <option value="">Manuel işlem</option>
+                    {serviceCatalogOptions?.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} - {money(item.price ?? item.defaultPrice ?? 0)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group col-span-2 sm:col-span-4">
                   <label className="label">Açıklama *</label>
                   <input
                     className="input"
@@ -865,6 +963,21 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
               {partError && <p className="error-text mb-2">{partError}</p>}
               <form onSubmit={handleAddPart} className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="form-group col-span-2 sm:col-span-3">
+                  <label className="label">Stok Kalemi</label>
+                  <select
+                    className="input"
+                    value={partForm.inventoryItemId}
+                    onChange={(e) => handleInventorySelection(e.target.value)}
+                  >
+                    <option value="">Manuel parça</option>
+                    {inventoryOptions?.items.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} - {money(item.unitPrice)} - Stok: {item.stockQuantity} {item.unit}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group col-span-2 sm:col-span-3">
                   <label className="label">Parça Adı *</label>
                   <input
                     className="input"
@@ -888,6 +1001,7 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
                     type="number"
                     className="input"
                     min={1}
+                    step={1}
                     value={partForm.quantity}
                     onChange={(e) => setPartForm((p) => ({ ...p, quantity: e.target.value }))}
                   />
@@ -1033,7 +1147,7 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
                     type="number"
                     className="input"
                     min={1}
-                    step="0.01"
+                    step={1}
                     value={consumableForm.quantity}
                     onChange={(e) => setConsumableForm((p) => ({ ...p, quantity: e.target.value }))}
                   />

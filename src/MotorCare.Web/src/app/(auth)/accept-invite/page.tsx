@@ -2,12 +2,14 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { authService } from '@/core/auth/auth.service';
 import { friendlyError } from '@/core/api/errors';
+import { authService } from '@/core/auth/auth.service';
 import { acceptInviteSchema, type AcceptInviteFormData } from '@/core/auth/schemas';
+import { appConfig } from '@/shared/config/env';
 
 function AcceptInviteInner() {
   const router = useRouter();
@@ -30,23 +32,36 @@ function AcceptInviteInner() {
   });
 
   useEffect(() => {
-    if (!token) { setTokenError('Geçersiz davet bağlantısı.'); setValidating(false); return; }
+    if (!token) {
+      setTokenError('Geçersiz davet bağlantısı.');
+      setValidating(false);
+      return;
+    }
+
     authService.validateInvite(token)
       .then((info) => {
-        if (!info.isValid) { setTokenError('Bu davet bağlantısı geçersiz veya süresi dolmuş.'); return; }
+        if (!info.isValid) {
+          setTokenError('Bu davet bağlantısı geçersiz veya süresi dolmuş.');
+          return;
+        }
         setInviteInfo(info);
         if (info.fullName) setValue('fullName', info.fullName);
       })
-      .catch(() => setTokenError('Davet bağlantısı doğrulanamadı.'))
+      .catch((err) => setTokenError(friendlyError(err, 'Davet bağlantısı doğrulanamadı.')))
       .finally(() => setValidating(false));
   }, [token, setValue]);
 
   async function onSubmit(data: AcceptInviteFormData) {
     setError('');
     try {
-      await authService.acceptInvite({ token, fullName: data.fullName, password: data.password, confirmPassword: data.confirmPassword });
+      await authService.acceptInvite({
+        token,
+        fullName: data.fullName,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+      });
       setSuccess(true);
-      toast.success('Hesabınız oluşturuldu! Giriş yapabilirsiniz.');
+      toast.success('Hesabınız oluşturuldu. Giriş yapabilirsiniz.');
     } catch (err) {
       const message = friendlyError(err, 'Davet kabul edilemedi. Lütfen tekrar deneyin.');
       setError(message);
@@ -65,9 +80,10 @@ function AcceptInviteInner() {
   if (tokenError) {
     return (
       <div className="card p-8 w-full max-w-md shadow-2xl text-center">
-        <div className="text-4xl mb-4">❌</div>
+        <div className="text-4xl mb-4" aria-hidden>!</div>
         <h2 className="text-lg font-bold text-slate-900 mb-2">Geçersiz Davet</h2>
-        <p className="text-sm text-slate-600">{tokenError}</p>
+        <p className="text-sm text-slate-600 mb-6">{tokenError}</p>
+        <Link href="/login" className="text-sm text-brand-600 hover:text-brand-700">Giriş sayfasına dön</Link>
       </div>
     );
   }
@@ -75,10 +91,10 @@ function AcceptInviteInner() {
   if (success) {
     return (
       <div className="card p-8 w-full max-w-md shadow-2xl text-center">
-        <div className="text-4xl mb-4">✅</div>
+        <div className="text-4xl mb-4" aria-hidden>✓</div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Hesabınız Oluşturuldu</h2>
         <p className="text-sm text-slate-600 mb-6">Giriş yaparak başlayabilirsiniz.</p>
-        <button onClick={() => router.push('/login')} className="btn-primary w-full">Giriş Yap</button>
+        <button type="button" onClick={() => router.push('/login')} className="btn-primary w-full">Giriş Yap</button>
       </div>
     );
   }
@@ -89,7 +105,7 @@ function AcceptInviteInner() {
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
           <span className="text-white font-bold">B</span>
         </div>
-        <span className="font-bold text-xl text-slate-900">BakımSuite</span>
+        <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
       </div>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Daveti Kabul Et</h1>
       {inviteInfo && (
@@ -106,6 +122,7 @@ function AcceptInviteInner() {
           <input
             className="input"
             placeholder="Adınız Soyadınız"
+            autoComplete="name"
             {...register('fullName')}
           />
           {errors.fullName && (
@@ -118,6 +135,7 @@ function AcceptInviteInner() {
             type="password"
             className="input"
             placeholder="En az 8 karakter"
+            autoComplete="new-password"
             {...register('password')}
           />
           {errors.password && (
@@ -130,6 +148,7 @@ function AcceptInviteInner() {
             type="password"
             className="input"
             placeholder="Şifrenizi tekrar girin"
+            autoComplete="new-password"
             {...register('confirmPassword')}
           />
           {errors.confirmPassword && (
@@ -137,7 +156,7 @@ function AcceptInviteInner() {
           )}
         </div>
         <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-2.5">
-          {isSubmitting ? 'Oluşturuluyor...' : 'Hesabı Oluştur ve Giriş Yap'}
+          {isSubmitting ? 'Oluşturuluyor...' : 'Hesabı Oluştur'}
         </button>
       </form>
     </div>

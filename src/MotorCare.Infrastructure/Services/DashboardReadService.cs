@@ -134,6 +134,36 @@ public sealed class DashboardReadService : IDashboardReadService
             recentServiceOrders);
     }
 
+    public async Task<List<MonthlyRevenueStat>> GetMonthlyRevenueAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var cutoff = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero).AddMonths(-11);
+
+        var rows = await _context.ServiceOrders
+            .AsNoTracking()
+            .Where(o => o.TenantId == tenantId && o.OpenedAt >= cutoff)
+            .Select(o => new
+            {
+                Year = o.OpenedAt.Year,
+                Month = o.OpenedAt.Month,
+                GrandTotal = o.GrandTotal,
+            })
+            .ToListAsync(cancellationToken);
+
+        var stats = rows
+            .GroupBy(o => new { o.Year, o.Month })
+            .Select(g => new MonthlyRevenueStat(
+                Month: $"{g.Key.Year:D4}-{g.Key.Month:D2}",
+                Revenue: g.Sum(o => o.GrandTotal),
+                OrderCount: g.Count()))
+            .OrderBy(s => s.Month)
+            .ToList();
+
+        return stats;
+    }
+
     private static (DateTimeOffset DayStart, DateTimeOffset DayEnd, DateTimeOffset MonthStart, DateTimeOffset MonthEnd) GetIstanbulRanges()
     {
         var zone = ResolveIstanbulTimeZone();

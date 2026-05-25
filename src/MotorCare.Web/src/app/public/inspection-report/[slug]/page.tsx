@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Building2, Phone, AlertCircle, Loader2, CheckCircle2, AlertTriangle, XCircle, MinusCircle, Car, User, Printer } from 'lucide-react';
+import { ClipboardList, Building2, AlertCircle, Loader2, CheckCircle2, AlertTriangle, XCircle, MinusCircle, Car, User, Printer } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { money, dateText } from '@/shared/utils/format';
 
@@ -229,7 +229,7 @@ export default function PublicInspectionReportPage() {
           <AlertCircle size={36} className="text-slate-300 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-slate-800 mb-2">Kayıt bulunamadı</h1>
           <p className="text-sm text-slate-500">
-            Bu kayıt bulunamadı veya paylaşım süresi dolmuş.
+            Bu paylaşım bağlantısı geçersiz veya artık kullanılamıyor.
           </p>
         </div>
       </div>
@@ -270,12 +270,6 @@ export default function PublicInspectionReportPage() {
                 <Building2 size={12} className="text-slate-400 shrink-0" />
                 {data.businessName}
               </span>
-              {data.businessPhone && (
-                <span className="flex items-center gap-1">
-                  <Phone size={12} className="text-slate-400 shrink-0" />
-                  {data.businessPhone}
-                </span>
-              )}
             </div>
           </div>
 

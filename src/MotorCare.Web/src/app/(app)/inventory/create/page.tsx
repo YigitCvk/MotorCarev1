@@ -64,9 +64,10 @@ export default function InventoryCreatePage() {
         minimumStockLevel: values.minStockLevel ?? 0,
         isActive: values.isActive,
       };
-      const { data } = await apiClient.post<{ id: string }>('/api/inventory', payload);
+      const { data } = await apiClient.post<string | { id: string }>('/api/inventory', payload);
+      const id = typeof data === 'string' ? data : data.id;
       toast.success('Stok kalemi kaydedildi');
-      router.push(`/inventory/${data.id}`);
+      router.push(`/inventory/${id}`);
     } catch (err) {
       toast.error(friendlyError(err, 'Ürün kaydedilemedi.'));
     }

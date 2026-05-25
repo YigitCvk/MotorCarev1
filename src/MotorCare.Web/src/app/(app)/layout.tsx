@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Users,
   Car,
+  CalendarDays,
   ClipboardList,
   FileSearch,
   Package,
@@ -26,6 +27,8 @@ const PATH_LABELS: Record<string, string> = {
   '/customers': 'Müşteriler',
   '/customers/create': 'Yeni Müşteri',
   '/vehicles': 'Araçlar',
+  '/appointments': 'Randevular',
+  '/appointments/new': 'Yeni Randevu',
   '/service-orders': 'Servis Kayıtları',
   '/service-orders/new': 'Yeni Servis Emri',
   '/inspections': 'Expertiz',
@@ -66,9 +69,9 @@ function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
 const BOTTOM_NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Servis', href: '/service-orders', icon: ClipboardList },
+  { label: 'Randevu', href: '/appointments', icon: CalendarDays },
   { label: 'Müşteriler', href: '/customers', icon: Users },
   { label: 'Expertiz', href: '/inspections', icon: FileSearch },
-  { label: 'Stok', href: '/inventory', icon: Package },
 ];
 
 interface NavItem {
@@ -82,6 +85,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
   { label: 'Müşteriler', href: '/customers', icon: Users, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
   { label: 'Araçlar', href: '/vehicles', icon: Car, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
+  { label: 'Randevular', href: '/appointments', icon: CalendarDays, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },
   { label: 'Servis Kayıtları', href: '/service-orders', icon: ClipboardList, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'Accountant', 'ReadOnly'] },
   { label: 'Expertiz', href: '/inspections', icon: FileSearch, roles: ['Owner', 'Admin', 'Manager', 'Inspector', 'ReadOnly'] },
   { label: 'Stok', href: '/inventory', icon: Package, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },

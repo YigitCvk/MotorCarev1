@@ -6,9 +6,10 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { authService } from '@/core/auth/auth.service';
 import { friendlyError } from '@/core/api/errors';
+import { authService } from '@/core/auth/auth.service';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/core/auth/schemas';
+import { appConfig } from '@/shared/config/env';
 
 function ResetPasswordInner() {
   const router = useRouter();
@@ -16,7 +17,7 @@ function ResetPasswordInner() {
   const tenant = params.get('tenant') ?? '';
   const email = params.get('email') ?? '';
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState(!tenant || !email ? 'Şifre sıfırlamak için işletme kodu ve e-posta bilgisi gerekli.' : '');
   const [success, setSuccess] = useState(false);
 
   const {
@@ -28,6 +29,7 @@ function ResetPasswordInner() {
   });
 
   async function onSubmit(data: ResetPasswordFormData) {
+    if (!tenant || !email) return;
     setError('');
     try {
       await authService.resetPassword({
@@ -49,10 +51,16 @@ function ResetPasswordInner() {
   if (success) {
     return (
       <div className="card p-8 w-full max-w-md shadow-2xl text-center">
-        <div className="text-5xl mb-4">✅</div>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
+            <span className="text-white font-bold">B</span>
+          </div>
+          <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
+        </div>
+        <div className="text-5xl mb-4" aria-hidden>✓</div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">Şifre Güncellendi</h2>
         <p className="text-sm text-slate-600 mb-6">Yeni şifrenizle giriş yapabilirsiniz.</p>
-        <button onClick={() => router.push('/login')} className="btn-primary w-full">Giriş Yap</button>
+        <button type="button" onClick={() => router.push('/login')} className="btn-primary w-full">Giriş Yap</button>
       </div>
     );
   }
@@ -63,7 +71,7 @@ function ResetPasswordInner() {
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
           <span className="text-white font-bold">B</span>
         </div>
-        <span className="font-bold text-xl text-slate-900">BakımSuite</span>
+        <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
       </div>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Yeni Şifre Belirle</h1>
       <p className="text-sm text-slate-500 mb-6">E-postanıza gönderilen kodu ve yeni şifrenizi girin.</p>
@@ -76,6 +84,7 @@ function ResetPasswordInner() {
           <input
             className="input"
             placeholder="6 haneli kod"
+            inputMode="numeric"
             maxLength={6}
             {...register('code')}
           />
@@ -89,6 +98,7 @@ function ResetPasswordInner() {
             type="password"
             className="input"
             placeholder="En az 8 karakter"
+            autoComplete="new-password"
             {...register('newPassword')}
           />
           {errors.newPassword && (
@@ -101,13 +111,14 @@ function ResetPasswordInner() {
             type="password"
             className="input"
             placeholder="Şifreyi tekrar girin"
+            autoComplete="new-password"
             {...register('confirmPassword')}
           />
           {errors.confirmPassword && (
             <p className="mt-1 text-xs text-red-500">{errors.confirmPassword.message}</p>
           )}
         </div>
-        <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-2.5">
+        <button type="submit" disabled={isSubmitting || !tenant || !email} className="btn-primary w-full py-2.5">
           {isSubmitting ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
         </button>
       </form>

@@ -64,9 +64,10 @@ export default function ServiceCatalogCreatePage() {
         currency: values.currency.trim() || 'TRY',
         isActive: values.isActive,
       };
-      const { data } = await apiClient.post<{ id: string }>('/api/services', payload);
+      const { data } = await apiClient.post<string | { id: string }>('/api/services', payload);
+      const id = typeof data === 'string' ? data : data.id;
       toast.success('Hizmet kaydedildi');
-      router.push(`/service-catalog/${data.id}`);
+      router.push(`/service-catalog/${id}`);
     } catch (err) {
       toast.error(friendlyError(err, 'Hizmet kaydedilemedi.'));
     }

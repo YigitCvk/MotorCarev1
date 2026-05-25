@@ -13,7 +13,7 @@ export const registerSchema = z.object({
   tenantIdentifier: z
     .string()
     .min(3, 'İşletme kodu en az 3 karakter olmalıdır')
-    .max(50)
+    .max(50, 'İşletme kodu en fazla 50 karakter olabilir')
     .regex(/^[a-z0-9-]+$/, 'Küçük harf, rakam ve tire kullanabilirsiniz'),
   email: z.string().email('Geçerli bir e-posta adresi girin'),
   fullName: z.string().min(2, 'Ad soyad en az 2 karakter olmalıdır'),

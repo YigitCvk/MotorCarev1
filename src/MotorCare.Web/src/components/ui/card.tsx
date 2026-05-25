@@ -15,7 +15,7 @@ export function Card({ children, className, padding = true }: CardProps) {
   );
 }
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
@@ -32,6 +32,14 @@ const statColorClass: Record<string, string> = {
   red: 'text-red-600',
 };
 
+const statIconBgClass: Record<string, string> = {
+  default: 'bg-brand-50 text-brand-500',
+  green: 'bg-green-50 text-green-500',
+  blue: 'bg-blue-50 text-blue-500',
+  orange: 'bg-orange-50 text-orange-500',
+  red: 'bg-red-50 text-red-500',
+};
+
 export function StatCard({ title, value, subtitle, icon, trend, color = 'default' }: StatCardProps) {
   return (
     <div className="stat-card">
@@ -46,7 +54,11 @@ export function StatCard({ title, value, subtitle, icon, trend, color = 'default
             </p>
           )}
         </div>
-        {icon && <div className="text-slate-300">{icon}</div>}
+        {icon && (
+          <div className={clsx('rounded-lg p-2', statIconBgClass[color])}>
+            {icon}
+          </div>
+        )}
       </div>
     </div>
   );

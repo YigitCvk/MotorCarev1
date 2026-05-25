@@ -16,8 +16,13 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   INSUFFICIENT_PERMISSIONS: 'Bu işlemi yapmak için yetkiniz bulunmuyor.',
 };
 
+type ProblemWithDetails = ApiProblem & {
+  title?: string;
+  detail?: string;
+};
+
 export function friendlyError(error: unknown, fallback = 'Bir hata oluştu. Lütfen tekrar deneyin.'): string {
-  const axiosErr = error as AxiosError<ApiProblem>;
+  const axiosErr = error as AxiosError<ProblemWithDetails>;
 
   if (!axiosErr?.response) {
     return 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.';
@@ -25,17 +30,31 @@ export function friendlyError(error: unknown, fallback = 'Bir hata oluştu. Lüt
 
   const { status, data } = axiosErr.response;
 
-  if (status === 401) return 'Oturumunuzun süresi dolmuş. Lütfen tekrar giriş yapın.';
-  if (status === 403) return 'Bu işlemi yapmak için yetkiniz bulunmuyor.';
-  if (status === 429) return 'Çok fazla istek gönderildi. Lütfen bekleyin.';
-  if (status >= 500) return 'Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.';
-
   if (data?.code && ERROR_CODE_MESSAGES[data.code]) {
     return ERROR_CODE_MESSAGES[data.code];
   }
 
+  if (status === 401) return 'Oturumunuzun süresi dolmuş veya bilgiler hatalı. Lütfen tekrar deneyin.';
+  if (status === 403) return 'Bu işlemi yapmak için yetkiniz bulunmuyor.';
+  if (status === 404) return 'İstenen kayıt bulunamadı.';
+  if (status === 409) return 'Bu bilgiyle kayıt zaten mevcut.';
+  if (status === 422) {
+    const firstValidationError = firstErrorMessage(data?.errors);
+    if (firstValidationError) return firstValidationError;
+  }
+  if (status === 429) return 'Çok fazla istek gönderildi. Lütfen biraz bekleyin.';
+  if (status >= 500) return 'Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.';
+
   if (data?.message && isUserFriendlyMessage(data.message)) {
     return data.message;
+  }
+
+  if (data?.detail && isUserFriendlyMessage(data.detail)) {
+    return data.detail;
+  }
+
+  if (data?.title && isUserFriendlyMessage(data.title)) {
+    return data.title;
   }
 
   return fallback;
@@ -56,4 +75,10 @@ export function extractValidationErrors(error: unknown): Record<string, string> 
       Array.isArray(messages) ? messages[0] : String(messages),
     ])
   );
+}
+
+function firstErrorMessage(errors?: Record<string, string[]>): string | null {
+  if (!errors) return null;
+  const first = Object.values(errors).flat()[0];
+  return first && isUserFriendlyMessage(first) ? first : null;
 }

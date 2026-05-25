@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { authService } from '@/core/auth/auth.service';
 import { friendlyError } from '@/core/api/errors';
+import { authService } from '@/core/auth/auth.service';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/core/auth/schemas';
+import { appConfig } from '@/shared/config/env';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -19,7 +20,6 @@ export default function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -42,13 +42,20 @@ export default function ForgotPasswordPage() {
   if (sent && submittedData) {
     return (
       <div className="card p-8 w-full max-w-md shadow-2xl text-center">
-        <div className="text-5xl mb-4">📬</div>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
+            <span className="text-white font-bold">B</span>
+          </div>
+          <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
+        </div>
+        <div className="text-5xl mb-4" aria-hidden>✉</div>
         <h2 className="text-xl font-bold text-slate-900 mb-2">E-posta Gönderildi</h2>
         <p className="text-sm text-slate-600 mb-2">
           Şifre sıfırlama kodu <strong>{submittedData.email}</strong> adresine gönderildi.
         </p>
         <p className="text-xs text-slate-400 mb-6">Spam klasörünü de kontrol edin.</p>
         <button
+          type="button"
           onClick={() =>
             router.push(
               `/reset-password?tenant=${encodeURIComponent(submittedData.tenantIdentifier)}&email=${encodeURIComponent(submittedData.email)}`,
@@ -59,6 +66,7 @@ export default function ForgotPasswordPage() {
           Kodu Gir
         </button>
         <button
+          type="button"
           onClick={() => setSent(false)}
           className="mt-3 text-sm text-slate-500 hover:text-slate-700 w-full"
         >
@@ -74,7 +82,7 @@ export default function ForgotPasswordPage() {
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center shadow">
           <span className="text-white font-bold">B</span>
         </div>
-        <span className="font-bold text-xl text-slate-900">BakımSuite</span>
+        <span className="font-bold text-xl text-slate-900">{appConfig.appName}</span>
       </div>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Şifremi Unuttum</h1>
       <p className="text-sm text-slate-500 mb-6">E-posta adresinize sıfırlama kodu göndereceğiz.</p>
@@ -87,6 +95,7 @@ export default function ForgotPasswordPage() {
           <input
             className="input"
             placeholder="isletme-kodunuz"
+            autoComplete="organization"
             {...register('tenantIdentifier')}
           />
           {errors.tenantIdentifier && (
@@ -99,6 +108,7 @@ export default function ForgotPasswordPage() {
             type="email"
             className="input"
             placeholder="isim@sirket.com"
+            autoComplete="email"
             {...register('email')}
           />
           {errors.email && (
