@@ -111,6 +111,7 @@ desktop.ini
 ## Markdown (docs)
 *.md
 !.github/**/*.md
+!docs/**/*.md
 
 ## Temp scripts
 temp-*.sh

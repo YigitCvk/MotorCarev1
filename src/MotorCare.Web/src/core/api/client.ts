@@ -14,8 +14,7 @@ const apiBaseUrl = appConfig.apiBaseUrl.replace(/\/$/, '');
 let refreshPromise: Promise<string> | null = null;
 
 function resolveBaseUrl(): string {
-  if (apiBaseUrl) return apiBaseUrl;
-  return typeof window !== 'undefined' ? window.location.origin : '';
+  return apiBaseUrl;
 }
 
 function isAuthRefreshCandidate(url?: string): boolean {
