@@ -1,0 +1,18 @@
+# Next.js build output
+.next/
+out/
+
+# Local env files (never commit secrets)
+.env.local
+.env.*.local
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# PWA
+public/sw.js
+public/workbox-*.js

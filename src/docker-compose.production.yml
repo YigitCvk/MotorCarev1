@@ -1,3 +1,7 @@
+# Production docker-compose for BakımSuite
+# Usage: docker compose -f docker-compose.production.yml up -d
+# Requires: .env file with all required variables (see deploy/portainer/production.env.example)
+
 x-default-logging: &default-logging
   driver: json-file
   options:
@@ -52,7 +56,7 @@ services:
 
   api:
     <<: *app-security
-    image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:production}
+    image: ${API_IMAGE}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile
@@ -106,6 +110,37 @@ services:
       interval: 20s
       timeout: 5s
       retries: 10
+    networks:
+      - motorcare-production
+
+  web:
+    <<: *app-security
+    image: ${WEB_IMAGE}
+    pull_policy: always
+    container_name: motorcare-production-web
+    restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${WEB_MEM_LIMIT:-512m}
+    cpus: ${WEB_CPUS:-0.75}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/.next/cache:rw,noexec,nosuid,size=128m
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      API_BASE_URL: http://api:8080
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://bakimsuite.com}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.garajpass.com}
+    ports:
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     networks:
       - motorcare-production
 

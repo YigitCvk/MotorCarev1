@@ -1,0 +1,112 @@
+// src/core/auth/auth.service.ts
+import apiClient from '@/core/api/client';
+import {
+  clearTokens,
+  getCurrentUserFromStorage,
+  setCurrentUserInStorage,
+  setTokens,
+} from '@/core/auth/storage';
+import type { CurrentUser, LoginRequest, LoginResponse } from '@/shared/types/api.types';
+
+function applyLoginResponse(response: LoginResponse): CurrentUser {
+  setTokens(response.accessToken, response.refreshToken);
+  const user: CurrentUser = {
+    userId: response.userId,
+    tenantId: response.tenantId,
+    tenantIdentifier: response.tenantIdentifier,
+    email: response.email,
+    role: response.role,
+  };
+  setCurrentUserInStorage(user);
+  return user;
+}
+
+export const authService = {
+  async login(request: LoginRequest): Promise<LoginResponse> {
+    const { data } = await apiClient.post<LoginResponse>('/api/auth/login', request);
+    if (!data.requiresTwoFactor) {
+      applyLoginResponse(data);
+    }
+    return data;
+  },
+
+  async register(body: {
+    tenantIdentifier: string;
+    tenantName: string;
+    ownerFullName: string;
+    ownerEmail: string;
+    ownerPassword: string;
+  }): Promise<void> {
+    await apiClient.post('/api/auth/register', body);
+  },
+
+  async verifyEmail(body: { tenantIdentifier: string; email: string; code: string }): Promise<void> {
+    await apiClient.post('/api/auth/verify-email-code', body);
+  },
+
+  async resendVerificationCode(body: { email: string; tenantIdentifier: string }): Promise<void> {
+    await apiClient.post('/api/auth/resend-email-verification-code', body);
+  },
+
+  async forgotPassword(body: { email: string; tenantIdentifier: string }): Promise<void> {
+    await apiClient.post('/api/auth/forgot-password', body);
+  },
+
+  async resetPassword(body: {
+    tenantIdentifier: string;
+    email: string;
+    code: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<void> {
+    await apiClient.post('/api/auth/reset-password', body);
+  },
+
+  async validateInvite(token: string): Promise<{ email: string; fullName?: string; role: string; isValid: boolean }> {
+    const { data } = await apiClient.get(`/api/users/invitations/${token}/validate`);
+    return data as { email: string; fullName?: string; role: string; isValid: boolean };
+  },
+
+  async acceptInvite(body: {
+    token: string;
+    fullName: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<void> {
+    await apiClient.post('/api/auth/accept-invite', body);
+  },
+
+  async verifyTwoFactor(body: { twoFactorToken: string; code: string }): Promise<CurrentUser> {
+    const { data } = await apiClient.post<LoginResponse>('/api/auth/two-factor/verify', body);
+    return applyLoginResponse(data);
+  },
+
+  async loadCurrentUser(): Promise<CurrentUser | null> {
+    try {
+      const { data } = await apiClient.get<CurrentUser>('/api/auth/me');
+      setCurrentUserInStorage(data);
+      return data;
+    } catch {
+      return getCurrentUserFromStorage<CurrentUser>();
+    }
+  },
+
+  async logout(refreshToken: string): Promise<void> {
+    try {
+      await apiClient.post('/api/auth/logout', { refreshToken });
+    } finally {
+      clearTokens();
+    }
+  },
+
+  roleLanding(role?: string): string {
+    switch (role) {
+      case 'Technician':
+        return '/service-orders';
+      case 'Inspector':
+        return '/inspections';
+      default:
+        return '/dashboard';
+    }
+  },
+};
