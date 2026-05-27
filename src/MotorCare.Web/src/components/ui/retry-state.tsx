@@ -10,9 +10,9 @@ export interface RetryStateProps {
 }
 
 export function RetryState({
-  title = 'Bir sorun olustu',
-  message = 'Veriler alinamadi. Tekrar deneyin.',
-  retryLabel = 'Tekrar dene',
+  title = 'Bir sorun oluştu',
+  message = 'Veriler alınamadı. Tekrar deneyin.',
+  retryLabel = 'Tekrar Dene',
   onRetry,
   loading,
 }: RetryStateProps) {

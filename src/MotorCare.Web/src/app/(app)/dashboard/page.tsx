@@ -64,15 +64,8 @@ export default function DashboardPage() {
     staleTime: 30_000,
   });
 
-  const { data: monthlyData, isError: monthlyError } = useQuery<MonthlyRevenueStat[]>({
-    queryKey: ['dashboard', 'monthly'],
-    queryFn: async () => {
-      const { data } = await apiClient.get<MonthlyRevenueStat[]>('/api/dashboard/monthly');
-      return data;
-    },
-    staleTime: 60_000,
-    retry: false,
-  });
+  const monthlyData: MonthlyRevenueStat[] = [];
+  const monthlyError = false;
 
   if (isLoading) return <PageLoading />;
 
@@ -128,9 +121,9 @@ export default function DashboardPage() {
   const appointments = safeArr(data?.todayAppointmentsList ?? data?.appointments ?? data?.todayAppointments as unknown);
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
         <PageHeader title="Dashboard" subtitle="Günlük operasyon özeti" />
-        <button onClick={() => void refetch()} className="btn-secondary text-sm px-3 py-1.5">
+        <button onClick={() => void refetch()} className="btn-secondary text-sm px-3 py-1.5 shrink-0">
           Yenile
         </button>
       </div>
@@ -183,12 +176,10 @@ export default function DashboardPage() {
             <div className="px-5 py-8 text-center text-sm text-slate-400">Henüz servis kaydı yok.</div>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {recentOrders.slice(0, 5).map((order, idx) => (
-                <li key={safeStr(order['id'], String(idx))}>
-                  <Link
-                    href={`/service-orders/${safeStr(order['id'], '#')}`}
-                    className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
-                  >
+              {recentOrders.slice(0, 5).map((order, idx) => {
+                const orderId = safeStr(order['id'], '');
+                const content = (
+                  <>
                     <div>
                       <p className="text-sm font-medium text-slate-900">
                         {safeStr(order['orderNo'] ?? order['serviceOrderNo'] ?? order['vehiclePlate'])}
@@ -203,9 +194,24 @@ export default function DashboardPage() {
                       )}
                       <span className="text-xs text-slate-400">{dateText(order['openedAt'] as string)}</span>
                     </div>
-                  </Link>
-                </li>
-              ))}
+                  </>
+                );
+
+                return (
+                  <li key={orderId || String(idx)}>
+                    {orderId ? (
+                      <Link
+                        href={`/service-orders/${orderId}`}
+                        className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors"
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <div className="flex items-center justify-between px-5 py-3">{content}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

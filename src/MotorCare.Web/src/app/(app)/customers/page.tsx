@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { Customer } from '@/features/customers/types';
 import type { PagedResult } from '@/shared/types/api.types';
+import { normalizePagedResult } from '@/shared/utils/api-normalize';
 
 export default function CustomersPage() {
   const router = useRouter();
@@ -21,10 +22,10 @@ export default function CustomersPage() {
   const { data, isLoading, error, refetch } = useQuery<PagedResult<Customer>>({
     queryKey: ['customers', search, page],
     queryFn: async () => {
-      const { data } = await apiClient.get<PagedResult<Customer>>('/api/customers', {
+      const { data } = await apiClient.get<unknown>('/api/customers', {
         params: { q: search, pageNumber: page, pageSize: 20 },
       });
-      return data;
+      return normalizePagedResult<Customer>(data, page, 20);
     },
   });
 
@@ -111,6 +112,7 @@ export default function CustomersPage() {
               </div>
 
               <div className="card p-0 overflow-hidden hidden md:block">
+                <div className="overflow-x-auto">
                 <table className="table">
                   <thead>
                     <tr>
@@ -123,14 +125,15 @@ export default function CustomersPage() {
                   <tbody>
                     {data.items.map((customer) => (
                       <tr key={customer.id} onClick={() => router.push(`/customers/${customer.id}`)} className="cursor-pointer">
-                        <td className="font-medium text-slate-900">{customer.fullName}</td>
+                        <td className="font-medium text-slate-900 max-w-[200px] truncate">{customer.fullName}</td>
                         <td className="text-slate-600">{customer.phone ?? '-'}</td>
-                        <td className="text-slate-500">{customer.email ?? '-'}</td>
+                        <td className="text-slate-500 max-w-[200px] truncate">{customer.email ?? '-'}</td>
                         <td className="text-slate-500">{customer.vehicleCount ?? 0} araç</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             </>
           )}

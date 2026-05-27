@@ -12,6 +12,7 @@ import { Building2, Save, AlertCircle } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { useAuth } from '@/core/auth/auth.context';
 import { friendlyError } from '@/core/api/errors';
+import { PageLoading } from '@/components/ui/loading';
 
 interface TenantProfileDto {
   id: string;
@@ -170,7 +171,7 @@ export default function SettingsBusinessPage() {
 
       <div className="card p-6 max-w-2xl">
         {isLoading ? (
-          <div className="py-8 text-center text-slate-400 text-sm">Yükleniyor...</div>
+          <PageLoading />
         ) : (
           <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-5">
             {/* Business Identity */}

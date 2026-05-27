@@ -153,6 +153,7 @@ export default function ServiceOrdersPage(): React.ReactElement {
             )
           ) : (
             <div className="card p-0 overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
@@ -174,22 +175,23 @@ export default function ServiceOrdersPage(): React.ReactElement {
                       <td>
                         <span className="font-mono font-medium text-slate-900">{order.orderNo}</span>
                       </td>
-                      <td className="font-medium text-slate-800">{order.customerName ?? '-'}</td>
+                      <td className="font-medium text-slate-800 max-w-[160px] truncate">{order.customerName ?? '-'}</td>
                       <td>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-slate-900">{order.vehiclePlate ?? '-'}</span>
+                        <div className="flex flex-col max-w-[140px]">
+                          <span className="font-medium text-slate-900 truncate">{order.vehiclePlate ?? '-'}</span>
                           {order.vehicleDisplay && (
-                            <span className="text-xs text-slate-400">{order.vehicleDisplay}</span>
+                            <span className="text-xs text-slate-400 truncate">{order.vehicleDisplay}</span>
                           )}
                         </div>
                       </td>
                       <td>{statusBadge(order.status)}</td>
-                      <td className="text-slate-500 text-sm">{dateText(order.openedAt)}</td>
-                      <td className="text-right font-medium text-slate-900">{money(order.grandTotal)}</td>
+                      <td className="text-slate-500 text-sm whitespace-nowrap">{dateText(order.openedAt)}</td>
+                      <td className="text-right font-medium text-slate-900 whitespace-nowrap">{money(order.grandTotal)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 

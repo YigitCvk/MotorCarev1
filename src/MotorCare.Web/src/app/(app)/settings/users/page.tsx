@@ -20,6 +20,8 @@ import apiClient from '@/core/api/client';
 import { useAuth } from '@/core/auth/auth.context';
 import { friendlyError } from '@/core/api/errors';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { PageLoading } from '@/components/ui/loading';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface UserDto {
   id: string;
@@ -288,9 +290,7 @@ export default function SettingsUsersPage() {
         </div>
       )}
 
-      {isLoading && (
-        <div className="py-10 text-center text-slate-400 text-sm">Yükleniyor...</div>
-      )}
+      {isLoading && <PageLoading />}
 
       {!isLoading && !loadError && users && (
         <div className="table-container">
@@ -381,9 +381,10 @@ export default function SettingsUsersPage() {
       )}
 
       {!isLoading && !loadError && users?.length === 0 && (
-        <div className="py-10 text-center text-slate-400 text-sm">
-          Henüz kullanıcı bulunmuyor.
-        </div>
+        <EmptyState
+          title="Kullanıcı bulunamadı"
+          description="Henüz sisteme eklenmiş kullanıcı yok. Kullanıcı davet ederek başlayabilirsiniz."
+        />
       )}
 
       {/* Deactivate confirmation dialog */}

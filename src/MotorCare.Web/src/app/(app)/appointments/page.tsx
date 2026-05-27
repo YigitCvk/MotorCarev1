@@ -66,7 +66,7 @@ export default function AppointmentsPage(): React.ReactElement {
     <div>
       <PageHeader
         title="Randevular"
-        subtitle={data ? `${data.totalCount} kayit` : ''}
+        subtitle={data ? `${data.totalCount} kayıt` : ''}
         actions={
           <Link href="/appointments/new" className="btn-primary">
             <CalendarPlus size={16} />
@@ -81,7 +81,7 @@ export default function AppointmentsPage(): React.ReactElement {
           <input
             type="search"
             className="input pl-9"
-            placeholder="Musteri, telefon veya plaka ara..."
+            placeholder="Müşteri, telefon veya plaka ara..."
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
           />
@@ -94,7 +94,7 @@ export default function AppointmentsPage(): React.ReactElement {
             setPage(1);
           }}
         >
-          <option value="">Tum Durumlar</option>
+          <option value="">Tüm Durumlar</option>
           {APPOINTMENT_STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -109,7 +109,7 @@ export default function AppointmentsPage(): React.ReactElement {
             setPage(1);
           }}
         >
-          <option value="">Tum Tipler</option>
+          <option value="">Tüm Tipler</option>
           {APPOINTMENT_TYPE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -119,28 +119,29 @@ export default function AppointmentsPage(): React.ReactElement {
       </div>
 
       {isLoading && <PageLoading />}
-      {error && <ErrorState message="Randevular yuklenemedi." onRetry={() => void refetch()} />}
+      {error && <ErrorState message="Randevular yüklenemedi." onRetry={() => void refetch()} />}
 
       {!isLoading && !error && (
         <>
           {!data?.items || data.items.length === 0 ? (
             <EmptyState
-              title="Randevu bulunamadi"
-              description="Filtreleri degistirin veya yeni bir randevu olusturun."
+              title="Randevu bulunamadı"
+              description="Filtreleri değiştirin veya yeni bir randevu oluşturun."
               icon={<CalendarRange size={48} />}
               action={{ label: 'Yeni Randevu', onClick: () => router.push('/appointments/new') }}
             />
           ) : (
             <>
               <div className="hidden overflow-hidden rounded-lg border border-slate-200 bg-white md:block">
+                <div className="overflow-x-auto">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Musteri</th>
+                      <th>Müşteri</th>
                       <th>Plaka</th>
                       <th>Tip</th>
-                      <th>Baslangic</th>
-                      <th>Bitis</th>
+                      <th>Başlangıç</th>
+                      <th>Bitiş</th>
                       <th>Durum</th>
                     </tr>
                   </thead>
@@ -151,9 +152,9 @@ export default function AppointmentsPage(): React.ReactElement {
                         className="cursor-pointer"
                         onClick={() => router.push(`/appointments/${appointment.id}`)}
                       >
-                        <td>
-                          <p className="font-medium text-slate-900">{appointment.customerName}</p>
-                          <p className="text-xs text-slate-400">{appointment.phone}</p>
+                        <td className="max-w-[180px]">
+                          <p className="font-medium text-slate-900 truncate">{appointment.customerName}</p>
+                          <p className="text-xs text-slate-400 truncate">{appointment.phone}</p>
                         </td>
                         <td className="font-medium text-slate-700">{appointment.plate || '-'}</td>
                         <td>{appointmentTypeLabel(appointment.type, appointment.typeText)}</td>
@@ -166,6 +167,7 @@ export default function AppointmentsPage(): React.ReactElement {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
 
               <div className="space-y-3 md:hidden">
@@ -205,7 +207,7 @@ export default function AppointmentsPage(): React.ReactElement {
           {totalPages > 1 && (
             <div className="mt-4 flex items-center justify-center gap-3">
               <button disabled={page === 1} onClick={() => setPage((value) => value - 1)} className="btn-secondary">
-                Onceki
+                Önceki
               </button>
               <span className="text-sm text-slate-600">
                 {page} / {totalPages}
