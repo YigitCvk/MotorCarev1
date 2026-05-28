@@ -2,8 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MotorCare.Infrastructure.Persistence;
 using MotorCare.Infrastructure.Persistence.Repositories;
+using MotorCare.Infrastructure.Persistence.Seed;
+using MotorCare.Infrastructure.Email;
 using MotorCare.Infrastructure.Services;
 using MotorCare.Infrastructure.Security;
 using MotorCare.Infrastructure.Tenancy;
@@ -20,8 +24,11 @@ public static class DependencyInjection
 
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantProvider, HeaderTenantProvider>();
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
 
         services.AddScoped<IVehicleRepository, VehicleRepository>();
+        services.AddScoped<IMotorcycleModelCatalogRepository, MotorcycleModelCatalogRepository>();
+        services.AddScoped<MotorcycleModelCatalogSeeder>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IServiceOrderRepository, ServiceOrderRepository>();
@@ -35,7 +42,46 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasherAdapter>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
+        services.AddScoped<IRefreshTokenLifetimeProvider, JwtRefreshTokenLifetimeProvider>();
+        services.AddScoped<ISecurityTokenFactory, SecurityTokenFactory>();
+        services.AddScoped<IAuthLinkBuilder, AuthLinkBuilder>();
+        services.AddScoped<IPublicRecordAccessService, PublicRecordAccessService>();
+        services.AddScoped<IDashboardReadService, DashboardReadService>();
+        services.AddScoped<SmtpEmailSender>();
+        services.AddScoped<LoggingEmailSender>();
+        services.AddScoped<IEmailSender>(sp =>
+        {
+            var env = sp.GetRequiredService<IHostEnvironment>();
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailOptions>>().Value;
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("MotorCare.Infrastructure.Email");
+
+            if (!options.SendEmails)
+            {
+                logger.LogInformation("Email sending disabled by configuration. Falling back to logging email sender.");
+                return sp.GetRequiredService<LoggingEmailSender>();
+            }
+
+            var smtpConfigured =
+                string.Equals(options.Provider, "Smtp", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(options.SmtpHost) &&
+                !string.IsNullOrWhiteSpace(options.FromEmail);
+
+            if (smtpConfigured)
+            {
+                return sp.GetRequiredService<SmtpEmailSender>();
+            }
+
+            if (env.IsDevelopment() || env.IsStaging())
+            {
+                logger.LogWarning("SMTP configuration is incomplete in {Environment}. Falling back to logging email sender.", env.EnvironmentName);
+                return sp.GetRequiredService<LoggingEmailSender>();
+            }
+
+            logger.LogError("SMTP configuration is incomplete in {Environment}. Falling back to logging email sender.", env.EnvironmentName);
+            return sp.GetRequiredService<LoggingEmailSender>();
+        });
         services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+        services.AddScoped<IImportService, ImportService>();
 
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 

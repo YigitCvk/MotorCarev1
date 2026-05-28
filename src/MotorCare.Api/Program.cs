@@ -1,22 +1,32 @@
 using System.IO;
 using System.Text;
+using System.Threading.RateLimiting;
 using Carter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MotorCare.Api.Authorization;
+using MotorCare.Api.Configuration;
+using MotorCare.Api.Files;
 using MotorCare.Api.Logging;
 using MotorCare.Api.Middleware;
 using MotorCare.Api.Swagger;
 using MotorCare.Application;
+using MotorCare.Application.Common.Interfaces;
+using MotorCare.Application.Common.Security;
 using MotorCare.Domain.Enums;
 using MotorCare.Infrastructure;
+using MotorCare.Infrastructure.Email;
+using MotorCare.Infrastructure.Persistence.Seed;
 using MotorCare.Infrastructure.Security;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Serilog.Settings.Configuration;
 using Serilog.Sinks.Elasticsearch;
 
 Log.Logger = new LoggerConfiguration()
@@ -25,11 +35,21 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger();
 
+const string PublicAuthRateLimitPolicy = "PublicAuth";
+const string PublicAuthClientKeyHeader = "X-MotorCare-Client-Key";
+const string FrontendCorsPolicy = "ConfiguredFrontendOrigins";
+
 try
 {
     Log.Information("Starting MotorCare API");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        [$"{BuildInfoOptions.SectionName}:CommitSha"] = Environment.GetEnvironmentVariable("MOTORCARE_COMMIT_SHA") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:CommitSha"],
+        [$"{BuildInfoOptions.SectionName}:BuildTime"] = Environment.GetEnvironmentVariable("MOTORCARE_BUILD_TIME") ?? builder.Configuration[$"{BuildInfoOptions.SectionName}:BuildTime"]
+    });
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
@@ -44,7 +64,7 @@ try
         var env = ctx.HostingEnvironment;
 
         cfg
-            .ReadFrom.Configuration(ctx.Configuration, sectionName: "Serilog")
+            .ReadFrom.Configuration(ctx.Configuration, new ConfigurationReaderOptions { SectionName = "Serilog" })
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithEnvironmentName()
@@ -55,6 +75,7 @@ try
             .Enrich.WithProperty("ApplicationName", "MotorCare.Api")
             .Enrich.WithProperty("Environment", env.EnvironmentName)
             .Enrich.With(new EventNameEnricher())
+            .Enrich.With(new RequestPathRedactionEnricher())
             .WriteTo.Console(
                 outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{EventId.Name}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
@@ -102,8 +123,14 @@ try
         .SetApplicationName("MotorCare.Api")
         .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 
-    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-    builder.Services.AddProblemDetails();
+    builder.Services.Configure<BuildInfoOptions>(builder.Configuration.GetSection(BuildInfoOptions.SectionName));
+
+    var jwtOptions = builder.Configuration.GetRequiredSection(JwtOptions.SectionName).Get<JwtOptions>()
+        ?? throw new InvalidOperationException("Jwt configuration section is required.");
+    JwtOptions.ThrowIfInvalid(jwtOptions);
+
+    var emailOptions = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>();
+    EmailOptions.ThrowIfInvalidForEnvironment(emailOptions, builder.Environment.EnvironmentName);
 
     builder.Services.AddCarter();
     builder.Services.AddEndpointsApiExplorer();
@@ -122,25 +149,58 @@ try
         options.OperationFilter<AuthorizeOperationFilter>();
     });
 
-    var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-    if (jwtOptions is not null && !string.IsNullOrWhiteSpace(jwtOptions.Key))
+    var corsAllowedOrigins = GetConfiguredCorsOrigins(builder.Configuration);
+    if (corsAllowedOrigins.Length > 0)
     {
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(FrontendCorsPolicy, policy =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateLifetime = true,
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
-                    ClockSkew = TimeSpan.FromMinutes(1)
-                };
+                policy
+                    .WithOrigins(corsAllowedOrigins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
             });
+        });
     }
+
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy(PublicAuthRateLimitPolicy, httpContext =>
+        {
+            var partitionKey = GetPublicAuthRateLimitPartitionKey(httpContext, PublicAuthClientKeyHeader);
+            var permitLimit = GetPublicAuthPermitLimit(httpContext.Request.Path);
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    AutoReplenishment = true,
+                    PermitLimit = permitLimit,
+                    QueueLimit = 0,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    Window = TimeSpan.FromMinutes(1)
+                });
+        });
+    });
+
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateIssuerSigningKey = true,
+                ValidateLifetime = true,
+                ValidIssuer = jwtOptions.Issuer,
+                ValidAudience = jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+                ClockSkew = TimeSpan.FromMinutes(1)
+            };
+        });
 
     builder.Services.AddAuthorization(options =>
     {
@@ -150,43 +210,54 @@ try
         options.AddPolicy(AuthorizationPolicies.TenantManagement, policy =>
             policy.RequireRole(UserRole.Owner.ToString()));
 
+        options.AddPolicy(AuthorizationPolicies.UserManagement, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.UserManagement)));
+
+        options.AddPolicy(AuthorizationPolicies.CustomerRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.CustomerRead)));
+
         options.AddPolicy(AuthorizationPolicies.CustomerOperations, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.CustomerWrite)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderRead, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString(),
-                UserRole.Technician.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderRead)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderWrite, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString(),
-                UserRole.Technician.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderWrite)));
 
         options.AddPolicy(AuthorizationPolicies.ServiceOrderPayments, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ServiceOrderPayments)));
+
+        options.AddPolicy(AuthorizationPolicies.InspectionRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InspectionRead)));
+
+        options.AddPolicy(AuthorizationPolicies.InspectionWrite, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InspectionWrite)));
+
+        options.AddPolicy(AuthorizationPolicies.InventoryRead, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InventoryRead)));
+
+        options.AddPolicy(AuthorizationPolicies.InventoryWrite, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.InventoryWrite)));
 
         options.AddPolicy(AuthorizationPolicies.DashboardRead, policy =>
-            policy.RequireRole(
-                UserRole.Owner.ToString(),
-                UserRole.Admin.ToString(),
-                UserRole.Receptionist.ToString()));
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.DashboardRead)));
+
+        options.AddPolicy(AuthorizationPolicies.ImportOperations, policy =>
+            policy.RequireRole(RoleCapabilities.Names(RoleCapabilities.ImportOperations)));
     });
 
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.Services.AddScoped<IServiceOrderAttachmentStorage, LocalServiceOrderAttachmentStorage>();
 
     var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<MotorcycleModelCatalogSeeder>();
+        await seeder.SeedAsync();
+    }
 
     app.UseForwardedHeaders();
 
@@ -196,18 +267,11 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseExceptionHandler();
-    app.UseHttpsRedirection();
-
-    app.UseMiddleware<CorrelationIdMiddleware>();
-    app.UseAuthentication();
-    app.UseMiddleware<UserContextLoggingMiddleware>();
-
     app.UseSerilogRequestLogging(options =>
     {
         options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000}ms";
         options.GetLevel = static (ctx, elapsed, ex) =>
-            ex is not null || ctx.Response.StatusCode >= 500
+            ctx.Response.StatusCode >= 500
                 ? LogEventLevel.Error
                 : ctx.Response.StatusCode >= 400
                     ? LogEventLevel.Warning
@@ -215,12 +279,26 @@ try
 
         options.EnrichDiagnosticContext = static (diag, ctx) =>
         {
+            diag.Set("RequestPath", RequestPathRedactor.Redact(ctx.Request.Path));
             diag.Set("RequestHost", ctx.Request.Host.Value);
             diag.Set("RequestScheme", ctx.Request.Scheme);
             diag.Set("RequestId", ctx.TraceIdentifier);
             diag.Set("CorrelationId", ctx.Response.Headers["X-Correlation-Id"].ToString());
         };
     });
+
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseHttpsRedirection();
+
+    app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseRateLimiter();
+    if (corsAllowedOrigins.Length > 0)
+    {
+        app.UseCors(FrontendCorsPolicy);
+    }
+
+    app.UseAuthentication();
+    app.UseMiddleware<UserContextLoggingMiddleware>();
 
     app.UseMiddleware<ActiveTenantUserGuardMiddleware>();
     app.UseAuthorization();
@@ -235,4 +313,75 @@ catch (Exception ex) when (ex is not HostAbortedException)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static string GetPublicAuthRateLimitPartitionKey(HttpContext httpContext, string clientKeyHeader)
+{
+    var path = httpContext.Request.Path.Value ?? "/api/auth";
+    var clientKey = httpContext.Request.Headers[clientKeyHeader].FirstOrDefault();
+    if (IsSafeRateLimitKey(clientKey))
+    {
+        return $"{path}:client:{clientKey}";
+    }
+
+    var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    var forwardedIp = forwardedFor?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(forwardedIp))
+    {
+        return $"{path}:xff:{forwardedIp}";
+    }
+
+    return $"{path}:ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+}
+
+static int GetPublicAuthPermitLimit(PathString path)
+{
+    if (path.StartsWithSegments("/api/auth/refresh-token", StringComparison.OrdinalIgnoreCase))
+    {
+        return 120;
+    }
+
+    return 30;
+}
+
+static bool IsSafeRateLimitKey(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value) || value.Length > 128)
+    {
+        return false;
+    }
+
+    foreach (var c in value)
+    {
+        if (!char.IsLetterOrDigit(c) && c is not '-' and not '_')
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static string[] GetConfiguredCorsOrigins(IConfiguration configuration)
+{
+    var configuredOrigins = configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? [];
+
+    var scalarOrigins = configuration["Cors:AllowedOrigins"]?
+        .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+
+    return configuredOrigins
+        .Concat(scalarOrigins)
+        .Select(origin => origin.Trim().TrimEnd('/'))
+        .Where(IsHttpOrigin)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
+static bool IsHttpOrigin(string origin)
+{
+    return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+           (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) &&
+           !string.IsNullOrWhiteSpace(uri.Host);
 }

@@ -6,4 +6,7 @@ public sealed record CurrentUserDto(
     string TenantIdentifier,
     string FullName,
     string Email,
-    string Role);
+    string Role,
+    bool IsEmailVerified,
+    bool TwoFactorEnabled,
+    string? TwoFactorProvider);

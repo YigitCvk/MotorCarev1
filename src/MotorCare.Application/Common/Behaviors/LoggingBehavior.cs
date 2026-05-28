@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MotorCare.Application.Common.Exceptions;
 
 namespace MotorCare.Application.Common.Behaviors;
 
@@ -41,8 +42,28 @@ public sealed class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
         {
             sw.Stop();
 
-            _logger.LogError(
-                EventIdStore.Common.UnhandledException,
+            if (ex is OperationCanceledException && cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug(
+                    EventIdStore.Common.ExpectedRequestFailure,
+                    "Request {RequestName} canceled after {ElapsedMs}ms",
+                    requestName,
+                    sw.ElapsedMilliseconds);
+
+                throw;
+            }
+
+            var logLevel = ExpectedExceptionClassifier.GetLogLevel(ex);
+            var eventId = ex switch
+            {
+                AppValidationException => EventIdStore.Common.ValidationFailed,
+                _ when ExpectedExceptionClassifier.IsExpected(ex) => EventIdStore.Common.ExpectedRequestFailure,
+                _ => EventIdStore.Common.UnhandledException
+            };
+
+            _logger.Log(
+                logLevel,
+                eventId,
                 ex,
                 "Request {RequestName} failed after {ElapsedMs}ms",
                 requestName,

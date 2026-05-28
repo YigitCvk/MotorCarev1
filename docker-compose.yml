@@ -37,32 +37,14 @@ services:
       Jwt__Key: "dev-secret-key-change-in-production-must-be-at-least-32-chars"
       Jwt__AccessTokenMinutes: 60
       Jwt__RefreshTokenDays: 7
+      Cors__AllowedOrigins: "http://localhost:4200;https://localhost:4200"
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+      Storage__AttachmentsPath: /var/lib/motorcare/attachments
     volumes:
       - api-dataprotection:/var/lib/motorcare/dataprotection
+      - api-attachments:/var/lib/motorcare/attachments
     ports:
       - "5000:8080"
-    networks:
-      - motorcare
-
-  app:
-    build:
-      context: ./src
-      dockerfile: MotorCare.App/Dockerfile
-    container_name: motorcare-app
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://0.0.0.0:8080
-      ApiBaseUrl: http://api:8080
-      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
-    volumes:
-      - app-dataprotection:/var/lib/motorcare/dataprotection
-    ports:
-      - "5001:8080"
     networks:
       - motorcare
 
@@ -92,4 +74,4 @@ networks:
 volumes:
   motorcare-postgres-data:
   api-dataprotection:
-  app-dataprotection:
+  api-attachments:

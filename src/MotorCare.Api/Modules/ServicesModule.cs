@@ -19,8 +19,7 @@ public sealed class ServicesModule : ICarterModule
     {
         var group = app.MapGroup("/api/services")
             .WithTags("Services")
-            .WithOpenApi()
-            .RequireAuthorization(AuthorizationPolicies.CustomerOperations);
+            .WithOpenApi();
 
         group.MapGet("/", async (
             string? q,
@@ -37,6 +36,7 @@ public sealed class ServicesModule : ICarterModule
 
             return Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<PagedResult<ServiceCatalogItemDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -46,6 +46,7 @@ public sealed class ServicesModule : ICarterModule
             var result = await mediator.Send(new GetServiceCatalogItemByIdQuery(id), ct);
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<ServiceCatalogItemDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -59,12 +60,14 @@ public sealed class ServicesModule : ICarterModule
                     request.Category,
                     request.Description,
                     request.DefaultDurationMinutes,
-                    request.DefaultPrice,
+                    request.EffectivePrice,
+                    request.Currency,
                     request.IsActive),
                 ct);
 
             return Results.Created($"/api/services/{id}", id);
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces<Guid>(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -79,12 +82,14 @@ public sealed class ServicesModule : ICarterModule
                     request.Category,
                     request.Description,
                     request.DefaultDurationMinutes,
-                    request.DefaultPrice,
+                    request.EffectivePrice,
+                    request.Currency,
                     request.IsActive),
                 ct);
 
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status409Conflict)
@@ -96,6 +101,7 @@ public sealed class ServicesModule : ICarterModule
             await mediator.Send(new ActivateServiceCatalogItemCommand(id), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -106,25 +112,36 @@ public sealed class ServicesModule : ICarterModule
             await mediator.Send(new DeactivateServiceCatalogItemCommand(id), ct);
             return Results.NoContent();
         })
+        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
         .Produces(StatusCodes.Status204NoContent)
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
     }
 
-    public sealed record CreateServiceCatalogItemRequest(
-        string Name,
-        ServiceCategory Category,
-        string? Description,
-        int DefaultDurationMinutes,
-        decimal DefaultPrice,
-        bool IsActive);
+    public sealed class CreateServiceCatalogItemRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public ServiceCategory Category { get; set; }
+        public string? Description { get; set; }
+        public int DefaultDurationMinutes { get; set; }
+        public decimal DefaultPrice { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "TRY";
+        public bool IsActive { get; set; } = true;
+        public decimal EffectivePrice => Price != 0 ? Price : DefaultPrice;
+    }
 
-    public sealed record UpdateServiceCatalogItemRequest(
-        string Name,
-        ServiceCategory Category,
-        string? Description,
-        int DefaultDurationMinutes,
-        decimal DefaultPrice,
-        bool IsActive);
+    public sealed class UpdateServiceCatalogItemRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public ServiceCategory Category { get; set; }
+        public string? Description { get; set; }
+        public int DefaultDurationMinutes { get; set; }
+        public decimal DefaultPrice { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "TRY";
+        public bool IsActive { get; set; }
+        public decimal EffectivePrice => Price != 0 ? Price : DefaultPrice;
+    }
 }

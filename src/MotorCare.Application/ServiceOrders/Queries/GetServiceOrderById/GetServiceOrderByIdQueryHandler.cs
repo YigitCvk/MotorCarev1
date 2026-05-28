@@ -40,14 +40,15 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
         }
 
         _logger.LogInformation(
-            EventIdStore.ServiceOrder.ServiceOrderFetched,
-            "Service order {ServiceOrderId} fetched for tenant {TenantId}. CustomerId={CustomerId} VehicleId={VehicleId} OperationCount={OperationCount} PartCount={PartCount} PaymentCount={PaymentCount}",
+            EventIdStore.ServiceOrder.ServiceOrderDetailFetched,
+            "Service order detail fetched. ServiceOrderId={ServiceOrderId} TenantId={TenantId} CustomerId={CustomerId} VehicleId={VehicleId} OperationCount={OperationCount} PartCount={PartCount} ConsumableCount={ConsumableCount} PaymentCount={PaymentCount}",
             order.Id,
             tenantId,
             order.CustomerId,
             order.VehicleId,
             order.Operations.Count,
             order.Parts.Count,
+            order.Consumables.Count,
             order.Payments.Count);
 
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId, tenantId, cancellationToken);
@@ -63,6 +64,7 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
             vehicle is null ? null : $"{vehicle.Brand} {vehicle.Model} ({vehicle.Year})",
             order.Status.ToString(),
             order.OpenedAt,
+            order.UpdatedAt,
             order.ClosedAt,
             order.VehicleKm,
             order.Complaint,
@@ -70,15 +72,48 @@ public class GetServiceOrderByIdQueryHandler : IRequestHandler<GetServiceOrderBy
             order.InternalNote,
             order.LaborTotal,
             order.PartsTotal,
+            order.ConsumablesTotal,
             order.DiscountTotal,
             order.GrandTotal,
             order.PaidTotal,
             order.RemainingTotal,
             order.Operations
-                .Select(operation => new ServiceOperationItemDto(operation.Id, operation.Description, operation.Price))
+                .Select(operation => new ServiceOperationItemDto(
+                    operation.Id,
+                    operation.Description,
+                    operation.Price,
+                    operation.Quantity,
+                    operation.UnitPrice,
+                    operation.Discount,
+                    operation.LineTotal,
+                    operation.Notes,
+                    operation.ServiceCatalogItemId))
                 .ToList(),
             order.Parts
-                .Select(part => new ServicePartItemDto(part.Id, part.PartName, part.PartNumber, part.UnitPrice, part.Quantity, part.TotalPrice))
+                .Select(part => new ServicePartItemDto(
+                    part.Id,
+                    part.PartName,
+                    part.PartNumber,
+                    part.UnitPrice,
+                    part.Quantity,
+                    part.TotalPrice,
+                    part.Discount,
+                    part.LineTotal,
+                    part.Notes,
+                    part.InventoryItemId))
+                .ToList(),
+            order.Consumables
+                .Select(consumable => new ServiceConsumableItemDto(
+                    consumable.Id,
+                    consumable.Category,
+                    consumable.Brand,
+                    consumable.ProductName,
+                    consumable.SubCategory,
+                    consumable.Specification,
+                    consumable.Notes,
+                    consumable.UnitPrice,
+                    consumable.Quantity,
+                    consumable.LineTotal))
                 .ToList(),
             order.Payments
                 .Select(payment => new ServicePaymentDto(payment.Id, payment.Amount, payment.Method.ToString(), payment.PaymentDate))

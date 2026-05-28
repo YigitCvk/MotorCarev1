@@ -17,6 +17,7 @@ public static class EventIdStore
         public static readonly EventId ValidationFailed    = new(1003, nameof(ValidationFailed));
         public static readonly EventId AuthRecoverySkippedDueToDisposedCircuit = new(1004, nameof(AuthRecoverySkippedDueToDisposedCircuit));
         public static readonly EventId NavigationSkippedDueToDisconnectedCircuit = new(1005, nameof(NavigationSkippedDueToDisconnectedCircuit));
+        public static readonly EventId ExpectedRequestFailure = new(1006, nameof(ExpectedRequestFailure));
     }
 
     // ── Auth  1100-1199 ─────────────────────────────────────────────────────
@@ -27,6 +28,15 @@ public static class EventIdStore
         public static readonly EventId LoginFailed     = new(1102, nameof(LoginFailed));
         public static readonly EventId TokenRefreshed  = new(1103, nameof(TokenRefreshed));
         public static readonly EventId LogoutSucceeded = new(1104, nameof(LogoutSucceeded));
+        public static readonly EventId EmailVerificationSendRequested = new(1105, nameof(EmailVerificationSendRequested));
+        public static readonly EventId EmailVerificationSent = new(1106, nameof(EmailVerificationSent));
+        public static readonly EventId EmailVerificationSendFailed = new(1107, nameof(EmailVerificationSendFailed));
+        public static readonly EventId PasswordResetEmailSendRequested = new(1108, nameof(PasswordResetEmailSendRequested));
+        public static readonly EventId PasswordResetEmailSent = new(1109, nameof(PasswordResetEmailSent));
+        public static readonly EventId PasswordResetEmailSendFailed = new(1110, nameof(PasswordResetEmailSendFailed));
+        public static readonly EventId TwoFactorEmailSendRequested = new(1111, nameof(TwoFactorEmailSendRequested));
+        public static readonly EventId TwoFactorEmailSent = new(1112, nameof(TwoFactorEmailSent));
+        public static readonly EventId TwoFactorEmailSendFailed = new(1113, nameof(TwoFactorEmailSendFailed));
     }
 
     // ── Customer  1200-1299 ─────────────────────────────────────────────────
@@ -45,6 +55,12 @@ public static class EventIdStore
         public static readonly EventId VehicleUpdated       = new(1301, nameof(VehicleUpdated));
         public static readonly EventId VehicleFetched       = new(1302, nameof(VehicleFetched));
         public static readonly EventId VehicleLookupByPlate = new(1303, nameof(VehicleLookupByPlate));
+        public static readonly EventId MotorcycleCatalogBrandSearch = new(1304, nameof(MotorcycleCatalogBrandSearch));
+        public static readonly EventId MotorcycleCatalogModelSearch = new(1305, nameof(MotorcycleCatalogModelSearch));
+        public static readonly EventId MotorcycleCatalogSeeded = new(1306, nameof(MotorcycleCatalogSeeded));
+        public static readonly EventId MotorcycleCatalogDuplicateSkipped = new(1307, nameof(MotorcycleCatalogDuplicateSkipped));
+        public static readonly EventId MotorcycleCatalogSearchError = new(1308, nameof(MotorcycleCatalogSearchError));
+        public static readonly EventId VehicleServiceHistoryFetched = new(1309, nameof(VehicleServiceHistoryFetched));
     }
 
     // ── Appointment  1400-1499 ──────────────────────────────────────────────
@@ -84,6 +100,23 @@ public static class EventIdStore
         public static readonly EventId ConsumableSuggestionsFetched = new(1521, nameof(ConsumableSuggestionsFetched));
         public static readonly EventId ConsumableSuggestionStored = new(1522, nameof(ConsumableSuggestionStored));
         public static readonly EventId ConsumableCustomItemAdded = new(1523, nameof(ConsumableCustomItemAdded));
+        public static readonly EventId ConsumableSuggestionSelected = new(1524, nameof(ConsumableSuggestionSelected));
+        public static readonly EventId ConsumableDraftInitialized = new(1525, nameof(ConsumableDraftInitialized));
+        public static readonly EventId ConsumableSearchStarted = new(1526, nameof(ConsumableSearchStarted));
+        public static readonly EventId ConsumableSearchCompleted = new(1527, nameof(ConsumableSearchCompleted));
+        public static readonly EventId ConsumableSelected = new(1528, nameof(ConsumableSelected));
+        public static readonly EventId ConsumableAddedToDraftList = new(1529, nameof(ConsumableAddedToDraftList));
+        public static readonly EventId ConsumableAddValidationFailed = new(1530, nameof(ConsumableAddValidationFailed));
+        public static readonly EventId ConsumableAddFailed = new(1531, nameof(ConsumableAddFailed));
+        public static readonly EventId ConsumablesAttachedToServiceOrder = new(1532, nameof(ConsumablesAttachedToServiceOrder));
+        public static readonly EventId ServiceOrderDetailFetched = new(1533, nameof(ServiceOrderDetailFetched));
+        public static readonly EventId ServiceOrderStatusHistoryFetched = new(1534, nameof(ServiceOrderStatusHistoryFetched));
+        public static readonly EventId ServiceOrderAttachmentUploaded = new(1535, nameof(ServiceOrderAttachmentUploaded));
+        public static readonly EventId ServiceOrderAttachmentsFetched = new(1536, nameof(ServiceOrderAttachmentsFetched));
+        public static readonly EventId ServiceOrderAttachmentDeleted = new(1537, nameof(ServiceOrderAttachmentDeleted));
+        public static readonly EventId ServiceOrderAttachmentDownloaded = new(1538, nameof(ServiceOrderAttachmentDownloaded));
+        public static readonly EventId ServiceOrderActivityFeedFetched = new(1539, nameof(ServiceOrderActivityFeedFetched));
+        public static readonly EventId ServiceOrderActivityFeedFailed = new(1540, nameof(ServiceOrderActivityFeedFailed));
     }
 
     // ── Inspection  1600-1699 ───────────────────────────────────────────────
@@ -121,5 +154,32 @@ public static class EventIdStore
     public static class Dashboard
     {
         public static readonly EventId DailySummaryFetched = new(1900, nameof(DailySummaryFetched));
+        public static readonly EventId SummaryDataSourceFailed = new(1901, nameof(SummaryDataSourceFailed));
+        public static readonly EventId RecentOrdersDataSourceFailed = new(1902, nameof(RecentOrdersDataSourceFailed));
+        public static readonly EventId PartialFallbackApplied = new(1903, nameof(PartialFallbackApplied));
+    }
+
+    // ── User  2000-2099 ─────────────────────────────────────────────────────
+    public static class User
+    {
+        public static readonly EventId UserCreated      = new(2000, nameof(UserCreated));
+        public static readonly EventId UserRoleUpdated  = new(2001, nameof(UserRoleUpdated));
+        public static readonly EventId UserDeactivated  = new(2002, nameof(UserDeactivated));
+        public static readonly EventId UserInviteSent   = new(2003, nameof(UserInviteSent));
+        public static readonly EventId UserInviteAccepted = new(2004, nameof(UserInviteAccepted));
+    }
+
+    // ── Import  2100-2199 ───────────────────────────────────────────────────
+    public static class Import
+    {
+        public static readonly EventId ImportUploaded        = new(2100, nameof(ImportUploaded));
+        public static readonly EventId ImportParsed          = new(2101, nameof(ImportParsed));
+        public static readonly EventId ImportValidationDone  = new(2102, nameof(ImportValidationDone));
+        public static readonly EventId ImportCommitted       = new(2103, nameof(ImportCommitted));
+        public static readonly EventId ImportCommitFailed    = new(2104, nameof(ImportCommitFailed));
+        public static readonly EventId ImportRowSkipped      = new(2105, nameof(ImportRowSkipped));
+        public static readonly EventId ImportRowError        = new(2106, nameof(ImportRowError));
+        public static readonly EventId ImportFileTooLarge    = new(2107, nameof(ImportFileTooLarge));
+        public static readonly EventId ImportParseError      = new(2108, nameof(ImportParseError));
     }
 }

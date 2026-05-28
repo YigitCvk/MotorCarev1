@@ -38,6 +38,9 @@ public class GetCurrentUserQueryHandler : IRequestHandler<GetCurrentUserQuery, C
             tenantIdentifier,
             user.FullName,
             user.Email,
-            user.Role.ToString());
+            user.Role.ToString(),
+            user.IsEmailVerified,
+            user.TwoFactorEnabled,
+            user.TwoFactorProvider?.ToString());
     }
 }

@@ -41,6 +41,8 @@ public sealed class GetServiceCatalogItemsQueryHandler : IRequestHandler<GetServ
                 item.Description,
                 item.DefaultDurationMinutes,
                 item.DefaultPrice,
+                item.Price,
+                item.Currency,
                 item.IsActive))
             .ToList();
 

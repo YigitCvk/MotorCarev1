@@ -59,7 +59,7 @@ public sealed class CustomersModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetCustomerById")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<CustomerDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -71,7 +71,7 @@ public sealed class CustomersModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("SearchCustomers")
-        .RequireAuthorization(AuthorizationPolicies.CustomerOperations)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<PagedResult<CustomerDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -82,7 +82,7 @@ public sealed class CustomersModule : ICarterModule
             return Results.Ok(result);
         })
         .WithName("GetCustomerVehicles")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<IReadOnlyList<VehicleDto>>()
         .ProducesProblem(StatusCodes.Status403Forbidden)
         .ProducesProblem(StatusCodes.Status422UnprocessableEntity);
@@ -93,7 +93,7 @@ public sealed class CustomersModule : ICarterModule
             return result is null ? Results.NotFound() : Results.Ok(result);
         })
         .WithName("GetCustomerSummary")
-        .RequireAuthorization(AuthorizationPolicies.ServiceOrderRead)
+        .RequireAuthorization(AuthorizationPolicies.CustomerRead)
         .Produces<CustomerSummaryDto>()
         .ProducesProblem(StatusCodes.Status404NotFound)
         .ProducesProblem(StatusCodes.Status403Forbidden)

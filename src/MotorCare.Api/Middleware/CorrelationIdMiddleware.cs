@@ -1,4 +1,5 @@
 using Serilog.Context;
+using MotorCare.Api.Logging;
 
 namespace MotorCare.Api.Middleware;
 
@@ -20,10 +21,11 @@ public sealed class CorrelationIdMiddleware
                 : Guid.NewGuid().ToString("N");
 
         context.Response.Headers[CorrelationIdHeader] = correlationId;
+        var requestPath = RequestPathRedactor.Redact(context.Request.Path);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))
         using (LogContext.PushProperty("RequestId", context.TraceIdentifier))
-        using (LogContext.PushProperty("RequestPath", context.Request.Path))
+        using (LogContext.PushProperty("RequestPath", requestPath))
         using (LogContext.PushProperty("RequestMethod", context.Request.Method))
         {
             await _next(context);

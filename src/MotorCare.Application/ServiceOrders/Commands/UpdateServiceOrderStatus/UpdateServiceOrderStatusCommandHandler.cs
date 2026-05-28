@@ -13,15 +13,18 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
 {
     private readonly IServiceOrderRepository _repository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<UpdateServiceOrderStatusCommandHandler> _logger;
 
     public UpdateServiceOrderStatusCommandHandler(
         IServiceOrderRepository repository,
         ITenantProvider tenantProvider,
+        ICurrentUserProvider currentUserProvider,
         ILogger<UpdateServiceOrderStatusCommandHandler> logger)
     {
         _repository = repository;
         _tenantProvider = tenantProvider;
+        _currentUserProvider = currentUserProvider;
         _logger = logger;
     }
 
@@ -32,6 +35,18 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
 
         var order = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
             ?? throw new NotFoundException(nameof(Domain.ServiceOrders.ServiceOrder), request.Id);
+        var previousStatus = order.Status;
+
+        if (previousStatus == request.Status)
+        {
+            throw new DomainException("Servis emri zaten seçilen durumda.");
+        }
+
+        if (string.Equals(_currentUserProvider.GetRole(), UserRole.Technician.ToString(), StringComparison.Ordinal) &&
+            request.Status is ServiceOrderStatus.Delivered or ServiceOrderStatus.Cancelled)
+        {
+            throw new UnauthorizedAccessException("Teknisyen rolü bu servis durumuna geçiş yapamaz.");
+        }
 
         switch (request.Status)
         {
@@ -68,13 +83,28 @@ public class UpdateServiceOrderStatusCommandHandler : IRequestHandler<UpdateServ
         }
 
         _repository.Update(order);
+        await _repository.AddStatusHistoryAsync(
+            new Domain.ServiceOrders.ServiceOrderStatusHistory(
+                tenantId,
+                order.Id,
+                previousStatus,
+                order.Status,
+                request.Note,
+                _currentUserProvider.GetUserId(),
+                _currentUserProvider.GetEmail(),
+                DateTimeOffset.UtcNow),
+            cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             EventIdStore.ServiceOrder.ServiceOrderStatusUpdated,
-            "Service order status updated. ServiceOrderId={ServiceOrderId} NewStatus={NewStatus}",
+            "Service order status updated. ServiceOrderId={ServiceOrderId} TenantId={TenantId} FromStatus={FromStatus} ToStatus={ToStatus} ChangedByUserId={ChangedByUserId} ChangedAt={ChangedAt}",
             request.Id,
-            request.Status);
+            tenantId,
+            previousStatus,
+            request.Status,
+            _currentUserProvider.GetUserId(),
+            DateTimeOffset.UtcNow);
 
         return Unit.Value;
     }

@@ -10,4 +10,6 @@ public sealed record ServiceCatalogItemDto(
     string? Description,
     int DefaultDurationMinutes,
     decimal DefaultPrice,
+    decimal Price,
+    string Currency,
     bool IsActive);

@@ -14,7 +14,14 @@ public class PasswordHasherAdapter : IPasswordHasher
 
     public bool Verify(string passwordHash, string password)
     {
-        var result = _passwordHasher.VerifyHashedPassword(new object(), passwordHash, password);
-        return result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded;
+        try
+        {
+            var result = _passwordHasher.VerifyHashedPassword(new object(), passwordHash, password);
+            return result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 }

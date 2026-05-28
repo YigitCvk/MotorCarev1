@@ -1,10 +1,13 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
+using MotorCare.Application.Common;
 using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
+using MotorCare.Domain.Users.Entities;
 
 namespace MotorCare.Application.Tenants.Commands.CreateTenantWithOwner;
 
@@ -13,15 +16,24 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
     private readonly ITenantRepository _tenantRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IEmailSender _emailSender;
+    private readonly ISecurityTokenFactory _securityTokenFactory;
+    private readonly ILogger<CreateTenantWithOwnerCommandHandler> _logger;
 
     public CreateTenantWithOwnerCommandHandler(
         ITenantRepository tenantRepository,
         IUserRepository userRepository,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IEmailSender emailSender,
+        ISecurityTokenFactory securityTokenFactory,
+        ILogger<CreateTenantWithOwnerCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _emailSender = emailSender;
+        _securityTokenFactory = securityTokenFactory;
+        _logger = logger;
     }
 
     public async Task<CreateTenantWithOwnerResultDto> Handle(CreateTenantWithOwnerCommand request, CancellationToken cancellationToken)
@@ -47,6 +59,52 @@ public class CreateTenantWithOwnerCommandHandler : IRequestHandler<CreateTenantW
         await _userRepository.AddAsync(owner, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        return new CreateTenantWithOwnerResultDto(tenant.Id, tenant.Identifier, owner.Id, owner.Email);
+        var verificationEmailSent = await TrySendVerificationEmailAsync(owner, cancellationToken);
+
+        return new CreateTenantWithOwnerResultDto(tenant.Id, tenant.Identifier, owner.Id, owner.Email, verificationEmailSent);
+    }
+
+    private async Task<bool> TrySendVerificationEmailAsync(User owner, CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var code = _securityTokenFactory.GenerateNumericCode();
+        var expiresAt = now.AddMinutes(10);
+        var token = owner.AddSecurityToken(
+            UserSecurityTokenPurpose.EmailVerification,
+            _securityTokenFactory.Hash(code),
+            expiresAt,
+            now);
+
+        _userRepository.Update(owner);
+        _userRepository.AddSecurityToken(token);
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            EventIdStore.Auth.EmailVerificationSendRequested,
+            "Email verification requested. UserId={UserId} Provider={Provider}",
+            owner.Id,
+            "Email");
+
+        try
+        {
+            await _emailSender.SendEmailVerificationAsync(owner.Email, owner.FullName, code, expiresAt.UtcDateTime, cancellationToken);
+
+            _logger.LogInformation(
+                EventIdStore.Auth.EmailVerificationSent,
+                "Email verification sent. UserId={UserId}",
+                owner.Id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                EventIdStore.Auth.EmailVerificationSendFailed,
+                ex,
+                "Email verification send failed. UserId={UserId}",
+                owner.Id);
+
+            return false;
+        }
     }
 }

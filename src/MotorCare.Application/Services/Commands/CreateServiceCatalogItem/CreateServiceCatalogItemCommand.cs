@@ -8,5 +8,6 @@ public sealed record CreateServiceCatalogItemCommand(
     ServiceCategory Category,
     string? Description,
     int DefaultDurationMinutes,
-    decimal DefaultPrice,
+    decimal Price,
+    string Currency = "TRY",
     bool IsActive = true) : IRequest<Guid>;

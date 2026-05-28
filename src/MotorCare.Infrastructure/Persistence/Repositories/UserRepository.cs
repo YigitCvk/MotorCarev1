@@ -21,11 +21,60 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId, cancellationToken);
     }
 
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<User?> GetByIdWithRefreshTokensAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.RefreshTokens)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<User?> GetByIdWithSecurityTokensAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.SecurityTokens)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string tenantId, string normalizedEmail, CancellationToken cancellationToken = default)
     {
         return await _context.Users
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Email == normalizedEmail, cancellationToken);
+    }
+
+    public async Task<User?> GetByEmailWithSecurityTokensAsync(string tenantId, string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.SecurityTokens)
+            .FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Email == normalizedEmail, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<User>> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Include(u => u.SecurityTokens)
+            .Where(u => u.Email == normalizedEmail)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<User>> GetAllByTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .IgnoreQueryFilters()
+            .Where(u => u.TenantId == tenantId)
+            .OrderBy(u => u.FullName)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<User?> GetByRefreshTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
@@ -36,6 +85,67 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.RefreshTokens.Any(t => t.TokenHash == tokenHash), cancellationToken);
     }
 
+    public async Task<Guid?> TryRevokeActiveRefreshTokenAsync(string tokenHash, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
+    {
+        var token = await _context.RefreshTokens
+            .AsNoTracking()
+            .Where(t => t.TokenHash == tokenHash)
+            .Select(t => new { t.Id, t.UserId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (token is null)
+        {
+            return null;
+        }
+
+        var updated = await _context.RefreshTokens
+            .Where(t => t.Id == token.Id && t.RevokedAt == null && t.ExpiresAt > revokedAt)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(t => t.RevokedAt, revokedAt),
+                cancellationToken);
+
+        return updated == 1 ? token.UserId : null;
+    }
+
+    public async Task<UserSecurityToken?> GetActiveSecurityTokenByHashAsync(string tokenHash, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        return await _context.UserSecurityTokens
+            .AsTracking()
+            .FirstOrDefaultAsync(
+                x => x.TokenHash == tokenHash &&
+                     x.Purpose == purpose &&
+                     x.ExpiresAt > now &&
+                     x.RevokedAt == null &&
+                     x.ConsumedAt == null,
+                cancellationToken);
+    }
+
+    public async Task<UserSecurityToken?> GetLatestSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserSecurityTokens
+            .AsTracking()
+            .Where(x => x.UserId == userId && x.Purpose == purpose && x.RevokedAt == null && x.ConsumedAt == null)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<UserSecurityToken?> GetLatestActiveSecurityTokenAsync(Guid userId, UserSecurityTokenPurpose purpose, CancellationToken cancellationToken = default)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        return await _context.UserSecurityTokens
+            .AsTracking()
+            .Where(x => x.UserId == userId &&
+                        x.Purpose == purpose &&
+                        x.RevokedAt == null &&
+                        x.ConsumedAt == null &&
+                        x.ExpiresAt > now)
+            .OrderByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);
@@ -44,6 +154,11 @@ public class UserRepository : IUserRepository
     public void AddRefreshToken(RefreshToken refreshToken)
     {
         _context.RefreshTokens.Add(refreshToken);
+    }
+
+    public void AddSecurityToken(UserSecurityToken securityToken)
+    {
+        _context.UserSecurityTokens.Add(securityToken);
     }
 
     public void Update(User user)

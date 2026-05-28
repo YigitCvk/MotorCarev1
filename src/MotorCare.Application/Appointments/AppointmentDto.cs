@@ -24,26 +24,26 @@ public static class AppointmentTextMapper
     public static string ToText(AppointmentType type) =>
         type switch
         {
-            AppointmentType.Maintenance => "Maintenance",
-            AppointmentType.Repair => "Repair",
-            AppointmentType.Cleaning => "Cleaning",
-            AppointmentType.Washing => "Washing",
-            AppointmentType.Inspection => "Inspection",
-            AppointmentType.TireChange => "Tire Change",
-            AppointmentType.Other => "Other",
+            AppointmentType.Maintenance => "Bakım",
+            AppointmentType.Repair => "Onarım",
+            AppointmentType.Cleaning => "Temizlik",
+            AppointmentType.Washing => "Yıkama",
+            AppointmentType.Inspection => "Ekspertiz",
+            AppointmentType.TireChange => "Lastik Değişimi",
+            AppointmentType.Other => "Diğer",
             _ => type.ToString()
         };
 
     public static string ToText(AppointmentStatus status) =>
         status switch
         {
-            AppointmentStatus.Scheduled => "Scheduled",
-            AppointmentStatus.Confirmed => "Confirmed",
-            AppointmentStatus.CheckedIn => "Checked In",
-            AppointmentStatus.ConvertedToOrder => "Converted To Order",
-            AppointmentStatus.Cancelled => "Cancelled",
-            AppointmentStatus.NoShow => "No Show",
-            AppointmentStatus.Completed => "Completed",
+            AppointmentStatus.Scheduled => "Planlandı",
+            AppointmentStatus.Confirmed => "Onaylandı",
+            AppointmentStatus.CheckedIn => "Servise Alındı",
+            AppointmentStatus.ConvertedToOrder => "İş Emrine Dönüştü",
+            AppointmentStatus.Cancelled => "İptal",
+            AppointmentStatus.NoShow => "Gelmedi",
+            AppointmentStatus.Completed => "Tamamlandı",
             _ => status.ToString()
         };
 }

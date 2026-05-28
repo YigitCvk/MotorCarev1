@@ -34,8 +34,28 @@ logs/
 *.tmp
 *.cache
 
+# Backup artifacts contain production-like data
+backups/
+**/backups/
+*.dump
+*.dump.sha256
+*.backup
+*.sql.gz
+
 # Package managers
 node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.angular/
+**/.angular/
+.vite/
+**/.vite/
+coverage/
+**/coverage/
+*.lscache
 
 # OS files
 .DS_Store
@@ -52,3 +72,6 @@ publish-ssl/
 
 # Repository-local temp copies
 src/**/obj/
+
+# Root gitignore ignores Markdown by default; keep tracked ops docs visible.
+!docs/ops/secret-management.md

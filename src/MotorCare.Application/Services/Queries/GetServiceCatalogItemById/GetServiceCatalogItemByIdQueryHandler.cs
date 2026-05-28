@@ -34,6 +34,8 @@ public sealed class GetServiceCatalogItemByIdQueryHandler : IRequestHandler<GetS
             item.Description,
             item.DefaultDurationMinutes,
             item.DefaultPrice,
+            item.Price,
+            item.Currency,
             item.IsActive);
     }
 }

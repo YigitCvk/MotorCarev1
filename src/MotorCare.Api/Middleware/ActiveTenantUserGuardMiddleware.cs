@@ -118,6 +118,18 @@ public sealed class ActiveTenantUserGuardMiddleware
             return;
         }
 
+        var tokenRole = user.FindFirstValue(JwtTokenGenerator.RoleClaim)
+            ?? user.FindFirstValue(ClaimTypes.Role);
+        if (!string.Equals(tokenRole, tenantUser.Role.ToString(), StringComparison.Ordinal))
+        {
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status403Forbidden,
+                "Forbidden",
+                "The authenticated role is no longer valid.");
+            return;
+        }
+
         await _next(context);
     }
 

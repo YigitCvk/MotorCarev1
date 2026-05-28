@@ -72,7 +72,7 @@ public sealed class UpdateMotorcycleInspectionCommandHandler : IRequestHandler<U
             ?? throw new UnauthorizedAccessException("Tenant ID is required.");
 
         var inspection = await _repository.GetByIdAsync(request.Id, tenantId, cancellationToken)
-            ?? throw new NotFoundException("Ekspertiz kaydi bulunamadi.");
+            ?? throw new NotFoundException("Ekspertiz kaydi bulunamadı.");
 
         inspection.UpdateDetails(
             request.CustomerId,

@@ -7,4 +7,8 @@ public sealed record AuthResponseDto(
     string TenantId,
     string TenantIdentifier,
     string Email,
-    string Role);
+    string Role,
+    bool RequiresTwoFactor = false,
+    string? TwoFactorToken = null,
+    DateTimeOffset? TwoFactorExpiresAtUtc = null,
+    string? TwoFactorProvider = null);

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
+using MotorCare.Api.Logging;
 using MotorCare.Domain.Common;
 
 namespace MotorCare.Api.Middleware;
@@ -35,7 +36,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             "Unhandled exception. StatusCode={StatusCode} Title={Title} Path={Path} CorrelationId={CorrelationId}",
             statusCode,
             title,
-            httpContext.Request.Path,
+            RequestPathRedactor.Redact(httpContext.Request.Path),
             httpContext.TraceIdentifier);
 
         httpContext.Response.StatusCode = statusCode;

@@ -14,6 +14,7 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
     private readonly IVehicleRepository _vehicleRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ITenantProvider _tenantProvider;
+    private readonly ICurrentUserProvider _currentUserProvider;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
     private readonly ILogger<CreateServiceOrderCommandHandler> _logger;
 
@@ -22,6 +23,7 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
         IVehicleRepository vehicleRepository,
         ICustomerRepository customerRepository,
         ITenantProvider tenantProvider,
+        ICurrentUserProvider currentUserProvider,
         IOrderNumberGenerator orderNumberGenerator,
         ILogger<CreateServiceOrderCommandHandler> logger)
     {
@@ -29,6 +31,7 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
         _vehicleRepository = vehicleRepository;
         _customerRepository = customerRepository;
         _tenantProvider = tenantProvider;
+        _currentUserProvider = currentUserProvider;
         _orderNumberGenerator = orderNumberGenerator;
         _logger = logger;
     }
@@ -60,7 +63,35 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
             request.VehicleKm,
             request.Complaint);
 
+        if (request.Consumables is not null)
+        {
+            foreach (var consumable in request.Consumables
+                         .Where(x => !string.IsNullOrWhiteSpace(x.Category) && !string.IsNullOrWhiteSpace(x.ProductName)))
+            {
+                order.AddConsumable(
+                    consumable.Category,
+                    consumable.ProductName,
+                    consumable.UnitPrice,
+                    consumable.Quantity,
+                    consumable.Brand,
+                    consumable.SubCategory,
+                    consumable.Specification,
+                    consumable.Notes);
+            }
+        }
+
         await _serviceOrderRepository.AddAsync(order, cancellationToken);
+        await _serviceOrderRepository.AddStatusHistoryAsync(
+            new ServiceOrderStatusHistory(
+                tenantId,
+                order.Id,
+                null,
+                order.Status,
+                "Servis emri oluşturuldu.",
+                _currentUserProvider.GetUserId(),
+                _currentUserProvider.GetEmail(),
+                DateTimeOffset.UtcNow),
+            cancellationToken);
         await _serviceOrderRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
@@ -70,6 +101,15 @@ public class CreateServiceOrderCommandHandler : IRequestHandler<CreateServiceOrd
             orderNo,
             request.CustomerId,
             request.VehicleId);
+
+        if (order.Consumables.Count > 0)
+        {
+            _logger.LogInformation(
+                EventIdStore.ServiceOrder.ConsumablesAttachedToServiceOrder,
+                "Consumables attached to service order. ServiceOrderId={ServiceOrderId} ConsumableCount={ConsumableCount}",
+                order.Id,
+                order.Consumables.Count);
+        }
 
         return order.Id;
     }

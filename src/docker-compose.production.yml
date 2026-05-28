@@ -1,8 +1,45 @@
+# Production docker-compose for BakımSuite
+# Usage: docker compose -f docker-compose.production.yml up -d
+# Requires: .env file with all required variables (see deploy/portainer/production.env.example)
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-5}
+
+x-app-security: &app-security
+  init: true
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  pids_limit: 256
+
+x-tool-security: &tool-security
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+  pids_limit: 256
+
 services:
   postgres:
     image: postgres:16
     container_name: motorcare-production-postgres
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${POSTGRES_MEM_LIMIT:-2g}
+    cpus: ${POSTGRES_CPUS:-2.00}
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-motorcare}
       POSTGRES_USER: ${POSTGRES_USER:-motorcare_user}
@@ -18,32 +55,54 @@ services:
       - motorcare-production
 
   api:
-    image: ${API_IMAGE:-ghcr.io/yigitcvk/motorcare-api:production}
+    <<: *app-security
+    image: ${API_IMAGE}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile
     pull_policy: always
     container_name: motorcare-production-api
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${API_MEM_LIMIT:-1g}
+    cpus: ${API_CPUS:-1.50}
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://0.0.0.0:8080
+      MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
+      MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
+      AllowedHosts: ${ALLOWED_HOSTS:-api.garajpass.com;garajpass.com;www.garajpass.com}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
-      Jwt__Issuer: ${JWT_ISSUER:-BakimSuite}
-      Jwt__Audience: ${JWT_AUDIENCE:-BakimSuite}
+      Jwt__Issuer: ${JWT_ISSUER:-GarajPass}
+      Jwt__Audience: ${JWT_AUDIENCE:-GarajPass.Client}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-60}
       Jwt__RefreshTokenDays: ${JWT_REFRESH_TOKEN_DAYS:-7}
+      Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS:-https://garajpass.com;https://www.garajpass.com}
       Elastic__Uri: ${ELASTIC_URI:-}
       Elastic__Username: ${ELASTIC_USERNAME:-}
       Elastic__Password: ${ELASTIC_PASSWORD:-}
       Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-prod-{0:yyyy.MM}}
       DataProtection__KeysPath: /var/lib/motorcare/dataprotection
+      Storage__AttachmentsPath: ${Storage__AttachmentsPath:-/var/lib/motorcare/attachments}
+      Email__Provider: ${Email__Provider:-Smtp}
+      Email__FromEmail: ${Email__FromEmail:-no-reply@garajpass.com}
+      Email__FromName: ${Email__FromName:-GarajPass}
+      Email__SmtpHost: ${Email__SmtpHost:-}
+      Email__SmtpPort: ${Email__SmtpPort:-587}
+      Email__SmtpUsername: ${Email__SmtpUsername:?Email__SmtpUsername is required}
+      Email__SmtpPassword: ${Email__SmtpPassword:?Email__SmtpPassword is required}
+      Email__EnableSsl: ${Email__EnableSsl:-true}
+      Email__UseDefaultCredentials: ${Email__UseDefaultCredentials:-false}
+      Email__AppBaseUrl: ${Email__AppBaseUrl:-https://garajpass.com}
+      Email__SendEmails: ${Email__SendEmails:-true}
+      Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     volumes:
       - api_dataprotection:/var/lib/motorcare/dataprotection
+      - api_attachments:${Storage__AttachmentsPath:-/var/lib/motorcare/attachments}
     ports:
       - "127.0.0.1:${API_HOST_PORT:-5002}:8080"
     healthcheck:
@@ -54,46 +113,55 @@ services:
     networks:
       - motorcare-production
 
-  app:
-    image: ${APP_IMAGE:-ghcr.io/yigitcvk/motorcare-app:production}
-    build:
-      context: .
-      dockerfile: MotorCare.App/Dockerfile
+  web:
+    <<: *app-security
+    image: ${WEB_IMAGE}
     pull_policy: always
-    container_name: motorcare-production-app
+    container_name: motorcare-production-web
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: ${WEB_MEM_LIMIT:-512m}
+    cpus: ${WEB_CPUS:-0.75}
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/.next/cache:rw,noexec,nosuid,size=128m
     depends_on:
       api:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://0.0.0.0:8080
-      ApiBaseUrl: ${APP_INTERNAL_API_BASE_URL:-http://api:8080}
-      DataProtection__KeysPath: /var/lib/motorcare/dataprotection
-    volumes:
-      - app_dataprotection:/var/lib/motorcare/dataprotection
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      API_BASE_URL: http://api:8080
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://bakimsuite.com}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.garajpass.com}
     ports:
-      - "127.0.0.1:${APP_HOST_PORT:-5001}:8080"
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
-      interval: 20s
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/health || exit 1"]
+      interval: 30s
       timeout: 5s
-      retries: 10
+      retries: 5
     networks:
       - motorcare-production
 
   migrator:
+    <<: *tool-security
     profiles: ["tools"]
     image: ${MIGRATOR_IMAGE:-ghcr.io/yigitcvk/motorcare-migrator:production}
     build:
       context: .
       dockerfile: MotorCare.Api/Dockerfile.migrator
     pull_policy: always
+    logging: *default-logging
+    mem_limit: ${MIGRATOR_MEM_LIMIT:-1g}
+    cpus: ${MIGRATOR_CPUS:-1.50}
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      MOTORCARE_COMMIT_SHA: ${MOTORCARE_COMMIT_SHA:-unknown}
+      MOTORCARE_BUILD_TIME: ${MOTORCARE_BUILD_TIME:-unknown}
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-motorcare};Username=${POSTGRES_USER:-motorcare_user};Password=${POSTGRES_PASSWORD}
-      Jwt__Issuer: ${JWT_ISSUER:-BakimSuite}
-      Jwt__Audience: ${JWT_AUDIENCE:-BakimSuite}
+      Jwt__Issuer: ${JWT_ISSUER:-GarajPass}
+      Jwt__Audience: ${JWT_AUDIENCE:-GarajPass.Client}
       Jwt__Key: ${JWT_KEY:?JWT_KEY is required}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-60}
       Jwt__RefreshTokenDays: ${JWT_REFRESH_TOKEN_DAYS:-7}
@@ -102,6 +170,7 @@ services:
       Elastic__Password: ${ELASTIC_PASSWORD:-}
       Elastic__IndexFormat: ${ELASTIC_INDEX_FORMAT:-motorcare-api-prod-{0:yyyy.MM}}
       DataProtection__KeysPath: /tmp/dataprotection
+      Email__LogEmailBodyInDevelopment: ${Email__LogEmailBodyInDevelopment:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,4 +185,4 @@ networks:
 volumes:
   postgres_data:
   api_dataprotection:
-  app_dataprotection:
+  api_attachments:

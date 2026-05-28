@@ -136,8 +136,8 @@ public sealed class GetCustomerSummaryQueryHandler : IRequestHandler<GetCustomer
     {
         ServiceOrderStatus.Open => "Acik",
         ServiceOrderStatus.InProgress => "Islemde",
-        ServiceOrderStatus.WaitingForParts => "Parca Bekliyor",
-        ServiceOrderStatus.Completed => "Tamamlandi",
+        ServiceOrderStatus.WaitingForParts => "Parça Bekliyor",
+        ServiceOrderStatus.Completed => "Teslime Hazır",
         ServiceOrderStatus.Delivered => "Teslim Edildi",
         ServiceOrderStatus.Cancelled => "Iptal",
         _ => status.ToString()

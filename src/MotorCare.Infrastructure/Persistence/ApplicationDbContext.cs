@@ -9,6 +9,8 @@ using MotorCare.Domain.ServiceOrders.Entities;
 using MotorCare.Domain.Services;
 using MotorCare.Domain.Inventory;
 using MotorCare.Domain.Inspections;
+using MotorCare.Domain.Imports;
+using MotorCare.Domain.PublicRecords;
 using MotorCare.Domain.Tenants;
 using MotorCare.Domain.Users;
 using MotorCare.Domain.Users.Entities;
@@ -45,14 +47,21 @@ public class ApplicationDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+    public DbSet<MotorcycleModelCatalogItem> MotorcycleModelCatalogItems => Set<MotorcycleModelCatalogItem>();
     public DbSet<ServiceOrder> ServiceOrders => Set<ServiceOrder>();
+    public DbSet<ServiceOrderAttachment> ServiceOrderAttachments => Set<ServiceOrderAttachment>();
+    public DbSet<ServiceOrderStatusHistory> ServiceOrderStatusHistories => Set<ServiceOrderStatusHistory>();
     public DbSet<ConsumableCatalogItem> ConsumableCatalogItems => Set<ConsumableCatalogItem>();
     public DbSet<ServiceCatalogItem> ServiceCatalogItems => Set<ServiceCatalogItem>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<MotorcycleInspection> MotorcycleInspections => Set<MotorcycleInspection>();
+    public DbSet<PublicRecordAccess> PublicRecordAccesses => Set<PublicRecordAccess>();
     public DbSet<ServiceOrderNumberCounter> ServiceOrderNumberCounters => Set<ServiceOrderNumberCounter>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
+    public DbSet<ImportBatchRow> ImportBatchRows => Set<ImportBatchRow>();
+    public DbSet<UserSecurityToken> UserSecurityTokens => Set<UserSecurityToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,11 +75,15 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Appointment>().HasQueryFilter(a => a.TenantId == CurrentTenantId);
         modelBuilder.Entity<Vehicle>().HasQueryFilter(v => v.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceOrder>().HasQueryFilter(o => o.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ServiceOrderAttachment>().HasQueryFilter(a => a.TenantId == CurrentTenantId && !a.IsDeleted);
+        modelBuilder.Entity<ServiceOrderStatusHistory>().HasQueryFilter(h => h.TenantId == CurrentTenantId);
         modelBuilder.Entity<ConsumableCatalogItem>().HasQueryFilter(c => c.IsSystemDefault || c.TenantId == CurrentTenantId);
         modelBuilder.Entity<ServiceCatalogItem>().HasQueryFilter(s => s.TenantId == CurrentTenantId);
         modelBuilder.Entity<InventoryItem>().HasQueryFilter(i => i.TenantId == CurrentTenantId);
         modelBuilder.Entity<MotorcycleInspection>().HasQueryFilter(i => i.TenantId == CurrentTenantId);
         modelBuilder.Entity<User>().HasQueryFilter(u => u.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ImportBatch>().HasQueryFilter(b => b.TenantId == CurrentTenantId);
+        modelBuilder.Entity<ImportBatchRow>().HasQueryFilter(r => r.TenantId == CurrentTenantId);
     }
     
     public override int SaveChanges()
@@ -123,6 +136,7 @@ public class ApplicationDbContext : DbContext
     {
         NormalizeNewOwnedEntries<ServiceOperationItem>();
         NormalizeNewOwnedEntries<ServicePartItem>();
+        NormalizeNewOwnedEntries<ServiceConsumableItem>();
         NormalizeNewOwnedEntries<ServicePayment>();
     }
 

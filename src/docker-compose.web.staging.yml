@@ -1,0 +1,43 @@
+services:
+  web:
+    image: ${WEB_IMAGE:-garajpass-web:staging}
+    build:
+      context: .
+      dockerfile: MotorCare.Web/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://staging-api.bakimsuite.com}
+    container_name: garajpass-staging-web
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/.next/cache:rw,noexec,nosuid,size=128m
+    read_only: true
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      API_BASE_URL: ${API_BASE_URL:-https://staging-api.bakimsuite.com}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
+      NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
+    ports:
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    pids_limit: 256
+    mem_limit: ${WEB_MEM_LIMIT:-512m}
+    cpus: ${WEB_CPUS:-0.75}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

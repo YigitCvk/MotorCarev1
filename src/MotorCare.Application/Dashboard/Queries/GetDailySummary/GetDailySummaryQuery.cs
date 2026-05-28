@@ -3,35 +3,24 @@ using MediatR;
 namespace MotorCare.Application.Dashboard.Queries.GetDailySummary;
 
 public sealed record DailySummaryDto(
-    int TodayAppointmentsCount,
-    int ActiveServiceOrdersCount,
-    int CompletedServiceOrdersCount,
-    int DeliveryWaitingCount,
-    decimal DailyRevenue,
+    int TotalCustomerCount,
+    int TotalVehicleCount,
+    int OpenServiceOrderCount,
+    int TodayAppointmentCount,
+    int CompletedServiceCountThisMonth,
+    decimal TotalPaymentsThisMonth,
+    int CriticalInspectionCount,
+    int TotalServiceOrdersToday,
+    int CompletedServiceOrdersToday,
+    int InProgressServiceOrdersCount,
     decimal TotalPaymentsToday,
-    decimal PendingAmount,
-    IReadOnlyList<DashboardAppointmentItemDto> TodayAppointments,
-    IReadOnlyList<DashboardServiceOrderItemDto> RecentServiceOrders);
+    int ActiveServiceOrdersCount,
+    IReadOnlyList<RecentServiceOrderDto> RecentServiceOrders);
 
-public sealed record DashboardAppointmentItemDto(
-    Guid Id,
-    string CustomerName,
-    string Phone,
-    string? Plate,
-    int Type,
-    string TypeText,
-    int Status,
-    string StatusText,
-    DateTimeOffset StartAt,
-    DateTimeOffset EndAt);
-
-public sealed record DashboardServiceOrderItemDto(
+public sealed record RecentServiceOrderDto(
     Guid Id,
     string OrderNo,
-    string? CustomerName,
-    string? VehiclePlate,
     string Status,
-    string StatusText,
     DateTimeOffset OpenedAt,
     decimal GrandTotal);
 
