@@ -10,7 +10,7 @@ import { ArrowLeft, Search, User, Car, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '@/core/api/client';
 import { friendlyError } from '@/core/api/errors';
-import type { PagedResult } from '@/shared/types/api.types';
+import { normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 
 const orderSchema = z.object({
   complaint: z.string().min(1, 'Şikayet açıklaması zorunludur'),
@@ -34,13 +34,6 @@ interface VehicleOption {
   year?: number;
 }
 
-interface CustomerWithVehicles {
-  id: string;
-  fullName: string;
-  phone?: string;
-  vehicles: VehicleOption[];
-}
-
 interface CreateOrderBody {
   vehicleId: string;
   customerId: string;
@@ -48,6 +41,45 @@ interface CreateOrderBody {
   complaint: string | null;
   notes: string | null;
   estimatedCompletionDate: string | null;
+}
+
+function normalizeCustomer(value: unknown): CustomerSearchResult | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+
+  const record = value as Record<string, unknown>;
+  const id = readString(record.id);
+  const fullName =
+    readString(record.fullName) ||
+    readString(record.displayName) ||
+    readString(record.name) ||
+    readString(record.title);
+
+  if (!id || !fullName) return null;
+
+  return {
+    id,
+    fullName,
+    phone: readString(record.phone) || readString(record.phoneNumber) || undefined,
+  };
+}
+
+function normalizeVehicle(value: unknown): VehicleOption | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+
+  const record = value as Record<string, unknown>;
+  const id = readString(record.id);
+  const plate =
+    readString(record.plate) || readString(record.plateOriginal) || readString(record.plateNormalized);
+
+  if (!id || !plate) return null;
+
+  return {
+    id,
+    plate,
+    brand: readString(record.brand) || undefined,
+    model: readString(record.model) || undefined,
+    year: readNumber(record.year),
+  };
 }
 
 export default function ServiceOrderNewPage(): React.ReactElement {
@@ -100,24 +132,38 @@ export default function ServiceOrderNewPage(): React.ReactElement {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const { data: customerResults, isFetching: searchingCustomers } = useQuery<PagedResult<CustomerSearchResult>>({
+  const {
+    data: customerResults = [],
+    isFetching: searchingCustomers,
+    isError: customerSearchError,
+  } = useQuery<CustomerSearchResult[]>({
     queryKey: ['customer-search', customerSearch],
     queryFn: async () => {
-      const { data } = await apiClient.get<PagedResult<CustomerSearchResult>>('/api/customers', {
+      const { data } = await apiClient.get<unknown>('/api/customers', {
         params: { q: customerSearch, pageSize: 10 },
       });
-      return data;
+      return normalizeApiArray(data)
+        .map(normalizeCustomer)
+        .filter((customer): customer is CustomerSearchResult => Boolean(customer));
     },
     enabled: customerSearch.length >= 2,
+    retry: false,
   });
 
-  const { data: customerDetail } = useQuery<CustomerWithVehicles>({
-    queryKey: ['customer-detail', selectedCustomer?.id],
+  const {
+    data: vehicles = [],
+    isFetching: loadingVehicles,
+    isError: vehiclesError,
+  } = useQuery<VehicleOption[]>({
+    queryKey: ['customer-vehicles', selectedCustomer?.id],
     queryFn: async () => {
-      const { data } = await apiClient.get<CustomerWithVehicles>(`/api/customers/${selectedCustomer!.id}`);
-      return data;
+      const { data } = await apiClient.get<unknown>(`/api/customers/${selectedCustomer!.id}/vehicles`);
+      return normalizeApiArray(data)
+        .map(normalizeVehicle)
+        .filter((vehicle): vehicle is VehicleOption => Boolean(vehicle));
     },
     enabled: Boolean(selectedCustomer?.id),
+    retry: false,
   });
 
   const createMutation = useMutation<string, Error, CreateOrderBody>({
@@ -168,8 +214,6 @@ export default function ServiceOrderNewPage(): React.ReactElement {
       estimatedCompletionDate: values.estimatedCompletionDate?.trim() || null,
     });
   });
-
-  const vehicles: VehicleOption[] = customerDetail?.vehicles ?? [];
 
   return (
     <div>
@@ -225,10 +269,15 @@ export default function ServiceOrderNewPage(): React.ReactElement {
                   {searchingCustomers && (
                     <div className="px-4 py-3 text-sm text-slate-400">Aranıyor...</div>
                   )}
-                  {!searchingCustomers && (!customerResults?.items || customerResults.items.length === 0) && (
+                  {!searchingCustomers && customerSearchError && (
+                    <div className="px-4 py-3 text-sm text-red-600">
+                      Müşteri arama şu anda yapılamıyor. Lütfen tekrar deneyin.
+                    </div>
+                  )}
+                  {!searchingCustomers && !customerSearchError && customerResults.length === 0 && (
                     <div className="px-4 py-3 text-sm text-slate-400">Müşteri bulunamadı.</div>
                   )}
-                  {!searchingCustomers && customerResults?.items.map((c) => (
+                  {!searchingCustomers && !customerSearchError && customerResults.map((c) => (
                     <button
                       key={c.id}
                       type="button"
@@ -259,7 +308,15 @@ export default function ServiceOrderNewPage(): React.ReactElement {
               <label className="label">
                 Araç <span className="text-red-500">*</span>
               </label>
-              {vehicles.length === 0 ? (
+              {loadingVehicles ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  Araçlar yükleniyor...
+                </div>
+              ) : vehiclesError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  Müşteriye bağlı araçlar şu anda yüklenemedi. Lütfen tekrar deneyin.
+                </div>
+              ) : vehicles.length === 0 ? (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
                   Bu müşteriye ait araç kaydı bulunamadı.
                 </div>

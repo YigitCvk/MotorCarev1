@@ -125,7 +125,7 @@ Auth, Customers, Vehicles, Appointments, Service Orders, Inspections, Inventory,
 
 | Priority | Gap | Detail |
 |---|---|---|
-| HIGH | `GET /api/dashboard/monthly` not wired | Backend endpoint exists and returns monthly revenue data. Frontend `dashboard/page.tsx` hardcodes `monthlyData = []` — the revenue chart always renders empty regardless of actual data. |
+| RESOLVED | `GET /api/dashboard/monthly` wired | Frontend `dashboard/page.tsx` now calls the endpoint through React Query and renders returned monthly revenue data. |
 | MEDIUM | Service order public-access management UI | Backend endpoints exist; no frontend UI. |
 | MEDIUM | Service order attachments | Backend upload/download endpoints exist; no frontend UI. |
 | LOW | Dashboard payment-summary and open-balances | Backend endpoints exist; not wired to any frontend widget. |
@@ -145,7 +145,7 @@ Auth, Customers, Vehicles, Appointments, Service Orders, Inspections, Inventory,
 | Blocker | Detail |
 |---|---|
 | DNS not configured | `staging.bakimsuite.com` and `staging-api.bakimsuite.com` A records must point to `46.225.166.254` — not yet set |
-| Nginx port mismatch | `docs/ops/nginx-staging.md` proxies to ports 8080/8081; `docker-compose.staging.yml` defaults `WEB_HOST_PORT=3000` and `API_HOST_PORT=5002` — must reconcile before first deploy |
+| Nginx port mismatch | Resolved in the release merge pass: Nginx staging docs now proxy web to `127.0.0.1:3000` and API to `127.0.0.1:5102`, matching `docker-compose.staging.yml` host defaults |
 | Migrator image not built in CI | `.github/workflows/staging-ci.yml` builds the API and Web images but not the database migrator image — migrations will not run automatically on deploy |
 | `REGISTRY_URL` placeholder | `staging.env.example` contains an unset `REGISTRY_URL` placeholder that will cause the CI image push step to fail |
 
@@ -192,13 +192,12 @@ Env var name mismatch corrected:
 
 The following items were identified and documented but not addressed in this QA pass, either because they require backend changes, are out of scope for a non-conflict branch, or are tracked as separate work:
 
-1. **Dashboard monthly chart always empty** — `GET /api/dashboard/monthly` must be wired to the chart component. High-visibility bug on first load for any user; recommend addressing before public staging demo.
-2. **Nginx / Docker port mismatch** — Must be reconciled before the first staging deployment attempt or the web container will be unreachable through the proxy.
-3. **Migrator image missing from CI** — Database schema will not be up to date after a fresh deploy until this is added to the workflow.
-4. **DNS not set** — Blocks all staging validation until A records are created.
-5. **2 moderate npm audit findings** — Non-blocking now; should be reviewed before production promotion.
-6. **Imports module** — 6 backend endpoints have no frontend surface. Not a regression (never existed), but a visible feature gap.
-7. **`/inspections` form and search** — Explicitly out of scope for this branch; covered by the concurrent `codex/inspection-customer-search` branch.
+1. **Nginx / Docker port mismatch** — Must be reconciled before the first staging deployment attempt or the web container will be unreachable through the proxy.
+2. **Migrator image missing from CI** — Database schema will not be up to date after a fresh deploy until this is added to the workflow.
+3. **DNS not set** — Blocks all staging validation until A records are created.
+4. **2 moderate npm audit findings** — Non-blocking now; should be reviewed before production promotion.
+5. **Imports module** — 6 backend endpoints have no frontend surface. Not a regression (never existed), but a visible feature gap.
+6. **`/inspections` form and search** — Explicitly out of scope for this branch; covered by the concurrent `codex/inspection-customer-search` branch.
 
 ---
 

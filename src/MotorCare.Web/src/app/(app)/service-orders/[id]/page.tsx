@@ -9,15 +9,16 @@ import {
   Plus,
   Trash2,
   ChevronDown,
-  Copy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import apiClient from '@/core/api/client';
 import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { friendlyError } from '@/core/api/errors';
 import { money, dateText, dateTimeText, todayInputValue } from '@/shared/utils/format';
+import { publicServiceRecordUrl } from '@/shared/utils/public-links';
 import type { PagedResult } from '@/shared/types/api.types';
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
@@ -584,37 +585,30 @@ export default function ServiceOrderDetailPage(): React.ReactElement {
     { key: 'consumables', label: 'Sarf Malzeme', count: data.consumables.length },
     { key: 'payments', label: 'Ödemeler', count: data.payments.length },
   ];
+  const publicUrl = data.publicSlug ? publicServiceRecordUrl(data.publicSlug) : null;
 
   return (
     <div>
       {/* Back nav */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button onClick={() => router.push('/service-orders')} className="btn-ghost text-sm">
           <ArrowLeft size={14} />
           Servis Kayıtları
         </button>
-        <div className="flex items-center gap-2">
-          {data.publicSlug && (
-            <button
-              type="button"
-              className="btn-secondary text-sm"
-              onClick={() => {
-                const url = `${window.location.origin}/public/service-record/${data.publicSlug ?? data.id}`;
-                navigator.clipboard.writeText(url).then(
-                  () => toast.success('Link kopyalandı'),
-                  () => toast.error('Link kopyalanamadı'),
-                );
-              }}
-            >
-              <Copy size={14} />
-              QR Linkini Kopyala
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
           <Link href={`/service-orders/${id}/print`} target="_blank" className="btn-secondary text-sm">
             <Printer size={14} />
             Yazdır
           </Link>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <QRLinkCard
+          href={publicUrl}
+          title="Servis paylaşım QR kodu"
+          description="Müşteri servis kaydını bu QR veya bağlantı ile görüntüleyebilir."
+        />
       </div>
 
       {/* Header */}

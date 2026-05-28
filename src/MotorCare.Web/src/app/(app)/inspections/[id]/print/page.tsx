@@ -6,7 +6,11 @@ import { Printer } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText } from '@/shared/utils/format';
+import { publicInspectionReportUrl } from '@/shared/utils/public-links';
+import { VehicleDiagram } from '@/features/inspections/components';
+import { buildDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
 
 // ---- DTOs ----------------------------------------------------------------
 
@@ -49,6 +53,8 @@ interface MotorcycleInspectionDto {
   updatedAt: string | null;
   completedAt: string | null;
   items: MotorcycleInspectionItemDto[];
+  publicSlug: string | null;
+  vehicleType?: string | null;
 }
 
 // ---- Constants -----------------------------------------------------------
@@ -108,6 +114,9 @@ export default function InspectionPrintPage({
     const bOrder = CATEGORY_ORDER.indexOf(bItems[0].category);
     return (aOrder === -1 ? 99 : aOrder) - (bOrder === -1 ? 99 : bOrder);
   });
+  const publicUrl = data.publicSlug ? publicInspectionReportUrl(data.publicSlug) : null;
+  const damageZones = buildDamageZones(data.items);
+  const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
 
   return (
     <>
@@ -124,7 +133,7 @@ export default function InspectionPrintPage({
       `}</style>
 
       {/* Print button — hidden on print */}
-      <div className="no-print fixed top-4 right-4 z-50 flex gap-2">
+      <div className="no-print mx-auto flex max-w-4xl justify-end gap-2 p-4">
         <button
           onClick={() => window.print()}
           className="btn-primary"
@@ -146,7 +155,7 @@ export default function InspectionPrintPage({
         {/* Business header */}
         <div className="flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">MotorCare</h1>
+            <h1 className="text-2xl font-bold text-slate-900">GarajPass</h1>
             <p className="text-sm text-slate-500">Motorsiklet Ekspertiz Raporu</p>
           </div>
           <div className="text-right">
@@ -154,6 +163,15 @@ export default function InspectionPrintPage({
             <p className="text-sm text-slate-500">{dateText(data.createdAt)}</p>
             <p className="text-sm font-medium text-slate-700">{data.statusText}</p>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <QRLinkCard
+            href={publicUrl}
+            title="Expertiz paylaşım QR kodu"
+            description="Müşteri bu QR ile expertiz raporunun public sayfasına ulaşabilir."
+            compact
+          />
         </div>
 
         {/* Customer & Vehicle info */}
@@ -244,6 +262,15 @@ export default function InspectionPrintPage({
             </table>
           </div>
         </div>
+
+        {damageZones.length > 0 && (
+          <div className="mb-6 rounded border border-slate-200 p-4">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
+              {diagramKind === 'motorcycle' ? 'Motosiklet Diyagramı' : 'Araç Diyagramı'}
+            </h2>
+            <VehicleDiagram zones={damageZones} vehicleType={diagramKind} />
+          </div>
+        )}
 
         {/* Inspection items by category */}
         {sortedCategories.map(([categoryText, items]) => (

@@ -99,7 +99,7 @@ function VerifyEmailInner() {
       {error && <div className="alert-error mb-4 text-left">{error}</div>}
       {success && <div className="alert-success mb-4 text-left">{success}</div>}
 
-      <div className="flex gap-2 justify-center mb-6">
+      <div className="grid grid-cols-6 gap-1.5 sm:gap-2 justify-center mb-6">
         {codes.map((digit, idx) => (
           <input
             key={idx}
@@ -111,7 +111,7 @@ function VerifyEmailInner() {
             onChange={(e) => handleCodeInput(idx, e.target.value)}
             onKeyDown={(e) => handleKeyDown(idx, e)}
             disabled={loading || !tenant || !email}
-            className="w-11 h-14 text-center text-xl font-bold border-2 rounded-xl border-slate-200 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+            className="h-12 w-full min-w-0 text-center text-lg font-bold border-2 rounded-xl border-slate-200 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50 sm:h-14 sm:text-xl"
           />
         ))}
       </div>

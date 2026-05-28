@@ -9,14 +9,15 @@ export interface BreadcrumbItem {
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
+  homeHref?: string;
 }
 
-export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
+export function Breadcrumbs({ items, className = '', homeHref = '/dashboard' }: BreadcrumbsProps) {
   if (items.length === 0) return null;
 
   return (
     <nav className={`flex items-center gap-1 text-sm ${className}`} aria-label="Breadcrumb">
-      <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 flex-shrink-0">
+      <Link href={homeHref} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
         <Home size={14} />
       </Link>
       {items.map((item, idx) => {

@@ -1,4 +1,4 @@
-# Staging Deploy Checklist — BakımSuite / MotorCare
+# Staging Deploy Checklist — GarajPass
 
 ## Staging Server
 
@@ -17,9 +17,13 @@ DNS records must resolve before running certbot; HTTPS setup fails without them.
 Verify propagation before continuing:
 
 ```bash
+nslookup staging.bakimsuite.com
+nslookup staging-api.bakimsuite.com
 dig +short staging.bakimsuite.com
 dig +short staging-api.bakimsuite.com
 ```
+
+If these records do not resolve to `46.225.166.254`, Nginx/HTTPS smoke is blocked and certbot may fail.
 
 ---
 
@@ -68,8 +72,8 @@ Compose file: `src/docker-compose.staging.yml`
 |---|---|---|---|
 | `postgres` | `motorcare-staging-postgres` | `postgres:16` | Exposes no host port (internal only). Data persisted in `postgres_data` volume. Health-checked with `pg_isready`. |
 | `mailpit` | `motorcare-staging-mailpit` | `axllent/mailpit:latest` | Email capture sidecar. UI on `127.0.0.1:8025`. Access via SSH tunnel: `ssh -L 8025:localhost:8025 user@46.225.166.254`. |
-| `api` | `motorcare-staging-api` | `ghcr.io/yigitcvk/motorcare-api:staging` | Binds `127.0.0.1:5002:8080` (override with `API_HOST_PORT`). Health-checked via `/health`. Waits for postgres healthy. |
-| `web` | `motorcare-staging-web` | `ghcr.io/yigitcvk/motorcare-web:staging` | Binds `127.0.0.1:3000:8080` (override with `WEB_HOST_PORT`). Health-checked via `/api/health`. Waits for api healthy. |
+| `api` | `motorcare-staging-api` | `ghcr.io/yigitcvk/motorcare-api:staging` | Host bind `127.0.0.1:5102` by default (override with `API_HOST_PORT`). Health-checked via `/health`. Waits for postgres healthy. |
+| `web` | `motorcare-staging-web` | `ghcr.io/yigitcvk/motorcare-web:staging` | Host bind `127.0.0.1:3000` by default (override with `WEB_HOST_PORT`). Health-checked via `/api/health`. Waits for api healthy. |
 | `migrator` | `motorcare-staging-migrator` | `ghcr.io/yigitcvk/motorcare-migrator:staging` | Profile `tools` — run explicitly. Runs migrations then exits (`restart: "no"`). |
 
 Deploy commands:
@@ -94,8 +98,8 @@ Full reference: `docs/ops/nginx-staging.md`
 
 | Step | Command |
 |---|---|
-| Save config | `sudo cp nginx-staging.conf /etc/nginx/sites-available/bakimsuite-staging` |
-| Enable site | `sudo ln -s /etc/nginx/sites-available/bakimsuite-staging /etc/nginx/sites-enabled/bakimsuite-staging` |
+| Save config | `sudo cp nginx-staging.conf /etc/nginx/sites-available/motorcare-staging` |
+| Enable site | `sudo ln -s /etc/nginx/sites-available/motorcare-staging /etc/nginx/sites-enabled/motorcare-staging` |
 | Test config | `sudo nginx -t` |
 | Reload | `sudo systemctl reload nginx` |
 
@@ -103,13 +107,10 @@ Port mapping used by the Nginx config:
 
 | Container | Host port | `proxy_pass` target |
 |---|---|---|
-| `motorcare-staging-web` (Next.js) | `3000` → Nginx sees `8080` | `http://127.0.0.1:8080` |
-| `motorcare-staging-api` (.NET) | `5002` → Nginx sees `8081` | `http://127.0.0.1:8081` |
+| `motorcare-staging-web` (Next.js) | `3000` | `http://127.0.0.1:3000` |
+| `motorcare-staging-api` (.NET) | `5102` | `http://127.0.0.1:5102` |
 
-> Note: The compose file exposes the web container on host port `3000` and the api container on
-> `5002`. The Nginx config in `docs/ops/nginx-staging.md` uses `8080` / `8081` respectively.
-> Align the host ports in `docker-compose.staging.yml` (via `WEB_HOST_PORT` / `API_HOST_PORT`)
-> with the `proxy_pass` ports in the Nginx config before deploying.
+The compose defaults and Nginx upstreams are aligned: web traffic uses `3000`, API traffic uses `5102`.
 
 Add the WebSocket upgrade map inside the top-level `http {}` block in `/etc/nginx/nginx.conf`
 (or `/etc/nginx/conf.d/upgrade-map.conf`):
@@ -225,7 +226,7 @@ ssh -L 8025:localhost:8025 user@46.225.166.254
 
 ```bash
 # From the repo root — requires: curl, python3, running Mailpit on port 8025
-API_BASE=http://127.0.0.1:5002 \
+API_BASE=http://127.0.0.1:5102 \
 MAILPIT_BASE=http://127.0.0.1:8025 \
   bash src/scripts/smoke/staging-auth-email-smoke.sh
 ```
@@ -233,7 +234,7 @@ MAILPIT_BASE=http://127.0.0.1:8025 \
 ### Run the password-reset smoke test
 
 ```bash
-API_BASE=http://127.0.0.1:5002 \
+API_BASE=http://127.0.0.1:5102 \
 MAILPIT_BASE=http://127.0.0.1:8025 \
   bash src/scripts/smoke/staging-password-reset-mailpit-smoke.sh
 ```
@@ -265,13 +266,10 @@ Do not sign off on a staging release if any of the following are true:
 ## 10. Current Known Blockers
 
 - [ ] **DNS records not configured** — `staging.bakimsuite.com` and `staging-api.bakimsuite.com`
-  A records must be pointed to `46.225.166.254` before HTTPS / certbot can proceed.
-- [ ] **Inspection customer search crash** — known regression, fix in progress (Codex).
+  A records must be pointed to `46.225.166.254` before HTTPS / certbot can proceed. This is a
+  staging live blocker, not a code blocker.
 - [ ] **GitHub Actions registry secrets not set** — `REGISTRY_URL`, `REGISTRY_USERNAME`,
   `REGISTRY_PASSWORD` must be added to the GitHub repository secrets before CI can push images.
 - [ ] **Migrator image not built by CI** — `staging-ci.yml` does not currently build or push the
   migrator image (`src/MotorCare.Api/Dockerfile.migrator`). Migrations must be run manually or
   a CI step must be added.
-- [ ] **Nginx host port mismatch** — compose default (`WEB_HOST_PORT=3000`, `API_HOST_PORT=5002`)
-  differs from the Nginx config in `docs/ops/nginx-staging.md` (expects `8080` / `8081`). Align
-  before first deploy.

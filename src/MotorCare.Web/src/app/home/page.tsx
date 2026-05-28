@@ -107,7 +107,7 @@ export default function LandingPage() {
           <div className="flex h-16 items-center justify-between">
             <Link href="/home" className="flex items-center gap-2" aria-label={`${appConfig.appName} ana sayfa`}>
               <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
+                <span className="text-white font-bold text-xs">GP</span>
               </div>
               <span className="font-bold text-lg text-slate-900">{appConfig.appName}</span>
             </Link>
@@ -181,7 +181,7 @@ export default function LandingPage() {
                     <div className="h-3 w-3 rounded-full bg-green-400" />
                   </div>
                   <div className="flex-1 mx-3 rounded-md border border-slate-200 bg-white px-3 py-1 text-center text-xs text-slate-400 truncate">
-                    app.bakimsuite.com/dashboard
+                    app.garajpass.com/dashboard
                   </div>
                 </div>
                 <div className="p-5 sm:p-6">
@@ -362,7 +362,7 @@ export default function LandingPage() {
             <div className="col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-7 w-7 rounded-lg bg-brand-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">B</span>
+                  <span className="text-white font-bold text-[10px]">GP</span>
                 </div>
                 <span className="font-semibold text-white">{appConfig.appName}</span>
               </div>

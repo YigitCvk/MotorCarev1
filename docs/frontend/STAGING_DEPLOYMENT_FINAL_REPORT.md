@@ -1,5 +1,5 @@
 # Staging Deployment Final Report
-## BakımSuite / MotorCare — Staging GO/NO-GO Kararı
+## GarajPass — Staging GO/NO-GO Kararı
 
 **Tarih:** 2026-05-26
 **Branch:** main
@@ -54,7 +54,7 @@ Tüm kritik sistemler hazır. Tek eksik adım canlı Docker stack üzerinde Mail
 - CORS: .NET middleware üzerinden yönetiliyor (Nginx'e eklenmedi — doğru)
 
 ### Portainer / Docker Compose
-- `staging.env.example` güncel: tüm domain referansları `bakimsuite.com`
+- `staging.env.example` guncel: staging domain referanslari `staging.bakimsuite.com` ve `staging-api.bakimsuite.com`
 - `NEXT_PUBLIC_API_BASE_URL` doğru endpoint'e işaret ediyor
 - `ConnectionStrings__DefaultConnection` şablonu mevcut
 - `MAILPIT_UI_AUTH` yapılandırması eklendi

@@ -3,15 +3,17 @@
 import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Printer, CheckCircle, XCircle, ClipboardList, Link2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft, Printer, CheckCircle, XCircle, ClipboardList } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText } from '@/shared/utils/format';
+import { publicInspectionReportUrl } from '@/shared/utils/public-links';
 import { friendlyError } from '@/core/api/errors';
 import { VehicleDiagram } from '@/features/inspections/components';
 import type { DamageZone } from '@/features/inspections/components';
+import { resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
 
 // ---- DTOs ----------------------------------------------------------------
 
@@ -55,6 +57,7 @@ interface MotorcycleInspectionDto {
   updatedAt: string | null;
   completedAt: string | null;
   items: MotorcycleInspectionItemDto[];
+  vehicleType?: string | null;
 }
 
 // ---- Constants -----------------------------------------------------------
@@ -101,11 +104,11 @@ const ISSUE_RESULTS = new Set(['Bad', 'Damaged', 'Scratched', 'Missing', 'Fail',
 function buildDamageZones(items: MotorcycleInspectionItemDto[]): DamageZone[] {
   const categoryMap = new Map<string, { category: string; hasIssue: boolean }>();
   for (const item of items) {
-    const key = item.categoryText;
+    const key = item.categoryText || item.name || item.category || 'Genel';
     const existing = categoryMap.get(key);
-    const isIssue = ISSUE_RESULTS.has(item.result) || ISSUE_RESULTS.has(item.resultText);
+    const isIssue = ISSUE_RESULTS.has(item.result) || ISSUE_RESULTS.has(item.resultText ?? '');
     if (!existing) {
-      categoryMap.set(key, { category: item.category, hasIssue: isIssue });
+      categoryMap.set(key, { category: item.category || key, hasIssue: isIssue });
     } else if (isIssue) {
       existing.hasIssue = true;
     }
@@ -266,20 +269,15 @@ export default function InspectionDetailPage({
   const canCancel = data.status === 'Draft' || data.status === 'InProgress';
 
   const publicIdentifier = data.publicSlug ?? null;
-
-  function copyQrLink() {
-    const url = `${window.location.origin}/public/inspection-report/${publicIdentifier ?? data?.id ?? id}`;
-    void navigator.clipboard.writeText(url).then(() => {
-      toast.success('Link kopyalandı');
-    });
-  }
+  const publicUrl = publicIdentifier ? publicInspectionReportUrl(publicIdentifier) : null;
+  const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
 
   // Build damage zones for the diagram
   const damageZones = buildDamageZones(data.items);
 
   // Group items by category
   const grouped = data.items.reduce<Record<string, MotorcycleInspectionItemDto[]>>((acc, item) => {
-    const key = item.categoryText;
+    const key = item.categoryText || item.name || item.category || 'Genel';
     if (!acc[key]) acc[key] = [];
     acc[key].push(item);
     return acc;
@@ -302,18 +300,12 @@ export default function InspectionDetailPage({
   return (
     <div>
       {/* Top nav */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button onClick={() => router.push('/inspections')} className="btn-ghost text-sm">
           <ArrowLeft size={14} />
           Ekspertizler
         </button>
-        <div className="flex items-center gap-2">
-          {publicIdentifier && (
-            <button onClick={copyQrLink} className="btn text-sm">
-              <Link2 size={14} />
-              QR Linkini Kopyala
-            </button>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => router.push(`/inspections/${id}/print`)}
             className="btn text-sm"
@@ -322,6 +314,14 @@ export default function InspectionDetailPage({
             Yazdır
           </button>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <QRLinkCard
+          href={publicUrl}
+          title="Expertiz paylaşım QR kodu"
+          description="Müşteri expertiz raporunu bu QR veya bağlantı ile görüntüleyebilir."
+        />
       </div>
 
       {/* Header */}
@@ -448,9 +448,9 @@ export default function InspectionDetailPage({
       {damageZones.length > 0 && (
         <div className="card p-5 mb-6">
           <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-            Araç Hasar Haritası
+            {diagramKind === 'motorcycle' ? 'Motosiklet Diyagramı' : 'Araç Diyagramı'}
           </h2>
-          <VehicleDiagram zones={damageZones} />
+          <VehicleDiagram zones={damageZones} vehicleType={diagramKind} />
         </div>
       )}
 

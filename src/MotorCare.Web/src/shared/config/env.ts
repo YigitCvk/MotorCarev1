@@ -1,5 +1,5 @@
 export const appConfig = {
-  appName: process.env.NEXT_PUBLIC_APP_NAME ?? 'BakımSuite',
+  appName: process.env.NEXT_PUBLIC_APP_NAME ?? 'GarajPass',
   publicAppUrl:
     process.env.NEXT_PUBLIC_PUBLIC_APP_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??

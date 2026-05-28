@@ -136,7 +136,7 @@ All protected endpoints require a valid JWT. Routes marked **No auth** are eithe
 
 **MotorcycleInspectionPackageType values**: defined in `Domain.Enums` (e.g. `Basic`, `Standard`, `Full` — confirm with backend enum)
 
-**Frontend note**: The inspection detail page computes the public share URL as `${window.location.origin}/public/inspection-report/${publicIdentifier ?? data?.id}` and copies it to clipboard.
+**Frontend note**: The inspection detail page computes the public share URL with `publicInspectionReportUrl(publicIdentifier)` and copies it to clipboard.
 
 ---
 
@@ -178,7 +178,7 @@ All protected endpoints require a valid JWT. Routes marked **No auth** are eithe
 | GET | `/api/dashboard/payment-summary` | (backend available, not yet wired in frontend) | Yes (DashboardRead) | Query: `from` (ISO), `to` (ISO). Returns `PaymentSummaryDto` |
 | GET | `/api/dashboard/open-balances` | (backend available, not yet wired in frontend) | Yes (DashboardRead) | Query: `take` (default 50). Returns `OpenBalanceDto[]` |
 
-**Frontend note**: The monthly revenue chart data is currently hardcoded to an empty array (`const monthlyData: MonthlyRevenueStat[] = []`). `GET /api/dashboard/monthly` is implemented on the backend but the frontend chart component does not yet call it — it shows a "Grafik verisi henüz mevcut değil" placeholder.
+**Frontend note**: The monthly revenue chart calls `GET /api/dashboard/monthly` through React Query and renders returned `{ month, revenue, orderCount }` rows. Empty/error responses are scoped to the chart and do not block the rest of the dashboard. Error copy: `Aylık grafik bilgileri şu anda yüklenemedi.`
 
 **Frontend fallback**: On daily summary error, the page renders an `<ErrorState>` component with a retry button.
 
@@ -255,13 +255,12 @@ All protected endpoints require a valid JWT. Routes marked **No auth** are eithe
 
 | Feature | Needed Endpoint | Current Backend Status | Frontend Fallback | Priority |
 |---------|----------------|------------------------|-------------------|----------|
-| Dashboard | `GET /api/dashboard/monthly` | Implemented | Chart shows static "no data" placeholder — `monthlyData` is hardcoded to `[]` | High |
 | Dashboard | `GET /api/dashboard/payment-summary` | Implemented | Not wired | Medium |
 | Dashboard | `GET /api/dashboard/open-balances` | Implemented | Not wired | Medium |
 | Service Orders | `GET /api/service-orders/{id}/status-history` | Implemented | Timeline not yet rendered | Low |
 | Service Orders | `GET /api/service-orders/{id}/activity-feed` | Implemented | Activity feed not rendered | Low |
 | Service Orders | Attachment CRUD (`/api/service-orders/{id}/attachments`) | Implemented | No attachment UI | Medium |
-| Service Orders | Public access management (`/api/service-orders/{id}/public-access`) | Implemented | Share button uses hardcoded fallback to `data.publicSlug ?? data.id` — if no slug is returned in `ServiceOrderDto`, the link may be invalid | High |
+| Service Orders | Public access management (`/api/service-orders/{id}/public-access`) | Implemented | Share button renders only when `publicSlug` is available; enable/disable toggle not built | Medium |
 | Inspections | Public access management (`/api/inspections/{id}/public-access`) | Implemented | Share button calls `POST /api/inspections/{id}/public-access` correctly; enable/disable toggle not built | Medium |
 | Auth / Security | `GET /api/auth/security-status`, 2FA enable/disable flow | Implemented | Settings security tab shows placeholder | Medium |
 | Imports | Full import flow (`/api/imports/*`) | Implemented | No import UI exists | Low |

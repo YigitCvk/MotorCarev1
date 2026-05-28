@@ -11,6 +11,7 @@ import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { ServiceOrderStatusBadge } from '@/components/ui/badge';
 import { money, dateText } from '@/shared/utils/format';
+import { isRecord, normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 
 interface MonthlyRevenueStat {
   month: string;
@@ -24,7 +25,14 @@ const TR_MONTHS: Record<string, string> = {
 };
 
 function toTrMonth(month: string): string {
-  // Handles both "Jan", "January", "2024-01", "01", numeric strings
+  const isoMonth = /^(\d{4})-(\d{2})$/.exec(month);
+  if (isoMonth) {
+    const monthNumber = Number(isoMonth[2]);
+    const label = Object.values(TR_MONTHS)[monthNumber - 1];
+    return label ?? month;
+  }
+
+  // Handles both "Jan", "January", "01", numeric strings
   const abbr = month.slice(0, 3);
   return TR_MONTHS[abbr] ?? month;
 }
@@ -54,6 +62,23 @@ function safeArr(v: unknown): Record<string, unknown>[] {
   return Array.isArray(v) ? (v as Record<string, unknown>[]) : [];
 }
 
+function normalizeMonthlyRevenueStats(value: unknown): MonthlyRevenueStat[] {
+  return normalizeApiArray<unknown>(value)
+    .map((item) => {
+      if (!isRecord(item)) return null;
+
+      const month = readString(item.month ?? item.Month);
+      if (!month) return null;
+
+      return {
+        month,
+        revenue: readNumber(item.revenue ?? item.Revenue) ?? 0,
+        orderCount: readNumber(item.orderCount ?? item.OrderCount ?? item.orders ?? item.Orders) ?? 0,
+      };
+    })
+    .filter((item): item is MonthlyRevenueStat => item !== null);
+}
+
 export default function DashboardPage() {
   const { data, isLoading, error, refetch } = useQuery<DailyDashboard>({
     queryKey: ['dashboard', 'daily'],
@@ -64,8 +89,18 @@ export default function DashboardPage() {
     staleTime: 30_000,
   });
 
-  const monthlyData: MonthlyRevenueStat[] = [];
-  const monthlyError = false;
+  const {
+    data: monthlyData,
+    isLoading: isMonthlyLoading,
+    isError: monthlyError,
+  } = useQuery<MonthlyRevenueStat[]>({
+    queryKey: ['dashboard', 'monthly'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<unknown>('/api/dashboard/monthly');
+      return normalizeMonthlyRevenueStats(data);
+    },
+    staleTime: 60_000,
+  });
 
   if (isLoading) return <PageLoading />;
 
@@ -119,6 +154,7 @@ export default function DashboardPage() {
 
   const recentOrders = safeArr(data?.recentServiceOrders ?? data?.serviceOrders ?? data?.orders);
   const appointments = safeArr(data?.todayAppointmentsList ?? data?.appointments ?? data?.todayAppointments as unknown);
+  const monthlyRows = monthlyData ?? [];
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
@@ -138,11 +174,15 @@ export default function DashboardPage() {
       {/* Monthly Revenue Chart */}
       <div className="card p-5 mb-6">
         <h2 className="font-semibold text-slate-900 mb-4">Aylık Gelir</h2>
-        {monthlyError || !monthlyData || monthlyData.length === 0 ? (
+        {isMonthlyLoading ? (
+          <p className="text-sm text-slate-400 text-center py-8">Aylık grafik yükleniyor...</p>
+        ) : monthlyError ? (
+          <p className="text-sm text-rose-500 text-center py-8">Aylık grafik bilgileri şu anda yüklenemedi.</p>
+        ) : monthlyRows.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">Grafik verisi henüz mevcut değil</p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={monthlyData.map((d) => ({ ...d, monthLabel: toTrMonth(d.month) }))} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={monthlyRows.map((d) => ({ ...d, monthLabel: toTrMonth(d.month) }))} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="monthLabel" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
               <YAxis yAxisId="revenue" orientation="left" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `₺${(v / 1000).toFixed(0)}k`} />

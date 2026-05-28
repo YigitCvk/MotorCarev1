@@ -4,7 +4,9 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Wrench, Package, Droplets, FileText, Building2, AlertCircle, Loader2, Printer, Car, User } from 'lucide-react';
 import apiClient from '@/core/api/client';
+import { CopyButton } from '@/components/ui/copy-button';
 import { money, dateText } from '@/shared/utils/format';
+import { publicServiceRecordUrl } from '@/shared/utils/public-links';
 
 // ─── PII masking ──────────────────────────────────────────────────────────────
 
@@ -176,9 +178,9 @@ export default function PublicServiceRecordPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-slate-400">
-          {/* BakımSuite brand */}
+          {/* GarajPass brand */}
           <div className="mb-2 text-center">
-            <span className="text-slate-700 font-bold text-lg tracking-tight">BakımSuite</span>
+            <span className="text-slate-700 font-bold text-lg tracking-tight">GarajPass</span>
           </div>
           <Loader2 size={28} className="animate-spin" />
           <p className="text-sm">Yükleniyor...</p>
@@ -194,7 +196,7 @@ export default function PublicServiceRecordPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 max-w-sm w-full text-center">
           {/* Brand */}
           <div className="mb-5">
-            <span className="text-slate-800 font-bold text-lg tracking-tight">BakımSuite</span>
+            <span className="text-slate-800 font-bold text-lg tracking-tight">GarajPass</span>
           </div>
           <AlertCircle size={36} className="text-slate-300 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-slate-800 mb-2">Kayıt bulunamadı</h1>
@@ -209,6 +211,7 @@ export default function PublicServiceRecordPage() {
   const hasOperations = (data.operations?.length ?? 0) > 0;
   const hasParts = (data.parts?.length ?? 0) > 0;
   const hasConsumables = (data.consumables?.length ?? 0) > 0;
+  const publicUrl = publicServiceRecordUrl(slug);
 
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-3 sm:px-4 print:bg-white print:py-0">
@@ -228,7 +231,7 @@ export default function PublicServiceRecordPage() {
           {/* Brand bar */}
           <div className="bg-brand-600 px-4 py-3 flex items-center justify-between print:bg-slate-800">
             <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-lg tracking-tight">BakımSuite</span>
+              <span className="text-white font-bold text-lg tracking-tight">GarajPass</span>
               <span className="text-brand-200 text-xs print:text-slate-300">Servis Kaydı</span>
             </div>
             <StatusBadge status={data.status} statusText={data.statusText} />
@@ -263,7 +266,8 @@ export default function PublicServiceRecordPage() {
             </div>
 
             {/* Print button */}
-            <div className="flex justify-end mb-1 no-print">
+            <div className="flex flex-wrap justify-end gap-2 mb-1 no-print">
+              <CopyButton value={publicUrl} label="Linki Kopyala" />
               <button
                 onClick={() => window.print()}
                 className="no-print inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors"
@@ -414,7 +418,7 @@ export default function PublicServiceRecordPage() {
           </p>
           <p className="text-xs text-slate-300">
             Güçlendiren:{' '}
-            <span className="font-semibold text-slate-500">BakımSuite</span>
+            <span className="font-semibold text-slate-500">GarajPass</span>
           </p>
         </div>
       </div>

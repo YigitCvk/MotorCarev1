@@ -63,9 +63,14 @@ export default function InspectionsPage() {
   const { data, isLoading, error, refetch } = useQuery<PagedResult<MotorcycleInspectionListItemDto>>({
     queryKey: ['inspections', search, status, packageType, page],
     queryFn: async () => {
+      const params: Record<string, string | number> = { pageNumber: page, pageSize: 20 };
+      if (search.trim()) params.q = search.trim();
+      if (status) params.status = status;
+      if (packageType) params.packageType = packageType;
+
       const { data } = await apiClient.get<PagedResult<MotorcycleInspectionListItemDto>>(
         '/api/inspections',
-        { params: { q: search, status, packageType, pageNumber: page, pageSize: 20 } }
+        { params }
       );
       return data;
     },

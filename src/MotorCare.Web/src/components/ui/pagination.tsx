@@ -13,8 +13,10 @@ interface PaginationProps {
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+
   return (
-    <div className="flex items-center justify-center gap-1 py-3">
+    <div className="flex items-center justify-center gap-1 overflow-x-auto py-3">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
@@ -23,8 +25,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         <ChevronLeft size={16} />
       </button>
 
-      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-        const page = i + 1;
+      {visiblePages.map((page) => {
         return (
           <button
             key={page}
@@ -50,4 +51,14 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
       </button>
     </div>
   );
+}
+
+function getVisiblePages(currentPage: number, totalPages: number): number[] {
+  const windowSize = Math.min(totalPages, 7);
+  const half = Math.floor(windowSize / 2);
+  let start = Math.max(1, currentPage - half);
+  const end = Math.min(totalPages, start + windowSize - 1);
+  start = Math.max(1, end - windowSize + 1);
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }

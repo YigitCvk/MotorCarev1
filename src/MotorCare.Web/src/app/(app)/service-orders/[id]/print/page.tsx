@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Printer } from 'lucide-react';
 import apiClient from '@/core/api/client';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText, dateTimeText } from '@/shared/utils/format';
+import { publicServiceRecordUrl } from '@/shared/utils/public-links';
 
 // ─── DTOs (inline — print page is standalone) ────────────────────────────────
 
@@ -49,6 +51,7 @@ interface ServicePaymentDto {
 interface ServiceOrderDto {
   id: string;
   orderNo: string;
+  publicSlug: string | null;
   customerName: string | null;
   vehiclePlate: string | null;
   vehicleDisplay: string | null;
@@ -123,6 +126,7 @@ export default function ServiceOrderPrintPage(): React.ReactElement {
       </div>
     );
   }
+  const publicUrl = order.publicSlug ? publicServiceRecordUrl(order.publicSlug) : null;
 
   return (
     <>
@@ -136,8 +140,8 @@ export default function ServiceOrderPrintPage(): React.ReactElement {
         body { font-family: sans-serif; }
       `}</style>
 
-      {/* Print button */}
-      <div className="no-print fixed top-4 right-4 z-50">
+      {/* Print actions */}
+      <div className="no-print mx-auto flex max-w-3xl justify-end p-4">
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 transition-colors"
@@ -170,6 +174,15 @@ export default function ServiceOrderPrintPage(): React.ReactElement {
               </p>
             )}
           </div>
+        </div>
+
+        <div className="mb-6">
+          <QRLinkCard
+            href={publicUrl}
+            title="Servis paylaşım QR kodu"
+            description="Müşteri bu QR ile servis kaydının public sayfasına ulaşabilir."
+            compact
+          />
         </div>
 
         {/* Customer + Vehicle info */}

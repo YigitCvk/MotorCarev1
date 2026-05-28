@@ -18,13 +18,13 @@ interface TabsProps {
 export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
   return (
     <div className="border-b border-slate-200">
-      <nav className="flex gap-0 -mb-px">
+      <nav className="flex gap-0 -mb-px overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={clsx(
-              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              'whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
               activeTab === tab.id
                 ? 'border-brand-600 text-brand-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'

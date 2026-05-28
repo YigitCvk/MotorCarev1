@@ -12,6 +12,7 @@ import { VehicleForm, type VehicleFormValues } from '@/features/vehicles/compone
 import { vehicleDuplicateMessage } from '@/features/vehicles/hooks';
 import type { Customer } from '@/features/customers/types';
 import type { PagedResult } from '@/shared/types/api.types';
+import { normalizePagedResult } from '@/shared/utils/api-normalize';
 
 export default function VehicleCreatePage() {
   const router = useRouter();
@@ -23,11 +24,12 @@ export default function VehicleCreatePage() {
   const { data: customers, isFetching } = useQuery<PagedResult<Customer>>({
     queryKey: ['customers', customerSearch, 1],
     queryFn: async () => {
-      const { data } = await apiClient.get<PagedResult<Customer>>('/api/customers', {
+      const { data } = await apiClient.get<unknown>('/api/customers', {
         params: { q: customerSearch, pageNumber: 1, pageSize: 8 },
       });
-      return data;
+      return normalizePagedResult<Customer>(data, 1, 8);
     },
+    retry: false,
     enabled: customerSearch.length >= 2,
   });
 

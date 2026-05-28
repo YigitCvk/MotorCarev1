@@ -7,7 +7,7 @@ import { ArrowLeft, Search, User, Bike } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { PageHeader } from '@/components/ui/page-header';
 import { friendlyError } from '@/core/api/errors';
-import type { PagedResult } from '@/shared/types/api.types';
+import { normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 
 interface CustomerSearchItem {
   id: string;
@@ -21,13 +21,6 @@ interface CustomerVehicle {
   brand?: string;
   model?: string;
   year?: number;
-}
-
-interface CustomerDetail {
-  id: string;
-  fullName: string;
-  phone?: string;
-  vehicles: CustomerVehicle[];
 }
 
 interface InspectionFormState {
@@ -77,6 +70,45 @@ const emptyForm: InspectionFormState = {
   cosmeticNotes: '',
 };
 
+function normalizeCustomer(value: unknown): CustomerSearchItem | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+
+  const record = value as Record<string, unknown>;
+  const id = readString(record.id);
+  const fullName =
+    readString(record.fullName) ||
+    readString(record.displayName) ||
+    readString(record.name) ||
+    readString(record.title);
+
+  if (!id || !fullName) return null;
+
+  return {
+    id,
+    fullName,
+    phone: readString(record.phone) || readString(record.phoneNumber) || undefined,
+  };
+}
+
+function normalizeVehicle(value: unknown): CustomerVehicle | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+
+  const record = value as Record<string, unknown>;
+  const id = readString(record.id);
+  const plate =
+    readString(record.plate) || readString(record.plateOriginal) || readString(record.plateNormalized);
+
+  if (!id || !plate) return null;
+
+  return {
+    id,
+    plate,
+    brand: readString(record.brand) || undefined,
+    model: readString(record.model) || undefined,
+    year: readNumber(record.year),
+  };
+}
+
 export default function InspectionNewPage() {
   const router = useRouter();
   const [form, setForm] = useState<InspectionFormState>(emptyForm);
@@ -89,25 +121,38 @@ export default function InspectionNewPage() {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const customerSearchRef = useRef<HTMLDivElement>(null);
 
-  const { data: customerResults, isFetching: searchingCustomers } =
-    useQuery<PagedResult<CustomerSearchItem>>({
+  const {
+    data: customerResults = [],
+    isFetching: searchingCustomers,
+    isError: customerSearchError,
+  } = useQuery<CustomerSearchItem[]>({
       queryKey: ['customer-search-inspection', customerSearchQuery],
       queryFn: async () => {
-        const { data } = await apiClient.get<PagedResult<CustomerSearchItem>>('/api/customers', {
+        const { data } = await apiClient.get<unknown>('/api/customers', {
           params: { q: customerSearchQuery, pageSize: 10 },
         });
-        return data;
+        return normalizeApiArray(data)
+          .map(normalizeCustomer)
+          .filter((customer): customer is CustomerSearchItem => Boolean(customer));
       },
-      enabled: customerSearchQuery.length >= 2,
+      enabled: customerSearchQuery.trim().length >= 2,
+      retry: false,
     });
 
-  const { data: selectedCustomerDetail } = useQuery<CustomerDetail>({
-    queryKey: ['customer-detail-inspection', form.customerId],
+  const {
+    data: linkedVehicles = [],
+    isFetching: loadingLinkedVehicles,
+    isError: linkedVehiclesError,
+  } = useQuery<CustomerVehicle[]>({
+    queryKey: ['customer-vehicles-inspection', form.customerId],
     queryFn: async () => {
-      const { data } = await apiClient.get<CustomerDetail>(`/api/customers/${form.customerId}`);
-      return data;
+      const { data } = await apiClient.get<unknown>(`/api/customers/${form.customerId}/vehicles`);
+      return normalizeApiArray(data)
+        .map(normalizeVehicle)
+        .filter((vehicle): vehicle is CustomerVehicle => Boolean(vehicle));
     },
     enabled: Boolean(form.customerId),
+    retry: false,
   });
 
   function update(field: keyof InspectionFormState, value: string) {
@@ -115,11 +160,28 @@ export default function InspectionNewPage() {
   }
 
   function handleCustomerSearchChange(value: string) {
+    const nextSearch = value.trim();
     setCustomerSearch(value);
-    if (value.length >= 2) {
-      setCustomerSearchQuery(value);
+
+    if (form.customerId && value !== form.customerName) {
+      setForm((prev) => ({
+        ...prev,
+        customerId: '',
+        vehicleId: '',
+        customerName: value,
+        phone: '',
+        plate: '',
+        brand: '',
+        model: '',
+        year: '',
+      }));
+    }
+
+    if (nextSearch.length >= 2) {
+      setCustomerSearchQuery(nextSearch);
       setShowCustomerDropdown(true);
     } else {
+      setCustomerSearchQuery('');
       setShowCustomerDropdown(false);
     }
   }
@@ -133,6 +195,10 @@ export default function InspectionNewPage() {
       vehicleId: '',
       customerName: customer.fullName,
       phone: customer.phone ?? '',
+      plate: '',
+      brand: '',
+      model: '',
+      year: '',
     }));
   }
 
@@ -146,6 +212,10 @@ export default function InspectionNewPage() {
       vehicleId: '',
       customerName: '',
       phone: '',
+      plate: '',
+      brand: '',
+      model: '',
+      year: '',
     }));
   }
 
@@ -251,11 +321,18 @@ export default function InspectionNewPage() {
                   {searchingCustomers && (
                     <div className="px-4 py-3 text-sm text-slate-400">Aranıyor...</div>
                   )}
+                  {!searchingCustomers && customerSearchError && (
+                    <div className="px-4 py-3 text-sm text-red-600">
+                      Müşteri arama şu anda yapılamıyor. Lütfen tekrar deneyin.
+                    </div>
+                  )}
                   {!searchingCustomers &&
-                    (!customerResults?.items || customerResults.items.length === 0) && (
+                    !customerSearchError &&
+                    customerSearchQuery.length >= 2 &&
+                    customerResults.length === 0 && (
                       <div className="px-4 py-3 text-sm text-slate-400">Müşteri bulunamadı.</div>
                     )}
-                  {customerResults?.items.map((c) => (
+                  {!searchingCustomers && !customerSearchError && customerResults.map((c) => (
                     <button
                       key={c.id}
                       type="button"
@@ -284,30 +361,47 @@ export default function InspectionNewPage() {
           </div>
 
           {/* Vehicle selection from linked customer */}
-          {form.customerId && selectedCustomerDetail && selectedCustomerDetail.vehicles.length > 0 && (
+          {form.customerId && (
             <div className="mb-4">
               <label className="label">Araç Seç</label>
-              <div className="flex flex-wrap gap-2">
-                {selectedCustomerDetail.vehicles.map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => selectVehicle(v)}
-                    className={`px-3 py-1.5 rounded-lg border text-sm font-mono transition-colors ${
-                      form.vehicleId === v.id
-                        ? 'border-brand-500 bg-brand-50 text-brand-700'
-                        : 'border-slate-200 hover:border-slate-400 text-slate-700'
-                    }`}
-                  >
-                    {v.plate}
-                    {v.brand && (
-                      <span className="ml-1 font-sans font-normal text-xs text-slate-400">
-                        {v.brand} {v.model}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {loadingLinkedVehicles && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  Araçlar yükleniyor...
+                </div>
+              )}
+              {!loadingLinkedVehicles && linkedVehiclesError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  Müşteriye bağlı araçlar şu anda yüklenemedi. Lütfen tekrar deneyin.
+                </div>
+              )}
+              {!loadingLinkedVehicles && !linkedVehiclesError && linkedVehicles.length === 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                  Bu müşteriye bağlı araç bulunmuyor.
+                </div>
+              )}
+              {!loadingLinkedVehicles && !linkedVehiclesError && linkedVehicles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {linkedVehicles.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => selectVehicle(v)}
+                      className={`px-3 py-1.5 rounded-lg border text-sm font-mono transition-colors ${
+                        form.vehicleId === v.id
+                          ? 'border-brand-500 bg-brand-50 text-brand-700'
+                          : 'border-slate-200 hover:border-slate-400 text-slate-700'
+                      }`}
+                    >
+                      {v.plate}
+                      {v.brand && (
+                        <span className="ml-1 font-sans font-normal text-xs text-slate-400">
+                          {v.brand} {v.model}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

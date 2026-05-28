@@ -33,7 +33,7 @@ export function Modal({ open, onClose, title, children, size = 'md', className }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-slate-900/50" onClick={onClose} />
-      <div className={clsx('relative bg-white rounded-xl shadow-xl w-full', sizeClass[size], className)}>
+      <div className={clsx('relative bg-white rounded-xl shadow-xl w-full max-h-[calc(100vh-2rem)] overflow-hidden', sizeClass[size], className)}>
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
             <h2 className="text-base font-semibold text-slate-900">{title}</h2>
@@ -42,7 +42,7 @@ export function Modal({ open, onClose, title, children, size = 'md', className }
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="max-h-[calc(100vh-7rem)] overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );
@@ -72,7 +72,7 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onCancel} title={title} size="sm">
       <p className="text-sm text-slate-600 mb-6">{message}</p>
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button onClick={onCancel} className="btn-secondary text-sm px-4 py-2" disabled={loading}>
           İptal
         </button>
