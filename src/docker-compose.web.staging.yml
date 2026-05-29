@@ -22,7 +22,7 @@ services:
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
-      API_BASE_URL: ${API_BASE_URL:-https://staging-api.bakimsuite.com}
+      API_BASE_URL: ${API_BASE_URL:-http://motorcare-staging-api:8080}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
     ports:
@@ -41,3 +41,11 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+    networks:
+      - default
+      - motorcare-staging
+
+networks:
+  motorcare-staging:
+    external: true
+    name: ${BACKEND_NETWORK:-motorcare-stack-src_motorcare-staging}
