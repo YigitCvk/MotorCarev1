@@ -5,9 +5,11 @@ services:
       context: .
       dockerfile: MotorCare.Web/Dockerfile
       args:
+        API_BASE_URL: ${API_BASE_URL:-http://motorcare-staging-api:8080}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
+        NEXT_PUBLIC_PUBLIC_APP_URL: ${NEXT_PUBLIC_PUBLIC_APP_URL:-http://46.225.166.254:3000}
         NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://staging-api.bakimsuite.com}
+        NEXT_PUBLIC_API_BASE_URL: ${WEB_NEXT_PUBLIC_API_BASE_URL:-}
     container_name: garajpass-staging-web
     restart: unless-stopped
     init: true
@@ -24,9 +26,11 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       API_BASE_URL: ${API_BASE_URL:-http://motorcare-staging-api:8080}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
+      NEXT_PUBLIC_PUBLIC_APP_URL: ${NEXT_PUBLIC_PUBLIC_APP_URL:-http://46.225.166.254:3000}
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
+      NEXT_PUBLIC_API_BASE_URL: ${WEB_NEXT_PUBLIC_API_BASE_URL:-}
     ports:
-      - "127.0.0.1:${WEB_HOST_PORT:-3000}:8080"
+      - "${WEB_HOST_PORT:-3000}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ || exit 1"]
       interval: 30s

@@ -134,6 +134,12 @@ services:
     build:
       context: .
       dockerfile: MotorCare.Web/Dockerfile
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://api:8080}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
+        NEXT_PUBLIC_PUBLIC_APP_URL: ${NEXT_PUBLIC_PUBLIC_APP_URL:-http://46.225.166.254:3000}
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-GarajPass}
+        NEXT_PUBLIC_API_BASE_URL: ${WEB_NEXT_PUBLIC_API_BASE_URL:-}
     pull_policy: always
     container_name: motorcare-staging-web
     restart: unless-stopped
@@ -151,9 +157,10 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       API_BASE_URL: http://api:8080
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://staging.bakimsuite.com}
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://staging-api.bakimsuite.com}
+      NEXT_PUBLIC_PUBLIC_APP_URL: ${NEXT_PUBLIC_PUBLIC_APP_URL:-http://46.225.166.254:3000}
+      NEXT_PUBLIC_API_BASE_URL: ${WEB_NEXT_PUBLIC_API_BASE_URL:-}
     ports:
-      - "127.0.0.1:${WEB_HOST_PORT:-3000}:8080"
+      - "${WEB_HOST_PORT:-3000}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/health || exit 1"]
       interval: 30s

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { friendlyError } from '@/core/api/errors';
+import { friendlyLoginError } from '@/core/api/errors';
 import { useAuth } from '@/core/auth/auth.context';
 import { authService } from '@/core/auth/auth.service';
 import { loginSchema, type LoginFormData } from '@/core/auth/schemas';
@@ -35,7 +35,7 @@ function LoginForm() {
       }
       router.replace(redirectTo ?? authService.roleLanding(response.role));
     } catch (err) {
-      toast.error(friendlyError(err, 'Giriş yapılamadı. Bilgileri kontrol edip tekrar deneyin.'));
+      toast.error(friendlyLoginError(err));
     }
   }
 

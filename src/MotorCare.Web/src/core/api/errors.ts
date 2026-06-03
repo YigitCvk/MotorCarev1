@@ -2,12 +2,19 @@
 import type { AxiosError } from 'axios';
 import type { ApiProblem } from '@/shared/types/api.types';
 
+const NETWORK_ERROR_MESSAGE =
+  'Sunucuya ulaşılamadı. Lütfen internet bağlantınızı veya servis durumunu kontrol edin.';
+
 const ERROR_CODE_MESSAGES: Record<string, string> = {
+  LOGIN_FAILED: 'İşletme kodu, e-posta veya şifre hatalı.',
   EMAIL_VERIFICATION_CODE_INVALID: 'Doğrulama kodu hatalı veya süresi dolmuş.',
   EMAIL_VERIFICATION_CODE_EXPIRED: 'Doğrulama kodunun süresi dolmuş. Yeni kod isteyin.',
   EMAIL_NOT_VERIFIED: 'E-posta adresiniz henüz doğrulanmamış.',
   INVALID_CREDENTIALS: 'İşletme kodu, e-posta veya şifre hatalı.',
+  TENANT_INACTIVE: 'İşletmeniz şu anda aktif değil. Lütfen destek ile iletişime geçin.',
+  USER_INACTIVE: 'Hesabınız şu anda aktif değil.',
   ACCOUNT_LOCKED: 'Hesap geçici olarak kilitlendi. Lütfen daha sonra tekrar deneyin.',
+  TOO_MANY_ATTEMPTS: 'Çok fazla deneme yapıldı. Lütfen biraz bekleyin.',
   INVITE_TOKEN_INVALID: 'Bu davet bağlantısı geçersiz veya süresi dolmuş.',
   INVITE_TOKEN_EXPIRED: 'Davet bağlantısının süresi dolmuş.',
   RESET_CODE_INVALID: 'Şifre sıfırlama kodu hatalı veya süresi dolmuş.',
@@ -23,9 +30,10 @@ type ProblemWithDetails = ApiProblem & {
 
 export function friendlyError(error: unknown, fallback = 'Bir hata oluştu. Lütfen tekrar deneyin.'): string {
   const axiosErr = error as AxiosError<ProblemWithDetails>;
+  logApiErrorInDevelopment(axiosErr);
 
   if (!axiosErr?.response) {
-    return 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.';
+    return NETWORK_ERROR_MESSAGE;
   }
 
   const { status, data } = axiosErr.response;
@@ -60,9 +68,48 @@ export function friendlyError(error: unknown, fallback = 'Bir hata oluştu. Lüt
   return fallback;
 }
 
+export function friendlyLoginError(error: unknown): string {
+  const axiosErr = error as AxiosError<ProblemWithDetails>;
+
+  if (axiosErr?.response?.status === 401) {
+    logApiErrorInDevelopment(axiosErr);
+    const { data } = axiosErr.response;
+
+    if (data?.code && ERROR_CODE_MESSAGES[data.code]) {
+      return ERROR_CODE_MESSAGES[data.code];
+    }
+
+    if (data?.message && isUserFriendlyMessage(data.message)) {
+      return data.message;
+    }
+
+    return ERROR_CODE_MESSAGES.LOGIN_FAILED;
+  }
+
+  return friendlyError(error, 'Giriş yapılamadı. Bilgileri kontrol edip tekrar deneyin.');
+}
+
 function isUserFriendlyMessage(message: string): boolean {
   const techPatterns = [/exception/i, /stack/i, /null reference/i, /sql/i, /database/i, /inner exception/i];
   return !techPatterns.some((pattern) => pattern.test(message));
+}
+
+function logApiErrorInDevelopment(error: AxiosError<ProblemWithDetails>): void {
+  if (process.env.NODE_ENV !== 'development') return;
+  if (!error?.isAxiosError) return;
+
+  const method = error.config?.method?.toUpperCase() ?? 'GET';
+  const endpoint = resolveRequestUrl(error.config?.baseURL, error.config?.url);
+  const status = error.response?.status ?? 'network';
+
+  console.warn('[api] request failed', { method, endpoint, status });
+}
+
+function resolveRequestUrl(baseURL?: string, url?: string): string {
+  if (!url) return baseURL ?? '';
+  if (/^https?:\/\//i.test(url)) return url;
+  if (!baseURL) return url;
+  return `${baseURL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
 }
 
 export function extractValidationErrors(error: unknown): Record<string, string> {
