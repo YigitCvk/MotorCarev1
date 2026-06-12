@@ -8,7 +8,8 @@ import { ShieldCheck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { authService } from '@/core/auth/auth.service';
+import { useAuth } from '@/core/auth/auth.context';
+import { authService, sanitizeAuthRedirect } from '@/core/auth/auth.service';
 import { friendlyError } from '@/core/api/errors';
 
 const twoFactorSchema = z.object({
@@ -22,9 +23,11 @@ const twoFactorSchema = z.object({
 type TwoFactorFormData = z.infer<typeof twoFactorSchema>;
 
 function TwoFactorForm(): React.ReactElement {
+  const { refreshUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const ticket = searchParams.get('ticket') ?? '';
+  const redirectTo = sanitizeAuthRedirect(searchParams.get('from'));
   const [resending, setResending] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -48,8 +51,9 @@ function TwoFactorForm(): React.ReactElement {
     setFormError('');
     try {
       const user = await authService.verifyTwoFactor({ ticket, code: values.code });
+      await refreshUser();
       toast.success('Giriş doğrulandı');
-      router.replace(authService.roleLanding(user?.role));
+      router.replace(redirectTo ?? authService.roleLanding(user?.role));
     } catch (err) {
       const message = friendlyError(err, 'Doğrulama kodu onaylanamadı. Lütfen tekrar deneyin.');
       setFormError(message);
@@ -130,7 +134,10 @@ function TwoFactorForm(): React.ReactElement {
         >
           {resending ? 'Kod gönderiliyor...' : 'Kodu tekrar gönder'}
         </button>
-        <Link href="/login" className="text-slate-500 hover:text-slate-700">
+        <Link
+          href={redirectTo ? `/login?from=${encodeURIComponent(redirectTo)}` : '/login'}
+          className="text-slate-500 hover:text-slate-700"
+        >
           Giriş ekranına dön
         </Link>
       </div>

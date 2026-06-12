@@ -53,8 +53,12 @@ interface MotorcycleInspectionDto {
   updatedAt: string | null;
   completedAt: string | null;
   items: MotorcycleInspectionItemDto[];
-  publicSlug: string | null;
   vehicleType?: string | null;
+}
+
+interface PublicAccessDto {
+  slug: string;
+  isActive: boolean;
 }
 
 // ---- Constants -----------------------------------------------------------
@@ -90,18 +94,28 @@ export default function InspectionPrintPage({
 }) {
   const { id } = use(params);
 
-  const { data, isLoading, error, refetch } = useQuery<MotorcycleInspectionDto>({
+  const { data: printData, isLoading, error, refetch } = useQuery<{
+    inspection: MotorcycleInspectionDto;
+    publicAccess: PublicAccessDto | null;
+  }>({
     queryKey: ['inspection-print', id],
     queryFn: async () => {
-      const { data } = await apiClient.get<MotorcycleInspectionDto>(`/api/inspections/${id}`);
-      return data;
+      const [inspectionResult, accessResult] = await Promise.all([
+        apiClient.get<MotorcycleInspectionDto>(`/api/inspections/${id}`),
+        apiClient.get<PublicAccessDto>(`/api/inspections/${id}/public-access`).catch(() => null),
+      ]);
+      return {
+        inspection: inspectionResult.data,
+        publicAccess: accessResult?.data ?? null,
+      };
     },
   });
 
   if (isLoading) return <PageLoading />;
-  if (error || !data) return <ErrorState message="Ekspertiz bulunamadı." onRetry={() => void refetch()} />;
+  if (error || !printData) return <ErrorState message="Ekspertiz bulunamadı." onRetry={() => void refetch()} />;
 
   // Group & sort items
+  const data = printData.inspection;
   const grouped = data.items.reduce<Record<string, MotorcycleInspectionItemDto[]>>((acc, item) => {
     const key = item.categoryText;
     if (!acc[key]) acc[key] = [];
@@ -114,7 +128,10 @@ export default function InspectionPrintPage({
     const bOrder = CATEGORY_ORDER.indexOf(bItems[0].category);
     return (aOrder === -1 ? 99 : aOrder) - (bOrder === -1 ? 99 : bOrder);
   });
-  const publicUrl = data.publicSlug ? publicInspectionReportUrl(data.publicSlug) : null;
+  const publicUrl =
+    printData.publicAccess?.isActive && printData.publicAccess.slug
+      ? publicInspectionReportUrl(printData.publicAccess.slug)
+      : null;
   const damageZones = buildDamageZones(data.items);
   const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
 

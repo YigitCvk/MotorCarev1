@@ -16,7 +16,7 @@ import { PageLoading } from '@/components/ui/loading';
 
 interface TenantProfileDto {
   id: string;
-  tenantIdentifier: string;
+  identifier: string;
   name: string;
   legalName: string | null;
   taxNumber: string | null;
@@ -25,7 +25,6 @@ interface TenantProfileDto {
   phone: string | null;
   email: string | null;
   website: string | null;
-  description: string | null;
   logoUrl: string | null;
 }
 
@@ -38,16 +37,34 @@ const businessSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Geçerli bir e-posta girin').optional().or(z.literal('')),
   website: z.string().url('Geçerli bir URL girin').optional().or(z.literal('')),
-  description: z.string().optional(),
 });
 
 type BusinessFormValues = z.infer<typeof businessSchema>;
 
+function toBusinessFormValues(profile: TenantProfileDto): BusinessFormValues {
+  return {
+    name: profile.name ?? '',
+    legalName: profile.legalName ?? '',
+    taxNumber: profile.taxNumber ?? '',
+    taxOffice: profile.taxOffice ?? '',
+    phone: profile.phone ?? '',
+    email: profile.email ?? '',
+    address: profile.address ?? '',
+    website: profile.website ?? '',
+  };
+}
+
 function SettingsNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const tabs = [
-    { label: 'İşletme Bilgileri', href: '/settings/business' },
-    { label: 'Kullanıcılar', href: '/settings/users' },
+    ...(user?.role === 'Owner'
+      ? [{ label: 'İşletme Bilgileri', href: '/settings/business' }]
+      : []),
+    ...(user?.role === 'Owner' || user?.role === 'Admin'
+      ? [{ label: 'Kullanıcılar', href: '/settings/users' }]
+      : []),
+    { label: 'Güvenlik', href: '/settings/security' },
   ];
   return (
     <div className="flex gap-1 border-b border-slate-200 mb-6">
@@ -92,7 +109,6 @@ export default function SettingsBusinessPage() {
       email: '',
       address: '',
       website: '',
-      description: '',
     },
   });
 
@@ -107,27 +123,21 @@ export default function SettingsBusinessPage() {
 
   useEffect(() => {
     if (data) {
-      reset({
-        name: data.name ?? '',
-        legalName: data.legalName ?? '',
-        taxNumber: data.taxNumber ?? '',
-        taxOffice: data.taxOffice ?? '',
-        phone: data.phone ?? '',
-        email: data.email ?? '',
-        address: data.address ?? '',
-        website: data.website ?? '',
-        description: data.description ?? '',
-      });
+      reset(toBusinessFormValues(data));
     }
   }, [data, reset]);
 
   const mutation = useMutation({
     mutationFn: async (payload: BusinessFormValues) => {
-      const { data } = await apiClient.put<TenantProfileDto>('/api/tenants/current/profile', payload);
-      return data;
+      const response = await apiClient.put<TenantProfileDto>('/api/tenants/current/profile', {
+        ...payload,
+        logoUrl: data?.logoUrl ?? null,
+      });
+      return response.data;
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(['tenant-profile'], updated);
+      reset(toBusinessFormValues(updated));
       toast.success('İşletme profili güncellendi');
     },
     onError: (err: unknown) => {
@@ -275,16 +285,6 @@ export default function SettingsBusinessPage() {
                 />
               </div>
 
-              <div className="form-group sm:col-span-2">
-                <label className="label" htmlFor="description">Kısa Açıklama</label>
-                <textarea
-                  id="description"
-                  className="input"
-                  rows={3}
-                  placeholder="Hizmetleriniz veya işletmeniz hakkında kısa bir açıklama"
-                  {...register('description')}
-                />
-              </div>
             </div>
 
             <div className="flex gap-3 pt-2">

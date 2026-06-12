@@ -14,12 +14,28 @@ import {
   Menu,
   Package,
   Settings,
+  ShieldCheck,
   Users,
+  Upload,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '@/core/auth/auth.context';
 import { authService } from '@/core/auth/auth.service';
 import { Breadcrumbs, BreadcrumbItem } from '@/components/ui/breadcrumbs';
+import {
+  canAccessAppPath,
+  canManageBusinessSettings,
+  canManageImports,
+  canManageUsers,
+  canViewAppointments,
+  canViewCustomers,
+  canViewDashboard,
+  canViewInspections,
+  canViewInventory,
+  canViewSecuritySettings,
+  canViewServiceCatalog,
+  canViewServiceOrders,
+} from '@/shared/constants/permissions';
 
 const PATH_LABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -43,6 +59,8 @@ const PATH_LABELS: Record<string, string> = {
   '/settings': 'Ayarlar',
   '/settings/business': 'Firma Ayarları',
   '/settings/users': 'Kullanıcı Yönetimi',
+  '/settings/security': 'Güvenlik',
+  '/imports': 'İçeri Aktarım',
 };
 
 const EXISTING_ROUTES = new Set(Object.keys(PATH_LABELS));
@@ -83,26 +101,27 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  roles: string[];
+  isVisible: (role?: string) => boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
-  { label: 'Müşteriler', href: '/customers', icon: Users, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
-  { label: 'Araçlar', href: '/vehicles', icon: Car, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
-  { label: 'Randevular', href: '/appointments', icon: CalendarDays, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },
-  { label: 'Servis Kayıtları', href: '/service-orders', icon: ClipboardList, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'Accountant', 'ReadOnly'] },
-  { label: 'Expertiz', href: '/inspections', icon: FileSearch, roles: ['Owner', 'Admin', 'Manager', 'Inspector', 'ReadOnly'] },
-  { label: 'Stok', href: '/inventory', icon: Package, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },
-  { label: 'Hizmet Kataloğu', href: '/service-catalog', icon: BookOpen, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isVisible: canViewDashboard },
+  { label: 'Müşteriler', href: '/customers', icon: Users, isVisible: canViewCustomers },
+  { label: 'Araçlar', href: '/vehicles', icon: Car, isVisible: canViewCustomers },
+  { label: 'Randevular', href: '/appointments', icon: CalendarDays, isVisible: canViewAppointments },
+  { label: 'Servis Kayıtları', href: '/service-orders', icon: ClipboardList, isVisible: canViewServiceOrders },
+  { label: 'Expertiz', href: '/inspections', icon: FileSearch, isVisible: canViewInspections },
+  { label: 'Stok', href: '/inventory', icon: Package, isVisible: canViewInventory },
+  { label: 'Hizmet Kataloğu', href: '/service-catalog', icon: BookOpen, isVisible: canViewServiceCatalog },
+  { label: 'İçeri Aktarım', href: '/imports', icon: Upload, isVisible: canManageImports },
 ];
 
 const BOTTOM_NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
-  { label: 'Servis', href: '/service-orders', icon: ClipboardList, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'Accountant', 'ReadOnly'] },
-  { label: 'Randevu', href: '/appointments', icon: CalendarDays, roles: ['Owner', 'Admin', 'Manager', 'Technician', 'ReadOnly'] },
-  { label: 'Müşteriler', href: '/customers', icon: Users, roles: ['Owner', 'Admin', 'Manager', 'Accountant', 'ReadOnly'] },
-  { label: 'Expertiz', href: '/inspections', icon: FileSearch, roles: ['Owner', 'Admin', 'Manager', 'Inspector', 'ReadOnly'] },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, isVisible: canViewDashboard },
+  { label: 'Servis', href: '/service-orders', icon: ClipboardList, isVisible: canViewServiceOrders },
+  { label: 'Randevu', href: '/appointments', icon: CalendarDays, isVisible: canViewAppointments },
+  { label: 'Müşteriler', href: '/customers', icon: Users, isVisible: canViewCustomers },
+  { label: 'Expertiz', href: '/inspections', icon: FileSearch, isVisible: canViewInspections },
 ];
 
 function SidebarContent({
@@ -116,8 +135,7 @@ function SidebarContent({
   onLogout: () => void;
   onNavigate?: () => void;
 }) {
-  const { hasRole } = useAuth();
-  const visibleItems = NAV_ITEMS.filter((item) => hasRole(item.roles));
+  const visibleItems = NAV_ITEMS.filter((item) => item.isVisible(user?.role));
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-slate-200">
@@ -150,25 +168,35 @@ function SidebarContent({
       </nav>
 
       <div className="border-t border-slate-200 p-3">
-        {hasRole(['Owner', 'Admin']) && (
-          <>
-            <Link
-              href="/settings/business"
-              onClick={onNavigate}
-              className={clsx('sidebar-link mb-0.5', isActiveRoute(pathname, '/settings/business') && 'sidebar-link-active')}
-            >
-              <Settings size={16} />
-              Firma Ayarları
-            </Link>
-            <Link
-              href="/settings/users"
-              onClick={onNavigate}
-              className={clsx('sidebar-link mb-1', isActiveRoute(pathname, '/settings/users') && 'sidebar-link-active')}
-            >
-              <Users size={16} />
-              Kullanıcı Yönetimi
-            </Link>
-          </>
+        {canManageBusinessSettings(user?.role) && (
+          <Link
+            href="/settings/business"
+            onClick={onNavigate}
+            className={clsx('sidebar-link mb-0.5', isActiveRoute(pathname, '/settings/business') && 'sidebar-link-active')}
+          >
+            <Settings size={16} />
+            Firma Ayarları
+          </Link>
+        )}
+        {canManageUsers(user?.role) && (
+          <Link
+            href="/settings/users"
+            onClick={onNavigate}
+            className={clsx('sidebar-link mb-1', isActiveRoute(pathname, '/settings/users') && 'sidebar-link-active')}
+          >
+            <Users size={16} />
+            Kullanıcı Yönetimi
+          </Link>
+        )}
+        {canViewSecuritySettings(user?.role) && (
+          <Link
+            href="/settings/security"
+            onClick={onNavigate}
+            className={clsx('sidebar-link mb-1', isActiveRoute(pathname, '/settings/security') && 'sidebar-link-active')}
+          >
+            <ShieldCheck size={16} />
+            Güvenlik
+          </Link>
         )}
         <div className="px-3 py-2">
           <p className="text-xs font-medium text-slate-700 truncate">{user?.fullName ?? user?.email ?? ''}</p>
@@ -184,7 +212,7 @@ function SidebarContent({
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, logout, hasRole } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -200,6 +228,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [mounted, isLoading, isAuthenticated, router]);
 
+  const currentPath = pathname ?? '';
+  const hasRouteAccess = canAccessAppPath(user?.role, currentPath);
+  const homeHref = authService.roleLanding(user?.role);
+
+  useEffect(() => {
+    if (mounted && !isLoading && isAuthenticated && user && !hasRouteAccess) {
+      router.replace(homeHref);
+    }
+  }, [hasRouteAccess, homeHref, isAuthenticated, isLoading, mounted, router, user]);
+
   const handleLogout = async () => {
     await logout();
     router.replace('/login');
@@ -214,10 +252,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) return null;
+  if (!hasRouteAccess) return null;
 
-  const currentPath = pathname ?? '';
-  const visibleBottomItems = BOTTOM_NAV_ITEMS.filter((item) => hasRole(item.roles));
-  const homeHref = authService.roleLanding(user?.role);
+  const visibleBottomItems = BOTTOM_NAV_ITEMS.filter((item) => item.isVisible(user?.role));
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden print:block print:h-auto print:overflow-visible print:bg-white">

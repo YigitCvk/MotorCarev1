@@ -16,7 +16,7 @@ export interface CopyButtonProps {
 export function CopyButton({
   value,
   label = 'Kopyala',
-  copiedLabel = 'Kopyalandi',
+  copiedLabel = 'Kopyalandı',
   variant = 'secondary',
   size = 'sm',
   className,

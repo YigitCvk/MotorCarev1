@@ -11,6 +11,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { money } from '@/shared/utils/format';
 import type { PagedResult } from '@/shared/types/api.types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canManageInventory } from '@/shared/constants/permissions';
 
 interface InventoryItemDto {
   id: string;
@@ -29,6 +31,8 @@ interface InventoryItemDto {
 
 export default function InventoryPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canManage = canManageInventory(user?.role);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -62,11 +66,11 @@ export default function InventoryPage() {
       <PageHeader
         title="Stok Yönetimi"
         subtitle={`${data?.totalCount ?? 0} ürün kayıtlı`}
-        actions={
+        actions={canManage ? (
           <button onClick={() => router.push('/inventory/create')} className="btn btn-primary">
             <Plus size={16} /> Yeni Ürün
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Filters */}
@@ -132,7 +136,7 @@ export default function InventoryPage() {
             <EmptyState
               title="Ürün bulunamadı"
               description="Arama kriterlerini değiştirin veya yeni ürün ekleyin."
-              action={{ label: 'Yeni Ürün', onClick: () => router.push('/inventory/create') }}
+              action={canManage ? { label: 'Yeni Ürün', onClick: () => router.push('/inventory/create') } : undefined}
             />
           ) : (
             <div className="overflow-x-auto rounded-lg border border-slate-200">

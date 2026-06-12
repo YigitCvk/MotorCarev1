@@ -1,14 +1,12 @@
 'use client';
 
-import { Suspense } from 'react';
+import { type ChangeEvent, type FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { friendlyLoginError } from '@/core/api/errors';
 import { useAuth } from '@/core/auth/auth.context';
-import { authService } from '@/core/auth/auth.service';
+import { authService, sanitizeAuthRedirect } from '@/core/auth/auth.service';
 import { loginSchema, type LoginFormData } from '@/core/auth/schemas';
 import { appConfig } from '@/shared/config/env';
 
@@ -16,26 +14,54 @@ function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = sanitizeRedirect(searchParams.get('from'));
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const redirectTo = sanitizeAuthRedirect(searchParams.get('from'));
+  const [formData, setFormData] = useState<LoginFormData>({
+    tenantIdentifier: '',
+    email: '',
+    password: '',
   });
+  const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function onSubmit(data: LoginFormData) {
+  function onFieldChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: undefined }));
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = loginSchema.safeParse(formData);
+    if (!parsed.success) {
+      const nextErrors: Partial<Record<keyof LoginFormData, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0] as keyof LoginFormData | undefined;
+        if (field && !nextErrors[field]) nextErrors[field] = issue.message;
+      }
+      setErrors(nextErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const response = await login(data);
+      const response = await login(parsed.data);
       if (response.requiresTwoFactor) {
-        router.push(`/two-factor?ticket=${encodeURIComponent(response.twoFactorToken ?? '')}`);
+        const ticket = response.twoFactorToken?.trim();
+        if (!ticket) {
+          toast.error('İki faktörlü doğrulama oturumu başlatılamadı. Lütfen tekrar deneyin.');
+          return;
+        }
+
+        const params = new URLSearchParams({ ticket });
+        if (redirectTo) params.set('from', redirectTo);
+        router.push(`/two-factor?${params.toString()}`);
         return;
       }
       router.replace(redirectTo ?? authService.roleLanding(response.role));
     } catch (err) {
       toast.error(friendlyLoginError(err));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -51,7 +77,7 @@ function LoginForm() {
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Giriş Yap</h1>
       <p className="text-sm text-slate-500 mb-6">İşletme hesabınıza giriş yapın.</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="form-group">
           <label className="label">İşletme Kodu <span className="text-red-500">*</span></label>
           <input
@@ -59,10 +85,12 @@ function LoginForm() {
             className="input"
             placeholder="ornek-garaj"
             autoComplete="organization"
-            {...register('tenantIdentifier')}
+            name="tenantIdentifier"
+            value={formData.tenantIdentifier}
+            onChange={onFieldChange}
           />
           {errors.tenantIdentifier && (
-            <p className="mt-1 text-xs text-red-500">{errors.tenantIdentifier.message}</p>
+            <p className="mt-1 text-xs text-red-500">{errors.tenantIdentifier}</p>
           )}
         </div>
 
@@ -73,10 +101,12 @@ function LoginForm() {
             className="input"
             placeholder="isim@sirket.com"
             autoComplete="email"
-            {...register('email')}
+            name="email"
+            value={formData.email}
+            onChange={onFieldChange}
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+            <p className="mt-1 text-xs text-red-500">{errors.email}</p>
           )}
         </div>
 
@@ -91,10 +121,12 @@ function LoginForm() {
             type="password"
             className="input"
             autoComplete="current-password"
-            {...register('password')}
+            name="password"
+            value={formData.password}
+            onChange={onFieldChange}
           />
           {errors.password && (
-            <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+            <p className="mt-1 text-xs text-red-500">{errors.password}</p>
           )}
         </div>
 
@@ -115,12 +147,6 @@ function LoginForm() {
       </p>
     </div>
   );
-}
-
-function sanitizeRedirect(value: string | null): string | undefined {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) return undefined;
-  if (value.startsWith('/login') || value.startsWith('/register')) return undefined;
-  return value;
 }
 
 export default function LoginPage() {

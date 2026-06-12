@@ -8,6 +8,17 @@ import {
 } from '@/core/auth/storage';
 import type { CurrentUser, LoginRequest, LoginResponse } from '@/shared/types/api.types';
 
+const AUTH_REDIRECT_ORIGIN = 'https://garajpass.local';
+const AUTH_ROUTES = [
+  '/accept-invite',
+  '/forgot-password',
+  '/login',
+  '/register',
+  '/reset-password',
+  '/two-factor',
+  '/verify-email',
+];
+
 function applyLoginResponse(response: LoginResponse): CurrentUser {
   setTokens(response.accessToken, response.refreshToken);
   const user: CurrentUser = {
@@ -19,6 +30,28 @@ function applyLoginResponse(response: LoginResponse): CurrentUser {
   };
   setCurrentUserInStorage(user);
   return user;
+}
+
+export function sanitizeAuthRedirect(value: string | null): string | undefined {
+  if (!value) return undefined;
+
+  try {
+    const candidate = value.trim();
+    if (!candidate.startsWith('/')) return undefined;
+
+    const url = new URL(candidate, AUTH_REDIRECT_ORIGIN);
+    if (url.origin !== AUTH_REDIRECT_ORIGIN) return undefined;
+
+    const pathname = url.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    const isAuthRoute = AUTH_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(`${route}/`),
+    );
+    if (isAuthRoute) return undefined;
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return undefined;
+  }
 }
 
 export const authService = {

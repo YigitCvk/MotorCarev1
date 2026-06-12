@@ -51,7 +51,6 @@ interface ServicePaymentDto {
 interface ServiceOrderDto {
   id: string;
   orderNo: string;
-  publicSlug: string | null;
   customerName: string | null;
   vehiclePlate: string | null;
   vehicleDisplay: string | null;
@@ -74,6 +73,11 @@ interface ServiceOrderDto {
   payments: ServicePaymentDto[];
 }
 
+interface PublicAccessDto {
+  slug: string;
+  isActive: boolean;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   Open: 'Açık',
   InProgress: 'Devam Ediyor',
@@ -94,14 +98,19 @@ export default function ServiceOrderPrintPage(): React.ReactElement {
   const id = params.id as string;
 
   const [order, setOrder] = useState<ServiceOrderDto | null>(null);
+  const [publicAccess, setPublicAccess] = useState<PublicAccessDto | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string>('');
 
   useEffect(() => {
     async function load(): Promise<void> {
       try {
-        const { data } = await apiClient.get<ServiceOrderDto>(`/api/service-orders/${id}`);
-        setOrder(data);
+        const [orderResult, accessResult] = await Promise.all([
+          apiClient.get<ServiceOrderDto>(`/api/service-orders/${id}`),
+          apiClient.get<PublicAccessDto>(`/api/service-orders/${id}/public-access`).catch(() => null),
+        ]);
+        setOrder(orderResult.data);
+        setPublicAccess(accessResult?.data ?? null);
       } catch {
         setLoadError('Servis kaydı yüklenemedi.');
       } finally {
@@ -126,7 +135,10 @@ export default function ServiceOrderPrintPage(): React.ReactElement {
       </div>
     );
   }
-  const publicUrl = order.publicSlug ? publicServiceRecordUrl(order.publicSlug) : null;
+  const publicUrl =
+    publicAccess?.isActive && publicAccess.slug
+      ? publicServiceRecordUrl(publicAccess.slug)
+      : null;
 
   return (
     <>

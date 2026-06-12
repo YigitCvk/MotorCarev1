@@ -2,20 +2,37 @@
 
 import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Printer, CheckCircle, XCircle, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, XCircle, ClipboardList, Pencil, Globe, GlobeLock, ExternalLink } from 'lucide-react';
 import apiClient from '@/core/api/client';
+import { useAuth } from '@/core/auth/auth.context';
 import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
+import { canManageInspection } from '@/shared/constants/permissions';
 import { friendlyError } from '@/core/api/errors';
 import { VehicleDiagram } from '@/features/inspections/components';
 import type { DamageZone } from '@/features/inspections/components';
 import { resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
+import {
+  inspectionCategoryFromApi,
+  inspectionResultFromApi,
+  inspectionResultToApi,
+  inspectionPackageTypeFromApi,
+  inspectionStatusFromApi,
+} from '@/features/inspections/api-enums';
 
 // ---- DTOs ----------------------------------------------------------------
+
+interface InspectionPublicAccessDto {
+  slug: string;
+  isActive: boolean;
+  lastAccessedAtUtc: string | null;
+  accessCount: number;
+}
 
 interface MotorcycleInspectionItemDto {
   id: string;
@@ -52,7 +69,6 @@ interface MotorcycleInspectionDto {
   generalNotes: string | null;
   testRideNotes: string | null;
   cosmeticNotes: string | null;
-  publicSlug: string | null;
   createdAt: string;
   updatedAt: string | null;
   completedAt: string | null;
@@ -146,7 +162,7 @@ function ItemRow({ item, inspectionId, editable }: ItemRowProps) {
       setSaving(true);
       try {
         await apiClient.put(`/api/inspections/${inspectionId}/items/${item.id}`, {
-          result,
+          result: inspectionResultToApi(result),
           notes: notes || null,
         });
         void qc.invalidateQueries({ queryKey: ['inspection', inspectionId] });
@@ -223,14 +239,69 @@ export default function InspectionDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [actionError, setActionError] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery<MotorcycleInspectionDto>({
     queryKey: ['inspection', id],
     queryFn: async () => {
       const { data } = await apiClient.get<MotorcycleInspectionDto>(`/api/inspections/${id}`);
-      return data;
+      return {
+        ...data,
+        packageType: inspectionPackageTypeFromApi(data.packageType),
+        status: inspectionStatusFromApi(data.status),
+        items: data.items.map((item) => ({
+          ...item,
+          category: inspectionCategoryFromApi(item.category),
+          result: inspectionResultFromApi(item.result),
+        })),
+      };
     },
+  });
+
+  const {
+    data: publicAccess,
+    error: publicAccessError,
+    refetch: refetchPublicAccess,
+  } = useQuery<InspectionPublicAccessDto | null>({
+    queryKey: ['inspection', id, 'public-access'],
+    queryFn: async () => {
+      try {
+        const { data: d } = await apiClient.get<InspectionPublicAccessDto>(`/api/inspections/${id}/public-access`);
+        return d;
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 404) return null;
+        throw err;
+      }
+    },
+    staleTime: 60_000,
+    throwOnError: false,
+  });
+
+  const enablePublicAccessMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.post(`/api/inspections/${id}/public-access`);
+      await apiClient.put(`/api/inspections/${id}/public-access/enable`);
+    },
+    onSuccess: () => {
+      void refetchPublicAccess();
+      void qc.invalidateQueries({ queryKey: ['inspection', id] });
+      setActionError('');
+    },
+    onError: (err: unknown) => setActionError(friendlyError(err, 'Erişim etkinleştirilemedi.')),
+  });
+
+  const disablePublicAccessMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.put(`/api/inspections/${id}/public-access/disable`);
+    },
+    onSuccess: () => {
+      void refetchPublicAccess();
+      void qc.invalidateQueries({ queryKey: ['inspection', id] });
+      setActionError('');
+    },
+    onError: (err: unknown) => setActionError(friendlyError(err, 'Erişim devre dışı bırakılamadı.')),
   });
 
   const completeMutation = useMutation({
@@ -264,12 +335,17 @@ export default function InspectionDetailPage({
   if (isLoading) return <PageLoading />;
   if (error || !data) return <ErrorState message="Ekspertiz bulunamadı." onRetry={() => void refetch()} />;
 
-  const editable = data.status === 'Draft' || data.status === 'InProgress';
-  const canComplete = data.status === 'Draft' || data.status === 'InProgress';
-  const canCancel = data.status === 'Draft' || data.status === 'InProgress';
+  const canWriteInspection = canManageInspection(user?.role);
+  const hasEditableStatus = data.status === 'Draft' || data.status === 'InProgress';
+  const editable = canWriteInspection && hasEditableStatus;
+  const canComplete = canWriteInspection && hasEditableStatus;
+  const canCancel = canWriteInspection && hasEditableStatus;
 
-  const publicIdentifier = data.publicSlug ?? null;
-  const publicUrl = publicIdentifier ? publicInspectionReportUrl(publicIdentifier) : null;
+  const publicSlug = publicAccess?.slug?.trim() || null;
+  const publicUrl = publicSlug ? publicInspectionReportUrl(publicSlug) : null;
+  const publicAccessErrorMessage = publicAccessError
+    ? friendlyError(publicAccessError, 'Paylaşım bilgileri yüklenemedi.')
+    : '';
   const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
 
   // Build damage zones for the diagram
@@ -306,6 +382,12 @@ export default function InspectionDetailPage({
           Ekspertizler
         </button>
         <div className="flex flex-wrap items-center gap-2">
+          {editable && (
+            <Link href={`/inspections/${id}/edit`} className="btn text-sm">
+              <Pencil size={14} />
+              Düzenle
+            </Link>
+          )}
           <button
             onClick={() => router.push(`/inspections/${id}/print`)}
             className="btn text-sm"
@@ -316,13 +398,73 @@ export default function InspectionDetailPage({
         </div>
       </div>
 
-      <div className="mb-4">
-        <QRLinkCard
-          href={publicUrl}
-          title="Expertiz paylaşım QR kodu"
-          description="Müşteri expertiz raporunu bu QR veya bağlantı ile görüntüleyebilir."
-        />
+      {/* Sharing panel */}
+      <div className="mb-4 card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {publicAccess?.isActive
+            ? <Globe size={16} className="text-green-600" />
+            : <GlobeLock size={16} className="text-slate-400" />}
+          <div>
+            <p className="text-sm font-medium text-slate-900">
+              {publicAccessError
+                ? 'Paylaşım durumu alınamadı'
+                : publicAccess?.isActive
+                  ? 'Genel Erişim Açık'
+                  : 'Genel Erişim Kapalı'}
+            </p>
+            {publicAccess?.isActive && publicUrl && (
+              <a href={publicUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-brand-600 hover:underline">
+                {publicUrl} <ExternalLink size={10} />
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {publicAccess?.isActive && (
+            <span className="text-xs text-slate-400">{publicAccess.accessCount} görüntülenme</span>
+          )}
+          {canWriteInspection && !publicAccessError && (publicAccess?.isActive ? (
+            <button
+              onClick={() => disablePublicAccessMutation.mutate()}
+              disabled={disablePublicAccessMutation.isPending}
+              className="btn text-sm text-rose-600 border-rose-200 hover:bg-rose-50"
+            >
+              <GlobeLock size={13} />
+              {disablePublicAccessMutation.isPending ? '...' : 'Kapat'}
+            </button>
+          ) : (
+            <button
+              onClick={() => enablePublicAccessMutation.mutate()}
+              disabled={enablePublicAccessMutation.isPending}
+              className="btn-primary text-sm"
+            >
+              <Globe size={13} />
+              {enablePublicAccessMutation.isPending ? '...' : 'Paylaşımı Aç'}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {publicAccessErrorMessage && (
+        <div className="alert-error mb-4">{publicAccessErrorMessage}</div>
+      )}
+
+      {!publicAccessError && !publicUrl && (
+        <div className="mb-4 text-sm text-slate-500">
+          Paylaşım bağlantısı henüz oluşturulmamış.
+        </div>
+      )}
+
+      {publicAccess?.isActive && (
+        <div className="mb-4">
+          <QRLinkCard
+            href={publicUrl}
+            title="Ekspertiz paylaşım QR kodu"
+            description="Müşteri ekspertiz raporunu bu QR veya bağlantı ile görüntüleyebilir."
+            emptyText="Paylaşım bağlantısı henüz oluşturulmamış."
+          />
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">

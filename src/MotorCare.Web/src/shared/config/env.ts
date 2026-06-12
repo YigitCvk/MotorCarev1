@@ -5,4 +5,5 @@ export const appConfig = {
     process.env.NEXT_PUBLIC_APP_URL ??
     'http://localhost:3000',
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? '',
+  monthlyDashboardEnabled: process.env.NEXT_PUBLIC_ENABLE_MONTHLY_DASHBOARD === 'true',
 } as const;

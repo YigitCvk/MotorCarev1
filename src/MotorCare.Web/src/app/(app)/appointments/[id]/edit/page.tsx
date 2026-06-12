@@ -24,11 +24,11 @@ export default function EditAppointmentPage(): React.ReactElement {
     setFormError('');
     updateAppointment.mutate(body, {
       onSuccess: (appointment) => {
-        toast.success('Randevu guncellendi');
+        toast.success('Randevu güncellendi');
         router.push(`/appointments/${appointment.id}`);
       },
       onError: (err) => {
-        const message = friendlyError(err, 'Randevu guncellenemedi.');
+        const message = friendlyError(err, 'Randevu güncellenemedi.');
         setFormError(message);
         toast.error(message);
       },
@@ -36,22 +36,22 @@ export default function EditAppointmentPage(): React.ReactElement {
   }
 
   if (isLoading) return <PageLoading />;
-  if (error || !data) return <ErrorState message="Randevu yuklenemedi." onRetry={() => void refetch()} />;
+  if (error || !data) return <ErrorState message="Randevu yüklenemedi." onRetry={() => void refetch()} />;
 
   return (
     <div>
       <div className="mb-4">
         <button onClick={() => router.push(`/appointments/${id}`)} className="btn-ghost text-sm">
           <ArrowLeft size={14} />
-          Randevu Detayi
+          Randevu Detayı
         </button>
       </div>
 
-      <PageHeader title="Randevu Duzenle" subtitle={data.customerName} />
+      <PageHeader title="Randevu Düzenle" subtitle={data.customerName} />
 
       <AppointmentForm
         appointment={data}
-        submitLabel="Degisiklikleri Kaydet"
+        submitLabel="Değişiklikleri Kaydet"
         isSubmitting={updateAppointment.isPending}
         error={formError}
         onSubmit={handleSubmit}

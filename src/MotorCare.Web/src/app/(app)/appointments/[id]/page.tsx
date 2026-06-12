@@ -22,6 +22,8 @@ import {
   useConvertAppointment,
   useUpdateAppointmentStatus,
 } from '@/features/appointments/hooks';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateServiceOrder, canEditAppointment } from '@/shared/constants/permissions';
 
 function StatusBadge({ appointment }: { appointment: AppointmentDto }): React.ReactElement {
   const label = appointmentStatusLabel(appointment.status, appointment.statusText);
@@ -49,6 +51,8 @@ function DetailItem({ label, value }: { label: string; value: React.ReactNode })
 export default function AppointmentDetailPage(): React.ReactElement {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const canEdit = canEditAppointment(user?.role);
   const id = params.id as string;
   const { data, isLoading, error, refetch } = useAppointment(id);
   const updateStatus = useUpdateAppointmentStatus(id);
@@ -64,17 +68,22 @@ export default function AppointmentDetailPage(): React.ReactElement {
   }, [data]);
 
   if (isLoading) return <PageLoading />;
-  if (error || !data) return <ErrorState message="Randevu yuklenemedi." onRetry={() => void refetch()} />;
+  if (error || !data) return <ErrorState message="Randevu yüklenemedi." onRetry={() => void refetch()} />;
 
+  const appointment = data;
   const terminalStatus = data.status === 'Cancelled' || data.status === 'ConvertedToOrder' || data.status === 'Completed';
+  const canConvert =
+    canCreateServiceOrder(user?.role) &&
+    !terminalStatus &&
+    Boolean(data.customerId && data.vehicleId);
 
   function handleStatusUpdate(): void {
     if (!data || statusValue === data.status) return;
     setActionError('');
     updateStatus.mutate(statusValue, {
-      onSuccess: () => toast.success('Durum guncellendi'),
+      onSuccess: () => toast.success('Durum güncellendi'),
       onError: (err) => {
-        const message = friendlyError(err, 'Durum guncellenemedi.');
+        const message = friendlyError(err, 'Durum güncellenemedi.');
         setActionError(message);
         toast.error(message);
       },
@@ -95,20 +104,25 @@ export default function AppointmentDetailPage(): React.ReactElement {
   }
 
   function handleConvert(): void {
+    if (!appointment.customerId || !appointment.vehicleId) {
+      setActionError('Servis emrine dönüştürmek için müşteri ve araç seçilmelidir.');
+      return;
+    }
+
     const km = Number(vehicleKm);
     if (Number.isNaN(km) || km < 0) {
-      setActionError('Gecerli bir arac KM degeri girin.');
+      setActionError('Geçerli bir araç KM değeri girin.');
       return;
     }
 
     setActionError('');
     convertAppointment.mutate(km, {
       onSuccess: (result) => {
-        toast.success('Servis emri olusturuldu');
+        toast.success('Servis emri oluşturuldu');
         router.push(`/service-orders/${result.serviceOrderId}`);
       },
       onError: (err) => {
-        const message = friendlyError(err, 'Servis emrine donusturulemedi.');
+        const message = friendlyError(err, 'Servis emrine dönüştürülemedi.');
         setActionError(message);
         toast.error(message);
       },
@@ -123,10 +137,12 @@ export default function AppointmentDetailPage(): React.ReactElement {
           Randevular
         </button>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/appointments/${id}/edit`} className="btn-secondary text-sm">
-            <Pencil size={14} />
-            Duzenle
-          </Link>
+          {canEdit && (
+            <Link href={`/appointments/${id}/edit`} className="btn-secondary text-sm">
+              <Pencil size={14} />
+              Düzenle
+            </Link>
+          )}
           {data.serviceOrderId && (
             <Link href={`/service-orders/${data.serviceOrderId}`} className="btn-secondary text-sm">
               <Wrench size={14} />
@@ -147,7 +163,7 @@ export default function AppointmentDetailPage(): React.ReactElement {
           <div>
             <div className="mb-2 flex items-center gap-2">
               <CalendarClock size={20} className="text-brand-600" />
-              <h1 className="text-xl font-bold text-slate-900">Randevu Detayi</h1>
+              <h1 className="text-xl font-bold text-slate-900">Randevu Detayı</h1>
             </div>
             <p className="text-sm text-slate-500">
               {dateTimeText(data.startAt)} - {dateTimeText(data.endAt)}
@@ -162,10 +178,10 @@ export default function AppointmentDetailPage(): React.ReactElement {
           <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <UserRound size={18} className="text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-800">Musteri</h2>
+              <h2 className="text-sm font-semibold text-slate-800">Müşteri</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailItem label="Musteri" value={data.customerName} />
+              <DetailItem label="Müşteri" value={data.customerName} />
               <DetailItem label="Telefon" value={data.phone} />
             </div>
           </section>
@@ -173,76 +189,78 @@ export default function AppointmentDetailPage(): React.ReactElement {
           <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Car size={18} className="text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-800">Arac ve Randevu</h2>
+              <h2 className="text-sm font-semibold text-slate-800">Araç ve Randevu</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <DetailItem label="Plaka" value={data.plate || '-'} />
               <DetailItem label="Tip" value={appointmentTypeLabel(data.type, data.typeText)} />
-              <DetailItem label="Baslangic" value={dateTimeText(data.startAt)} />
-              <DetailItem label="Bitis" value={dateTimeText(data.endAt)} />
+              <DetailItem label="Başlangıç" value={dateTimeText(data.startAt)} />
+              <DetailItem label="Bitiş" value={dateTimeText(data.endAt)} />
             </div>
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 text-sm font-semibold text-slate-800">Notlar</h2>
             <div className="space-y-4">
-              <DetailItem label="Sikayet" value={data.complaint || '-'} />
+              <DetailItem label="Şikayet" value={data.complaint || '-'} />
               <DetailItem label="Not" value={data.note || '-'} />
             </div>
           </section>
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800">Durum Guncelle</h2>
-            <div className="space-y-3">
-              <select
-                className="input"
-                value={statusValue}
-                disabled={updateStatus.isPending || data.status === 'ConvertedToOrder'}
-                onChange={(event) => setStatusValue(event.target.value as AppointmentStatus)}
-              >
-                {APPOINTMENT_STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="btn-primary w-full"
-                disabled={updateStatus.isPending || statusValue === data.status || data.status === 'ConvertedToOrder'}
-                onClick={handleStatusUpdate}
-              >
-                <CheckCircle2 size={16} />
-                {updateStatus.isPending ? 'Guncelleniyor...' : 'Durumu Kaydet'}
-              </button>
-              {!terminalStatus && (
+          {canEdit && (
+            <section className="rounded-lg border border-slate-200 bg-white p-4">
+              <h2 className="mb-3 text-sm font-semibold text-slate-800">Durum Güncelle</h2>
+              <div className="space-y-3">
+                <select
+                  className="input"
+                  value={statusValue}
+                  disabled={updateStatus.isPending || data.status === 'ConvertedToOrder'}
+                  onChange={(event) => setStatusValue(event.target.value as AppointmentStatus)}
+                >
+                  {APPOINTMENT_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
-                  className="btn-danger w-full"
-                  disabled={cancelAppointment.isPending}
-                  onClick={handleCancel}
+                  className="btn-primary w-full"
+                  disabled={updateStatus.isPending || statusValue === data.status || data.status === 'ConvertedToOrder'}
+                  onClick={handleStatusUpdate}
                 >
-                  {cancelAppointment.isPending ? 'Iptal ediliyor...' : 'Randevuyu Iptal Et'}
+                  <CheckCircle2 size={16} />
+                  {updateStatus.isPending ? 'Güncelleniyor...' : 'Durumu Kaydet'}
                 </button>
-              )}
-            </div>
-          </section>
+                {!terminalStatus && (
+                  <button
+                    type="button"
+                    className="btn-danger w-full"
+                    disabled={cancelAppointment.isPending}
+                    onClick={handleCancel}
+                  >
+                    {cancelAppointment.isPending ? 'İptal ediliyor...' : 'Randevuyu İptal Et'}
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
 
-          {!terminalStatus && (
+          {canConvert && (
             <section className="rounded-lg border border-slate-200 bg-white p-4">
-              <h2 className="mb-3 text-sm font-semibold text-slate-800">Servis Emrine Donustur</h2>
+              <h2 className="mb-3 text-sm font-semibold text-slate-800">Servis Emrine Dönüştür</h2>
               <div className="space-y-3">
                 <div className="form-group">
-                  <label className="label">Arac KM *</label>
+                  <label className="label">Araç KM *</label>
                   <input
                     type="number"
                     min={0}
                     className="input"
                     value={vehicleKm}
                     onChange={(event) => setVehicleKm(event.target.value)}
-                    placeholder="or. 85000"
+                    placeholder="Ör. 85000"
                   />
                 </div>
                 <button
@@ -252,7 +270,7 @@ export default function AppointmentDetailPage(): React.ReactElement {
                   onClick={handleConvert}
                 >
                   <Wrench size={16} />
-                  {convertAppointment.isPending ? 'Donusturuluyor...' : 'Servis Emri Olustur'}
+                  {convertAppointment.isPending ? 'Dönüştürülüyor...' : 'Servis Emri Oluştur'}
                 </button>
               </div>
             </section>

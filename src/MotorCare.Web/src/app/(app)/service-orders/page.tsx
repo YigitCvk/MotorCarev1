@@ -12,6 +12,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { money, dateText } from '@/shared/utils/format';
 import type { PagedResult } from '@/shared/types/api.types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateServiceOrder } from '@/shared/constants/permissions';
 
 interface ServiceOrderSummaryDto {
   id: string;
@@ -56,6 +58,8 @@ function statusBadge(status: string): React.ReactElement {
 
 export default function ServiceOrdersPage(): React.ReactElement {
   const router = useRouter();
+  const { user } = useAuth();
+  const canCreate = canCreateServiceOrder(user?.role);
   const [inputValue, setInputValue] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -90,12 +94,12 @@ export default function ServiceOrdersPage(): React.ReactElement {
       <PageHeader
         title="Servis Kayıtları"
         subtitle={data ? `${data.totalCount} kayıt` : ''}
-        actions={
+        actions={canCreate ? (
           <Link href="/service-orders/new" className="btn-primary">
             <Plus size={16} />
             Yeni Servis Kaydı
           </Link>
-        }
+        ) : undefined}
       />
 
       {/* Filters */}
@@ -136,19 +140,21 @@ export default function ServiceOrdersPage(): React.ReactElement {
               <EmptyState
                 title="Servis kaydı bulunamadı"
                 description="Arama kriterlerini değiştirin veya yeni servis kaydı oluşturun."
-                action={{ label: 'Yeni Servis Kaydı', onClick: () => router.push('/service-orders/new') }}
+                action={canCreate ? { label: 'Yeni Servis Kaydı', onClick: () => router.push('/service-orders/new') } : undefined}
               />
             ) : (
               <div className="text-center py-16 text-slate-400">
                 <ClipboardList size={48} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm">Henüz servis kaydı yok.</p>
-                <button
-                  onClick={() => router.push('/service-orders/new')}
-                  className="mt-4 btn-primary text-sm"
-                >
-                  <Plus size={14} />
-                  Yeni Servis Kaydı Oluştur
-                </button>
+                {canCreate && (
+                  <button
+                    onClick={() => router.push('/service-orders/new')}
+                    className="mt-4 btn-primary text-sm"
+                  >
+                    <Plus size={14} />
+                    Yeni Servis Kaydı Oluştur
+                  </button>
+                )}
               </div>
             )
           ) : (

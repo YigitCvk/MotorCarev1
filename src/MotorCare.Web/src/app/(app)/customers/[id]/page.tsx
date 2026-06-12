@@ -16,11 +16,16 @@ import { VehicleForm, type VehicleFormValues } from '@/features/vehicles/compone
 import { getVehiclePlate, vehicleDuplicateMessage } from '@/features/vehicles/hooks';
 import type { Customer } from '@/features/customers/types';
 import type { Vehicle } from '@/features/vehicles/types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateVehicle, canEditCustomer } from '@/shared/constants/permissions';
 
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const canEdit = canEditCustomer(user?.role);
+  const canAddVehicle = canCreateVehicle(user?.role);
   const [showVehicleForm, setShowVehicleForm] = useState(false);
 
   const customerQuery = useQuery<Customer>({
@@ -76,10 +81,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <ArrowLeft size={14} />
           Müşteriler
         </button>
-        <Link href={`/customers/${id}/edit`} className="btn-secondary text-sm">
-          <Edit size={14} />
-          Düzenle
-        </Link>
+        {canEdit && (
+          <Link href={`/customers/${id}/edit`} className="btn-secondary text-sm">
+            <Edit size={14} />
+            Düzenle
+          </Link>
+        )}
       </div>
 
       <h1 className="text-2xl font-bold text-slate-900 mb-6">{customer.fullName}</h1>
@@ -105,13 +112,15 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-lg font-semibold text-slate-900">Araçlar ({vehicles.length})</h2>
-        <button onClick={() => setShowVehicleForm(true)} className="btn-secondary text-sm self-start sm:self-auto">
-          <Plus size={14} />
-          Araç Ekle
-        </button>
+        {canAddVehicle && (
+          <button onClick={() => setShowVehicleForm(true)} className="btn-secondary text-sm self-start sm:self-auto">
+            <Plus size={14} />
+            Araç Ekle
+          </button>
+        )}
       </div>
 
-      {showVehicleForm && (
+      {canAddVehicle && showVehicleForm && (
         <div className="card p-4 mb-4 max-w-2xl">
           <VehicleForm
             submitLabel="Araç Ekle"
@@ -133,7 +142,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         <EmptyState
           title="Araç kaydı yok"
           description="Bu müşteriye ait araç kaydı bulunmuyor."
-          action={{ label: 'Araç Ekle', onClick: () => router.push(`/customers/${id}/vehicles/new`) }}
+          action={canAddVehicle ? { label: 'Araç Ekle', onClick: () => router.push(`/customers/${id}/vehicles/new`) } : undefined}
         />
       )}
       {vehicles.length > 0 && (

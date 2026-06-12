@@ -21,6 +21,10 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   TENANT_NOT_FOUND: 'İşletme bulunamadı.',
   USER_ALREADY_EXISTS: 'Bu e-posta adresiyle zaten bir hesap mevcut.',
   INSUFFICIENT_PERMISSIONS: 'Bu işlemi yapmak için yetkiniz bulunmuyor.',
+  TWO_FACTOR_CODE_INVALID: 'Doğrulama kodu hatalı veya süresi dolmuş.',
+  TWO_FACTOR_CODE_EXPIRED: 'Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.',
+  TWO_FACTOR_ALREADY_ENABLED: 'İki faktörlü doğrulama zaten etkin.',
+  TWO_FACTOR_NOT_ENABLED: 'İki faktörlü doğrulama etkin değil.',
 };
 
 type ProblemWithDetails = ApiProblem & {

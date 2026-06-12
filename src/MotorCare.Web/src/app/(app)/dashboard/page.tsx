@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, ClipboardList, TrendingUp, CreditCard, Users, Calendar } from 'lucide-react';
+import { BarChart3, ClipboardList, TrendingUp, CreditCard, Users, Calendar, Wallet, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import apiClient from '@/core/api/client';
 import { StatCard } from '@/components/ui/card';
@@ -12,6 +12,13 @@ import { ErrorState } from '@/components/ui/error-state';
 import { ServiceOrderStatusBadge } from '@/components/ui/badge';
 import { money, dateText } from '@/shared/utils/format';
 import { isRecord, normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
+import { useAuth } from '@/core/auth/auth.context';
+import { appConfig } from '@/shared/config/env';
+import {
+  canCreateCustomer,
+  canCreateServiceOrder,
+  canManageInspection,
+} from '@/shared/constants/permissions';
 
 interface MonthlyRevenueStat {
   month: string;
@@ -35,6 +42,40 @@ function toTrMonth(month: string): string {
   // Handles both "Jan", "January", "01", numeric strings
   const abbr = month.slice(0, 3);
   return TR_MONTHS[abbr] ?? month;
+}
+
+interface DailyPaymentSummary {
+  date: string;
+  total: number;
+  cash: number;
+  creditCard: number;
+  bankTransfer: number;
+  paymentCount: number;
+}
+
+interface PaymentSummary {
+  totalCollected: number;
+  cashTotal: number;
+  creditCardTotal: number;
+  bankTransferTotal: number;
+  openBalance: number;
+  totalOrdersInPeriod: number;
+  paidOrdersCount: number;
+  partiallyPaidOrdersCount: number;
+  unpaidOrdersCount: number;
+  dailyBreakdown: DailyPaymentSummary[];
+}
+
+interface OpenBalanceItem {
+  serviceOrderId: string;
+  orderNo: string;
+  customerName: string | null;
+  vehiclePlate: string | null;
+  grandTotal: number;
+  paidTotal: number;
+  remainingTotal: number;
+  status: string;
+  openedAt: string;
 }
 
 interface DailyDashboard {
@@ -80,11 +121,36 @@ function normalizeMonthlyRevenueStats(value: unknown): MonthlyRevenueStat[] {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data, isLoading, error, refetch } = useQuery<DailyDashboard>({
     queryKey: ['dashboard', 'daily'],
     queryFn: async () => {
       const { data } = await apiClient.get<DailyDashboard>('/api/dashboard/daily');
       return data;
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: paymentSummary, isLoading: isPaymentLoading, isError: paymentError, refetch: refetchPayment } = useQuery<PaymentSummary>({
+    queryKey: ['dashboard', 'payment-summary'],
+    queryFn: async () => {
+      const to = new Date();
+      const from = new Date(to.getFullYear(), to.getMonth(), 1);
+      const params = new URLSearchParams({
+        from: from.toISOString(),
+        to: to.toISOString(),
+      });
+      const { data } = await apiClient.get<PaymentSummary>(`/api/dashboard/payment-summary?${params.toString()}`);
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: openBalances, isLoading: isBalancesLoading, isError: balancesError, refetch: refetchBalances } = useQuery<OpenBalanceItem[]>({
+    queryKey: ['dashboard', 'open-balances'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<unknown>('/api/dashboard/open-balances');
+      return normalizeApiArray<OpenBalanceItem>(data);
     },
     staleTime: 30_000,
   });
@@ -99,6 +165,7 @@ export default function DashboardPage() {
       const { data } = await apiClient.get<unknown>('/api/dashboard/monthly');
       return normalizeMonthlyRevenueStats(data);
     },
+    enabled: appConfig.monthlyDashboardEnabled,
     staleTime: 60_000,
   });
 
@@ -155,11 +222,19 @@ export default function DashboardPage() {
   const recentOrders = safeArr(data?.recentServiceOrders ?? data?.serviceOrders ?? data?.orders);
   const appointments = safeArr(data?.todayAppointmentsList ?? data?.appointments ?? data?.todayAppointments as unknown);
   const monthlyRows = monthlyData ?? [];
+  const balanceRows = openBalances ?? [];
+
+  function refreshDashboard(): void {
+    void refetch();
+    void refetchPayment();
+    void refetchBalances();
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
         <PageHeader title="Dashboard" subtitle="Günlük operasyon özeti" />
-        <button onClick={() => void refetch()} className="btn-secondary text-sm px-3 py-1.5 shrink-0">
+        <button onClick={refreshDashboard} className="btn-secondary text-sm px-3 py-1.5 shrink-0">
           Yenile
         </button>
       </div>
@@ -171,10 +246,112 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Payment overview */}
+      <div className="grid xl:grid-cols-3 gap-6 mb-6">
+        <div className="card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet size={18} className="text-emerald-600" />
+            <div>
+              <h2 className="font-semibold text-slate-900">Bu Ay Tahsilat</h2>
+              <p className="text-xs text-slate-500">Ay başından bugüne</p>
+            </div>
+          </div>
+
+          {isPaymentLoading ? (
+            <p className="text-sm text-slate-400 py-6 text-center">Ödeme özeti yükleniyor...</p>
+          ) : paymentError ? (
+            <div className="py-4 text-center">
+              <p className="text-sm text-rose-500">Ödeme özeti yüklenemedi.</p>
+              <button onClick={() => void refetchPayment()} className="mt-2 text-xs text-brand-600 hover:underline">
+                Yeniden dene
+              </button>
+            </div>
+          ) : paymentSummary ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{money(paymentSummary.totalCollected)}</p>
+                <p className="text-xs text-slate-500">{paymentSummary.totalOrdersInPeriod} servis emri</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Nakit</span>
+                  <span className="font-medium text-slate-800">{money(paymentSummary.cashTotal)}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Kredi Kartı</span>
+                  <span className="font-medium text-slate-800">{money(paymentSummary.creditCardTotal)}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-slate-500">Banka Transferi</span>
+                  <span className="font-medium text-slate-800">{money(paymentSummary.bankTransferTotal)}</span>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-100 flex justify-between gap-3 text-sm">
+                <span className="text-slate-500">Dönem açık bakiyesi</span>
+                <span className="font-semibold text-amber-700">{money(paymentSummary.openBalance)}</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="card p-0 overflow-hidden xl:col-span-2">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-amber-500" />
+              <h2 className="font-semibold text-slate-900">Açık Bakiyeler</h2>
+            </div>
+            <Link href="/service-orders" className="text-xs text-brand-600 hover:text-brand-700">
+              Tümünü gör →
+            </Link>
+          </div>
+
+          {isBalancesLoading ? (
+            <p className="text-sm text-slate-400 py-10 text-center">Açık bakiyeler yükleniyor...</p>
+          ) : balancesError ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-rose-500">Açık bakiye listesi yüklenemedi.</p>
+              <button onClick={() => void refetchBalances()} className="mt-2 text-xs text-brand-600 hover:underline">
+                Yeniden dene
+              </button>
+            </div>
+          ) : balanceRows.length === 0 ? (
+            <p className="text-sm text-slate-400 py-10 text-center">Açık bakiyesi olan servis emri yok.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {balanceRows.slice(0, 5).map((item) => (
+                <li key={item.serviceOrderId}>
+                  <Link
+                    href={`/service-orders/${item.serviceOrderId}`}
+                    className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {item.orderNo} · {item.vehiclePlate ?? 'Plaka yok'}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {item.customerName ?? 'Müşteri bilgisi yok'} · {dateText(item.openedAt)}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-semibold text-amber-700">{money(item.remainingTotal)}</p>
+                      <p className="text-xs text-slate-400">{money(item.paidTotal)} ödendi</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* Monthly Revenue Chart */}
       <div className="card p-5 mb-6">
         <h2 className="font-semibold text-slate-900 mb-4">Aylık Gelir</h2>
-        {isMonthlyLoading ? (
+        {!appConfig.monthlyDashboardEnabled ? (
+          <p className="text-sm text-slate-400 text-center py-8">
+            Aylık grafik backend desteği etkinleştirildiğinde burada gösterilecek.
+          </p>
+        ) : isMonthlyLoading ? (
           <p className="text-sm text-slate-400 text-center py-8">Aylık grafik yükleniyor...</p>
         ) : monthlyError ? (
           <p className="text-sm text-rose-500 text-center py-8">Aylık grafik bilgileri şu anda yüklenemedi.</p>
@@ -284,9 +461,15 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/service-orders/new" className="btn-secondary">Yeni Servis Emri</Link>
-        <Link href="/customers/create" className="btn-secondary">Yeni Müşteri</Link>
-        <Link href="/inspections/new" className="btn-secondary">Yeni Expertiz</Link>
+        {canCreateServiceOrder(user?.role) && (
+          <Link href="/service-orders/new" className="btn-secondary">Yeni Servis Emri</Link>
+        )}
+        {canCreateCustomer(user?.role) && (
+          <Link href="/customers/create" className="btn-secondary">Yeni Müşteri</Link>
+        )}
+        {canManageInspection(user?.role) && (
+          <Link href="/inspections/new" className="btn-secondary">Yeni Expertiz</Link>
+        )}
       </div>
     </div>
   );

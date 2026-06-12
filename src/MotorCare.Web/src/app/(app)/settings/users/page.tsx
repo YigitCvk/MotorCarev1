@@ -22,6 +22,12 @@ import { friendlyError } from '@/core/api/errors';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageLoading } from '@/components/ui/loading';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+  INVITABLE_ROLES,
+  ROLE_LABELS,
+  ROLE_VALUES,
+  isUserRole,
+} from '@/shared/constants/roles';
 
 interface UserDto {
   id: string;
@@ -33,27 +39,21 @@ interface UserDto {
   lastLoginAt: string | null;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  Owner: 'Sahip',
-  Admin: 'Yönetici',
-  Manager: 'Müdür',
-  Technician: 'Teknisyen',
-  Inspector: 'Eksper',
-  Accountant: 'Muhasebe',
-  ReadOnly: 'Salt Okuma',
-};
-
-const ASSIGNABLE_ROLES = ['Admin', 'Manager', 'Technician', 'Inspector', 'Accountant', 'ReadOnly'];
-
 function roleLabel(role: string): string {
-  return ROLE_LABELS[role] ?? role;
+  return isUserRole(role) ? ROLE_LABELS[role] : role;
 }
 
 function SettingsNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const tabs = [
-    { label: 'İşletme Bilgileri', href: '/settings/business' },
-    { label: 'Kullanıcılar', href: '/settings/users' },
+    ...(user?.role === 'Owner'
+      ? [{ label: 'İşletme Bilgileri', href: '/settings/business' }]
+      : []),
+    ...(user?.role === 'Owner' || user?.role === 'Admin'
+      ? [{ label: 'Kullanıcılar', href: '/settings/users' }]
+      : []),
+    { label: 'Güvenlik', href: '/settings/security' },
   ];
   return (
     <div className="flex gap-1 border-b border-slate-200 mb-6">
@@ -116,12 +116,14 @@ export default function SettingsUsersPage() {
       const { data } = await apiClient.get<UserDto[]>('/api/users');
       return data;
     },
+    enabled: canManage,
   });
 
   // Role mutation
   const roleMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: string }) => {
-      await apiClient.put(`/api/users/${id}/role`, { role });
+      if (!isUserRole(role)) throw new Error('Geçersiz kullanıcı rolü.');
+      await apiClient.put(`/api/users/${id}/role`, { role: ROLE_VALUES[role] });
     },
     onSuccess: () => {
       toast.success('Rol güncellendi');
@@ -151,7 +153,11 @@ export default function SettingsUsersPage() {
   // Invite mutation
   const inviteMutation = useMutation({
     mutationFn: async (payload: InviteFormValues) => {
-      await apiClient.post('/api/users/invite', payload);
+      if (!isUserRole(payload.role)) throw new Error('Geçersiz kullanıcı rolü.');
+      await apiClient.post('/api/users/invite', {
+        ...payload,
+        role: ROLE_VALUES[payload.role],
+      });
     },
     onSuccess: () => {
       toast.success('Kullanıcı davet edildi');
@@ -172,6 +178,20 @@ export default function SettingsUsersPage() {
     if (confirmDeactivate) {
       deactivateMutation.mutate(confirmDeactivate);
     }
+  }
+
+  if (!currentUser) return null;
+
+  if (!canManage) {
+    return (
+      <div>
+        <SettingsNav />
+        <div className="alert-error flex items-center gap-2 max-w-xl">
+          <AlertCircle size={16} className="shrink-0" />
+          Bu sayfayı görüntülemek için yetkiniz yok.
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -246,7 +266,7 @@ export default function SettingsUsersPage() {
                 className="input"
                 {...register('role')}
               >
-                {ASSIGNABLE_ROLES.map((r) => (
+                {INVITABLE_ROLES.map((r) => (
                   <option key={r} value={r}>
                     {roleLabel(r)}
                   </option>
@@ -306,7 +326,7 @@ export default function SettingsUsersPage() {
             </thead>
             <tbody>
               {users.map((u) => {
-                const isSelf = u.id === currentUser?.id;
+                const isSelf = u.id === (currentUser.id ?? currentUser.userId);
                 const isOwner = u.role === 'Owner';
 
                 return (
@@ -349,7 +369,7 @@ export default function SettingsUsersPage() {
                               onChange={(e) => handleRoleChange(u.id, e.target.value)}
                               aria-label={`${u.fullName} rolünü değiştir`}
                             >
-                              {ASSIGNABLE_ROLES.map((r) => (
+                              {INVITABLE_ROLES.map((r) => (
                                 <option key={r} value={r}>
                                   {roleLabel(r)}
                                 </option>

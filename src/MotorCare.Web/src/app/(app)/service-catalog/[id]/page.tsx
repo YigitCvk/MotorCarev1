@@ -13,6 +13,8 @@ import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { friendlyError } from '@/core/api/errors';
 import { money } from '@/shared/utils/format';
+import { useAuth } from '@/core/auth/auth.context';
+import { canManageServiceCatalog } from '@/shared/constants/permissions';
 
 interface ServiceCatalogItemDto {
   id: string;
@@ -54,6 +56,8 @@ export default function ServiceCatalogDetailPage({ params }: { params: Promise<{
   const { id } = use(params);
   const router = useRouter();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const canManage = canManageServiceCatalog(user?.role);
 
   const [toggling, setToggling] = useState(false);
 
@@ -156,23 +160,25 @@ export default function ServiceCatalogDetailPage({ params }: { params: Promise<{
             <p className="text-sm text-slate-500">{data.categoryText}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => void handleToggleActive()}
-            disabled={toggling}
-            className={`btn ${data.isActive ? 'btn-danger' : 'btn-primary'}`}
-          >
-            {data.isActive ? (
-              <>
-                <XCircle size={14} /> Pasif Yap
-              </>
-            ) : (
-              <>
-                <CheckCircle size={14} /> Aktif Yap
-              </>
-            )}
-          </button>
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void handleToggleActive()}
+              disabled={toggling}
+              className={`btn ${data.isActive ? 'btn-danger' : 'btn-primary'}`}
+            >
+              {data.isActive ? (
+                <>
+                  <XCircle size={14} /> Pasif Yap
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={14} /> Aktif Yap
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Summary cards */}
@@ -205,10 +211,12 @@ export default function ServiceCatalogDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Edit form */}
-      <div className="card p-6 max-w-2xl">
-        <h2 className="text-base font-semibold text-slate-800 mb-4">Hizmet Bilgileri</h2>
-        <form onSubmit={(e) => void handleSubmit(onSave)(e)} className="space-y-4">
+      {canManage && (
+        <>
+          {/* Edit form */}
+          <div className="card p-6 max-w-2xl">
+            <h2 className="text-base font-semibold text-slate-800 mb-4">Hizmet Bilgileri</h2>
+            <form onSubmit={(e) => void handleSubmit(onSave)(e)} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group sm:col-span-2">
               <label className="label">
@@ -287,8 +295,10 @@ export default function ServiceCatalogDetailPage({ params }: { params: Promise<{
               {saving ? 'Kaydediliyor...' : 'Kaydet'}
             </button>
           </div>
-        </form>
-      </div>
+            </form>
+          </div>
+        </>
+      )}
     </div>
   );
 }

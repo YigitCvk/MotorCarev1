@@ -5,37 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, Building2, AlertCircle, Loader2, CheckCircle2, AlertTriangle, XCircle, MinusCircle, Car, User, Printer } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { CopyButton } from '@/components/ui/copy-button';
-import { money, dateText } from '@/shared/utils/format';
+import { dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
 import { VehicleDiagram } from '@/features/inspections/components';
 import { buildDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
 
 // ─── PII masking ──────────────────────────────────────────────────────────────
-
-function maskName(fullName: string): string {
-  if (!fullName) return '';
-
-  // Email address: mask middle of local part
-  if (fullName.includes('@')) {
-    const [local, domain] = fullName.split('@');
-    if (!domain) return fullName;
-    const masked = local.length <= 1 ? local : `${local[0]}***`;
-    return `${masked}@${domain}`;
-  }
-
-  const parts = fullName.trim().split(/\s+/);
-
-  // Single word: show first 3 chars + ***
-  if (parts.length === 1) {
-    const name = parts[0];
-    return name.length <= 3 ? name : `${name.slice(0, 3)}***`;
-  }
-
-  // Multi-word: show first name fully, mask last name to initial + "."
-  const firstName = parts[0];
-  const lastInitial = parts[parts.length - 1][0];
-  return `${firstName} ${lastInitial}.`;
-}
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 
@@ -67,8 +42,39 @@ interface PublicInspectionReportDto {
   completedAt: string | null;
   generalNotes: string | null;
   items: InspectionItem[];
-  packagePrice: number;
   vehicleType?: string | null;
+  criticalFindingCount: number;
+  resultSummary: string;
+  verificationText: string;
+  testRideNotes: string | null;
+  cosmeticNotes: string | null;
+}
+
+interface PublicInspectionReportApiDto {
+  inspectionNo: string;
+  date: string;
+  vehiclePlate: string;
+  vehicleBrand: string | null;
+  vehicleModel: string | null;
+  vehicleYear: number | null;
+  vehicleMileage: number | null;
+  packageType: string;
+  status: string;
+  isCompleted: boolean;
+  criticalFindingCount: number;
+  resultSummary: string;
+  generalNotes: string | null;
+  testRideNotes: string | null;
+  cosmeticNotes: string | null;
+  items: Array<{
+    category: string;
+    name: string;
+    result: string;
+    notes: string | null;
+    sortOrder: number;
+  }>;
+  businessName: string | null;
+  verificationText: string;
 }
 
 // ─── Result badge ─────────────────────────────────────────────────────────────
@@ -197,10 +203,38 @@ export default function PublicInspectionReportPage() {
   const { data, isLoading, error } = useQuery<PublicInspectionReportDto>({
     queryKey: ['public-inspection-report', slug],
     queryFn: async () => {
-      const { data } = await apiClient.get<PublicInspectionReportDto>(
+      const { data } = await apiClient.get<PublicInspectionReportApiDto>(
         `/api/public/inspection-report/${encodeURIComponent(slug)}`
       );
-      return data;
+      return {
+        inspectionNo: data.inspectionNo,
+        businessName: data.businessName ?? 'GarajPass',
+        businessPhone: null,
+        customerName: 'Paylaşılmıyor',
+        plate: data.vehiclePlate,
+        brand: data.vehicleBrand,
+        model: data.vehicleModel,
+        year: data.vehicleYear,
+        mileage: data.vehicleMileage,
+        packageType: data.packageType,
+        packageTypeText: data.packageType,
+        status: data.status,
+        statusText: data.status,
+        createdAt: data.date,
+        completedAt: data.isCompleted ? data.date : null,
+        generalNotes: data.generalNotes,
+        items: data.items.map((item) => ({
+          ...item,
+          categoryText: item.category,
+          resultText: item.result,
+        })),
+        vehicleType: null,
+        criticalFindingCount: data.criticalFindingCount,
+        resultSummary: data.resultSummary,
+        verificationText: data.verificationText,
+        testRideNotes: data.testRideNotes,
+        cosmeticNotes: data.cosmeticNotes,
+      };
     },
     enabled: Boolean(slug),
     retry: 1,
@@ -333,15 +367,17 @@ export default function PublicInspectionReportPage() {
           </dl>
         </div>
 
-        {/* ── 3. CUSTOMER INFO ── */}
+        {/* ── 3. REPORT INFO ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-4 mb-3">
-          <SectionHeader icon={<User size={15} />} title="Müşteri Bilgileri" />
+          <SectionHeader icon={<User size={15} />} title="Rapor Bilgileri" />
           <dl>
-            <InfoRow label="Müşteri" value={maskName(data.customerName)} />
+            <InfoRow label="Gizlilik" value="Müşteri bilgileri bu public raporda paylaşılmaz." />
             <InfoRow label="Rapor Tarihi" value={dateText(data.createdAt)} />
             {data.completedAt && (
               <InfoRow label="Tamamlanma" value={dateText(data.completedAt)} />
             )}
+            <InfoRow label="Sonuç" value={data.resultSummary} />
+            <InfoRow label="Kritik Bulgu" value={String(data.criticalFindingCount)} />
           </dl>
         </div>
 
@@ -403,16 +439,16 @@ export default function PublicInspectionReportPage() {
           </div>
         )}
 
-        {/* Package price */}
+        {/* Package and verification */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-4 mb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs text-slate-400 mb-0.5">Ekspertiz Paketi</p>
               <p className="text-sm font-medium text-slate-700">{data.packageTypeText}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-400 mb-0.5">Ücret</p>
-              <p className="text-lg font-bold text-slate-900">{money(data.packagePrice)}</p>
+            <div className="sm:max-w-xs sm:text-right">
+              <p className="text-xs text-slate-400 mb-0.5">Doğrulama</p>
+              <p className="text-xs font-medium text-slate-700">{data.verificationText}</p>
             </div>
           </div>
         </div>

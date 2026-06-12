@@ -17,6 +17,8 @@ import {
   type AppointmentDto,
 } from '@/features/appointments/types';
 import { useAppointments } from '@/features/appointments/hooks';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateAppointment } from '@/shared/constants/permissions';
 
 function StatusBadge({ appointment }: { appointment: AppointmentDto }): React.ReactElement {
   const label = appointmentStatusLabel(appointment.status, appointment.statusText);
@@ -34,6 +36,8 @@ function StatusBadge({ appointment }: { appointment: AppointmentDto }): React.Re
 
 export default function AppointmentsPage(): React.ReactElement {
   const router = useRouter();
+  const { user } = useAuth();
+  const canCreate = canCreateAppointment(user?.role);
   const [inputValue, setInputValue] = useState<string>('');
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -67,12 +71,12 @@ export default function AppointmentsPage(): React.ReactElement {
       <PageHeader
         title="Randevular"
         subtitle={data ? `${data.totalCount} kayıt` : ''}
-        actions={
+        actions={canCreate ? (
           <Link href="/appointments/new" className="btn-primary">
             <CalendarPlus size={16} />
             Yeni Randevu
           </Link>
-        }
+        ) : undefined}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -128,7 +132,7 @@ export default function AppointmentsPage(): React.ReactElement {
               title="Randevu bulunamadı"
               description="Filtreleri değiştirin veya yeni bir randevu oluşturun."
               icon={<CalendarRange size={48} />}
-              action={{ label: 'Yeni Randevu', onClick: () => router.push('/appointments/new') }}
+              action={canCreate ? { label: 'Yeni Randevu', onClick: () => router.push('/appointments/new') } : undefined}
             />
           ) : (
             <>

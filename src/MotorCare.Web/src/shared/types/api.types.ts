@@ -1,5 +1,9 @@
 // src/shared/types/api.types.ts
 
+import type { UserRole } from '@/shared/constants/roles';
+
+export type { UserRole } from '@/shared/constants/roles';
+
 export interface PagedResult<T> {
   items: T[];
   totalCount: number;
@@ -28,7 +32,7 @@ export interface LoginResponse {
   tenantId: string;
   tenantIdentifier: string;
   email: string;
-  role: string;
+  role: UserRole;
   requiresTwoFactor?: boolean;
   twoFactorToken?: string;
 }
@@ -40,31 +44,8 @@ export interface CurrentUser {
   tenantIdentifier?: string;
   email: string;
   fullName?: string;
-  role: string;
+  role: UserRole;
 }
-
-export type UserRole = 'Owner' | 'Admin' | 'Manager' | 'Technician' | 'Inspector' | 'Accountant' | 'ReadOnly';
-
-export const ROLE_VALUES: Record<string, number> = {
-  Owner: 1,
-  Admin: 2,
-  Receptionist: 3,
-  Technician: 4,
-  Manager: 5,
-  Inspector: 6,
-  Accountant: 7,
-  ReadOnly: 8,
-};
-
-export const ROLE_LABELS: Record<string, string> = {
-  Owner: 'Sahip',
-  Admin: 'Yönetici',
-  Manager: 'Müdür',
-  Technician: 'Teknisyen',
-  Inspector: 'Eksper',
-  Accountant: 'Muhasebe',
-  ReadOnly: 'Salt Okuma',
-};
 
 export interface TenantProfile {
   name: string;

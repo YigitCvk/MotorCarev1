@@ -13,6 +13,8 @@ import { PageLoading } from '@/components/ui/loading';
 import { ErrorState } from '@/components/ui/error-state';
 import { friendlyError } from '@/core/api/errors';
 import { money } from '@/shared/utils/format';
+import { useAuth } from '@/core/auth/auth.context';
+import { canManageInventory } from '@/shared/constants/permissions';
 
 interface InventoryItemDto {
   id: string;
@@ -56,6 +58,8 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
   const { id } = use(params);
   const router = useRouter();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const canManage = canManageInventory(user?.role);
 
   const [toggling, setToggling] = useState(false);
 
@@ -194,23 +198,25 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
             {data.sku && <p className="text-sm text-slate-400">SKU: {data.sku}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => void handleToggleActive()}
-            disabled={toggling}
-            className={`btn ${data.isActive ? 'btn-danger' : 'btn-primary'}`}
-          >
-            {data.isActive ? (
-              <>
-                <XCircle size={14} /> Pasif Yap
-              </>
-            ) : (
-              <>
-                <CheckCircle size={14} /> Aktif Yap
-              </>
-            )}
-          </button>
-        </div>
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void handleToggleActive()}
+              disabled={toggling}
+              className={`btn ${data.isActive ? 'btn-danger' : 'btn-primary'}`}
+            >
+              {data.isActive ? (
+                <>
+                  <XCircle size={14} /> Pasif Yap
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={14} /> Aktif Yap
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stock summary card */}
@@ -240,10 +246,12 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      {/* Edit form */}
-      <div className="card p-6 max-w-2xl mb-6">
-        <h2 className="text-base font-semibold text-slate-800 mb-4">Ürün Bilgileri</h2>
-        <form onSubmit={(e) => void handleSubmit(onSave)(e)} className="space-y-4">
+      {canManage && (
+        <>
+          {/* Edit form */}
+          <div className="card p-6 max-w-2xl mb-6">
+            <h2 className="text-base font-semibold text-slate-800 mb-4">Ürün Bilgileri</h2>
+            <form onSubmit={(e) => void handleSubmit(onSave)(e)} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group sm:col-span-2">
               <label className="label">
@@ -319,13 +327,13 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
               {saving ? 'Kaydediliyor...' : 'Kaydet'}
             </button>
           </div>
-        </form>
-      </div>
+            </form>
+          </div>
 
-      {/* Stock adjustment */}
-      <div className="card p-6 max-w-2xl">
-        <h2 className="text-base font-semibold text-slate-800 mb-4">Stok Ayarla</h2>
-        <form onSubmit={(e) => void handleSubmitAdj(onAdjust)(e)} className="space-y-4">
+          {/* Stock adjustment */}
+          <div className="card p-6 max-w-2xl">
+            <h2 className="text-base font-semibold text-slate-800 mb-4">Stok Ayarla</h2>
+            <form onSubmit={(e) => void handleSubmitAdj(onAdjust)(e)} className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">
               <label className="label">
@@ -357,8 +365,10 @@ export default function InventoryDetailPage({ params }: { params: Promise<{ id: 
           <button type="submit" disabled={adjusting} className="btn btn-secondary">
             {adjusting ? 'Güncelleniyor...' : 'Stok Güncelle'}
           </button>
-        </form>
-      </div>
+            </form>
+          </div>
+        </>
+      )}
     </div>
   );
 }

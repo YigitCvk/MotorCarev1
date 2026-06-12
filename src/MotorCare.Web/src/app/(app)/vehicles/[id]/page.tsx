@@ -12,10 +12,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ServiceOrderStatusBadge } from '@/components/ui/badge';
 import { money, dateText } from '@/shared/utils/format';
 import type { VehicleHistoryApiResponse, VehicleHistoryResponse, VehicleHistoryEntry } from '@/features/vehicles/types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canEditVehicle } from '@/shared/constants/permissions';
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
+  const canEdit = canEditVehicle(user?.role);
 
   const { data, isLoading, error, refetch } = useQuery<VehicleHistoryApiResponse>({
     queryKey: ['vehicle-history', id],
@@ -38,10 +42,12 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           <ArrowLeft size={14} />
           Geri
         </button>
-        <Link href={`/vehicles/${id}/edit`} className="btn-secondary text-sm">
-          <Edit size={14} />
-          Düzenle
-        </Link>
+        {canEdit && (
+          <Link href={`/vehicles/${id}/edit`} className="btn-secondary text-sm">
+            <Edit size={14} />
+            Düzenle
+          </Link>
+        )}
       </div>
 
       <div className="mb-6">

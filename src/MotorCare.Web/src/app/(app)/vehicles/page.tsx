@@ -13,11 +13,15 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { getVehiclePlate, normalizePlate } from '@/features/vehicles/hooks';
 import type { Vehicle } from '@/features/vehicles/types';
 import type { PagedResult } from '@/shared/types/api.types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateVehicle } from '@/shared/constants/permissions';
 
 type VehicleApiResponse = PagedResult<Vehicle> | Vehicle;
 
 export default function VehiclesPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canCreate = canCreateVehicle(user?.role);
   const [plate, setPlate] = useState('');
   const [search, setSearch] = useState('');
 
@@ -46,12 +50,12 @@ export default function VehiclesPage() {
       <PageHeader
         title="Araçlar"
         subtitle="Plakaya göre araç ara"
-        actions={
+        actions={canCreate ? (
           <Link href="/vehicles/new" className="btn-primary">
             <Plus size={16} />
             Yeni Araç
           </Link>
-        }
+        ) : undefined}
       />
 
       <div className="flex flex-col sm:flex-row gap-2 mb-6 w-full sm:max-w-md">
@@ -77,7 +81,7 @@ export default function VehiclesPage() {
         <EmptyState
           title="Plaka ile arama yapın"
           description="Araç detayına ulaşmak için plaka numarasını girin."
-          action={{ label: 'Yeni Araç', onClick: () => router.push('/vehicles/new') }}
+          action={canCreate ? { label: 'Yeni Araç', onClick: () => router.push('/vehicles/new') } : undefined}
         />
       )}
       {search && isLoading && <PageLoading />}

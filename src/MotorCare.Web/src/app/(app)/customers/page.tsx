@@ -12,9 +12,13 @@ import { EmptyState } from '@/components/ui/empty-state';
 import type { Customer } from '@/features/customers/types';
 import type { PagedResult } from '@/shared/types/api.types';
 import { normalizePagedResult } from '@/shared/utils/api-normalize';
+import { useAuth } from '@/core/auth/auth.context';
+import { canCreateCustomer } from '@/shared/constants/permissions';
 
 export default function CustomersPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canCreate = canCreateCustomer(user?.role);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -39,12 +43,12 @@ export default function CustomersPage() {
       <PageHeader
         title="Müşteriler"
         subtitle={`${data?.totalCount ?? 0} müşteri kayıtlı`}
-        actions={
+        actions={canCreate ? (
           <button onClick={() => router.push('/customers/new')} className="btn-primary">
             <Plus size={16} />
             Yeni Müşteri
           </button>
-        }
+        ) : undefined}
       />
 
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
@@ -75,7 +79,7 @@ export default function CustomersPage() {
             <EmptyState
               title="Müşteri bulunamadı"
               description="Arama kriterlerini değiştirin veya yeni müşteri ekleyin."
-              action={{ label: 'Yeni Müşteri', onClick: () => router.push('/customers/new') }}
+              action={canCreate ? { label: 'Yeni Müşteri', onClick: () => router.push('/customers/new') } : undefined}
             />
           ) : (
             <>

@@ -8,6 +8,7 @@ import apiClient from '@/core/api/client';
 import { PageHeader } from '@/components/ui/page-header';
 import { friendlyError } from '@/core/api/errors';
 import { normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
+import { inspectionPackageTypeToApi } from '@/features/inspections/api-enums';
 
 interface CustomerSearchItem {
   id: string;
@@ -261,7 +262,7 @@ export default function InspectionNewPage() {
         engineNumber: form.engineNumber.trim() || undefined,
         query5664: form.query5664.trim() || undefined,
         mileageQuery: form.mileageQuery.trim() || undefined,
-        packageType: form.packageType,
+        packageType: inspectionPackageTypeToApi(form.packageType),
         generalNotes: form.generalNotes.trim() || undefined,
         testRideNotes: form.testRideNotes.trim() || undefined,
         cosmeticNotes: form.cosmeticNotes.trim() || undefined,

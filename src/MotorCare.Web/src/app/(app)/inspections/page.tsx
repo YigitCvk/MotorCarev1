@@ -11,6 +11,12 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { money, dateText } from '@/shared/utils/format';
 import type { PagedResult } from '@/shared/types/api.types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canManageInspection } from '@/shared/constants/permissions';
+import {
+  inspectionPackageTypeFromApi,
+  inspectionStatusFromApi,
+} from '@/features/inspections/api-enums';
 
 interface MotorcycleInspectionListItemDto {
   id: string;
@@ -54,6 +60,8 @@ const STATUSES: Array<{ value: string; label: string }> = [
 
 export default function InspectionsPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canManage = canManageInspection(user?.role);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -72,7 +80,14 @@ export default function InspectionsPage() {
         '/api/inspections',
         { params }
       );
-      return data;
+      return {
+        ...data,
+        items: data.items.map((item) => ({
+          ...item,
+          packageType: inspectionPackageTypeFromApi(item.packageType),
+          status: inspectionStatusFromApi(item.status),
+        })),
+      };
     },
   });
 
@@ -86,11 +101,11 @@ export default function InspectionsPage() {
       <PageHeader
         title="Ekspertizler"
         subtitle={`${data?.totalCount ?? 0} kayıt`}
-        actions={
+        actions={canManage ? (
           <button onClick={() => router.push('/inspections/new')} className="btn-primary">
             <Plus size={16} /> Yeni Ekspertiz
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Filters */}
@@ -150,7 +165,7 @@ export default function InspectionsPage() {
             <EmptyState
               title="Ekspertiz bulunamadı"
               description="Arama kriterlerini değiştirin veya yeni ekspertiz oluşturun."
-              action={{ label: 'Yeni Ekspertiz', onClick: () => router.push('/inspections/new') }}
+              action={canManage ? { label: 'Yeni Ekspertiz', onClick: () => router.push('/inspections/new') } : undefined}
             />
           ) : (
             <div className="table-container overflow-x-auto">

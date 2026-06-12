@@ -19,11 +19,11 @@ export default function NewAppointmentPage(): React.ReactElement {
     setFormError('');
     createAppointment.mutate(body, {
       onSuccess: (appointment) => {
-        toast.success('Randevu olusturuldu');
+        toast.success('Randevu oluşturuldu');
         router.push(`/appointments/${appointment.id}`);
       },
       onError: (error) => {
-        const message = friendlyError(error, 'Randevu olusturulamadi.');
+        const message = friendlyError(error, 'Randevu oluşturulamadı.');
         setFormError(message);
         toast.error(message);
       },
@@ -39,10 +39,13 @@ export default function NewAppointmentPage(): React.ReactElement {
         </button>
       </div>
 
-      <PageHeader title="Yeni Randevu" subtitle="Musteri, arac ve zaman bilgisini girerek randevu olusturun." />
+      <PageHeader
+        title="Yeni Randevu"
+        subtitle="Müşteri, araç ve zaman bilgisini girerek randevu oluşturun."
+      />
 
       <AppointmentForm
-        submitLabel="Randevu Olustur"
+        submitLabel="Randevu Oluştur"
         isSubmitting={createAppointment.isPending}
         error={formError}
         onSubmit={handleSubmit}

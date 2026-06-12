@@ -11,6 +11,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { money } from '@/shared/utils/format';
 import type { PagedResult } from '@/shared/types/api.types';
+import { useAuth } from '@/core/auth/auth.context';
+import { canManageServiceCatalog } from '@/shared/constants/permissions';
 
 interface ServiceCatalogItemDto {
   id: string;
@@ -38,6 +40,8 @@ const SERVICE_CATEGORIES: Array<{ value: string; label: string }> = [
 
 export default function ServiceCatalogPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const canManage = canManageServiceCatalog(user?.role);
   const [q, setQ] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -69,11 +73,11 @@ export default function ServiceCatalogPage() {
       <PageHeader
         title="Hizmet Kataloğu"
         subtitle={`${data?.totalCount ?? 0} hizmet kayıtlı`}
-        actions={
+        actions={canManage ? (
           <button onClick={() => router.push('/service-catalog/create')} className="btn btn-primary">
             <Plus size={16} /> Yeni Hizmet
           </button>
-        }
+        ) : undefined}
       />
 
       {/* Filters — flex-wrap ensures they stack neatly on mobile */}
@@ -132,7 +136,7 @@ export default function ServiceCatalogPage() {
             <EmptyState
               title="Hizmet bulunamadı"
               description="Arama kriterlerini değiştirin veya yeni hizmet ekleyin."
-              action={{ label: 'Yeni Hizmet', onClick: () => router.push('/service-catalog/create') }}
+              action={canManage ? { label: 'Yeni Hizmet', onClick: () => router.push('/service-catalog/create') } : undefined}
             />
           ) : (
             <div className="overflow-x-auto rounded-lg border border-slate-200">
