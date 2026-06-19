@@ -12,13 +12,56 @@ interface RetryConfig extends InternalAxiosRequestConfig {
 
 const apiBaseUrl = appConfig.apiBaseUrl.replace(/\/$/, '');
 let refreshPromise: Promise<string> | null = null;
+const AUTH_REFRESH_EXCLUDED_PATHS = [
+  '/api/auth/accept-invite',
+  '/api/auth/forgot-password',
+  '/api/auth/login',
+  '/api/auth/refresh-token',
+  '/api/auth/register',
+  '/api/auth/resend-email-verification',
+  '/api/auth/resend-email-verification-code',
+  '/api/auth/reset-password',
+  '/api/auth/two-factor/resend',
+  '/api/auth/two-factor/verify',
+  '/api/auth/verify-email',
+  '/api/auth/verify-email-code',
+];
+const AUTH_REFRESH_EXCLUDED_PREFIXES = ['/api/users/invitations/'];
 
 function resolveBaseUrl(): string {
   return apiBaseUrl;
 }
 
-function isAuthRefreshCandidate(url?: string): boolean {
-  return !!url && !url.includes('/api/auth/refresh-token') && !url.includes('/api/auth/login');
+function isAuthRefreshCandidate(config?: RetryConfig): boolean {
+  if (!config?.url || !hasAuthorizationHeader(config)) return false;
+
+  const path = requestPath(config.url);
+  if (!path) return false;
+
+  return (
+    !AUTH_REFRESH_EXCLUDED_PATHS.includes(path) &&
+    !AUTH_REFRESH_EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix))
+  );
+}
+
+function requestPath(url: string): string {
+  try {
+    return (
+      new URL(url, 'https://garajpass.local').pathname.toLowerCase().replace(/\/+$/, '') || '/'
+    );
+  } catch {
+    return url.split(/[?#]/, 1)[0]?.toLowerCase().replace(/\/+$/, '') ?? '';
+  }
+}
+
+function hasAuthorizationHeader(config: InternalAxiosRequestConfig): boolean {
+  const headers = config.headers;
+  return (
+    !!headers.get?.('Authorization') ||
+    !!headers.get?.('authorization') ||
+    !!headers.Authorization ||
+    !!headers.authorization
+  );
 }
 
 async function refreshAccessToken(): Promise<string> {
@@ -27,10 +70,18 @@ async function refreshAccessToken(): Promise<string> {
       const refreshToken = getRefreshToken();
       if (!refreshToken) throw new Error('Refresh token bulunamadı.');
 
+      const clientKey = getClientKey();
+
       const response = await axios.post<LoginResponse>(
         `${resolveBaseUrl()}/api/auth/refresh-token`,
         { refreshToken },
-        { headers: { 'Content-Type': 'application/json' }, timeout: 15_000 },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(clientKey ? { 'X-MotorCare-Client-Key': clientKey } : {}),
+          },
+          timeout: 15_000,
+        },
       );
 
       const { accessToken, refreshToken: newRefreshToken } = response.data;
@@ -69,7 +120,7 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      isAuthRefreshCandidate(originalRequest.url)
+      isAuthRefreshCandidate(originalRequest)
     ) {
       originalRequest._retry = true;
 

@@ -31,7 +31,14 @@ function LoginForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = loginSchema.safeParse(formData);
+    const submittedData: LoginFormData = {
+      tenantIdentifier: formValue(event.currentTarget, 'tenantIdentifier'),
+      email: formValue(event.currentTarget, 'email'),
+      password: formValue(event.currentTarget, 'password'),
+    };
+    setFormData(submittedData);
+
+    const parsed = loginSchema.safeParse(submittedData);
     if (!parsed.success) {
       const nextErrors: Partial<Record<keyof LoginFormData, string>> = {};
       for (const issue of parsed.error.issues) {
@@ -63,6 +70,11 @@ function LoginForm() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function formValue(form: HTMLFormElement, name: keyof LoginFormData): string {
+    const value = new FormData(form).get(name);
+    return typeof value === 'string' ? value : '';
   }
 
   return (

@@ -26,16 +26,22 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterFormData) {
     setError('');
     try {
-      await authService.register({
-        tenantIdentifier: data.tenantIdentifier,
+      const tenantIdentifier = data.tenantIdentifier.trim().toLowerCase();
+      const ownerEmail = data.email.trim().toLowerCase();
+      const result = await authService.register({
+        tenantIdentifier,
         tenantName: data.tenantName,
         ownerFullName: data.fullName,
-        ownerEmail: data.email,
+        ownerEmail,
         ownerPassword: data.password,
       });
-      toast.success('Hesap oluşturuldu. E-postanıza gelen kodla doğrulama yapın.');
+      if (result.verificationEmailSent) {
+        toast.success('Hesap oluşturuldu. E-postanıza gelen kodla doğrulama yapın.');
+      } else {
+        toast.warning('Hesap olusturuldu ancak dogrulama e-postasi gonderilemedi. Kodu tekrar gonder secenegini deneyin.');
+      }
       router.push(
-        `/verify-email?tenant=${encodeURIComponent(data.tenantIdentifier)}&email=${encodeURIComponent(data.email)}`,
+        `/verify-email?tenant=${encodeURIComponent(result.tenantIdentifier ?? tenantIdentifier)}&email=${encodeURIComponent(result.ownerEmail ?? ownerEmail)}`,
       );
     } catch (err) {
       const message = friendlyError(err, 'İşletme oluşturulamadı. Lütfen tekrar deneyin.');

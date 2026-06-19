@@ -47,6 +47,14 @@ export interface CurrentUser {
   role: UserRole;
 }
 
+export interface RegisterResponse {
+  tenantId: string;
+  tenantIdentifier: string;
+  ownerId: string;
+  ownerEmail: string;
+  verificationEmailSent: boolean;
+}
+
 export interface TenantProfile {
   name: string;
   legalName?: string;
