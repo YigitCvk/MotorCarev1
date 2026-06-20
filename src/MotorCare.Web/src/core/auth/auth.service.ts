@@ -6,9 +6,11 @@ import {
   setCurrentUserInStorage,
   setTokens,
 } from '@/core/auth/storage';
-import type { CurrentUser, LoginRequest, LoginResponse, RegisterResponse } from '@/shared/types/api.types';
+import { appConfig } from '@/shared/config/env';
+import type { ApiProblem, CurrentUser, LoginRequest, LoginResponse, RegisterResponse } from '@/shared/types/api.types';
 
 const AUTH_REDIRECT_ORIGIN = 'https://garajpass.local';
+const publicApiBaseUrl = appConfig.apiBaseUrl.replace(/\/$/, '');
 const AUTH_ROUTES = [
   '/accept-invite',
   '/forgot-password',
@@ -40,6 +42,51 @@ function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
+async function publicAuthPost<TResponse>(path: string, body: unknown): Promise<TResponse> {
+  const response = await fetch(`${publicApiBaseUrl}${path}`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw await createApiError(response);
+  }
+
+  if (response.status === 204) {
+    return undefined as TResponse;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as TResponse;
+}
+
+async function createApiError(response: Response) {
+  const data = await readApiProblem(response);
+  return {
+    isAxiosError: true,
+    message: data?.message ?? data?.title ?? response.statusText,
+    response: {
+      status: response.status,
+      data,
+    },
+  };
+}
+
+async function readApiProblem(response: Response): Promise<(ApiProblem & { title?: string; detail?: string }) | undefined> {
+  const text = await response.text();
+  if (!text) return undefined;
+
+  try {
+    return JSON.parse(text) as ApiProblem & { title?: string; detail?: string };
+  } catch {
+    return { message: text };
+  }
+}
+
 export function sanitizeAuthRedirect(value: string | null): string | undefined {
   if (!value) return undefined;
 
@@ -64,7 +111,7 @@ export function sanitizeAuthRedirect(value: string | null): string | undefined {
 
 export const authService = {
   async login(request: LoginRequest): Promise<LoginResponse> {
-    const { data } = await apiClient.post<LoginResponse>('/api/auth/login', {
+    const data = await publicAuthPost<LoginResponse>('/api/auth/login', {
       ...request,
       tenantIdentifier: normalizeTenantIdentifier(request.tenantIdentifier),
       email: normalizeEmail(request.email),
@@ -82,7 +129,7 @@ export const authService = {
     ownerEmail: string;
     ownerPassword: string;
   }): Promise<RegisterResponse> {
-    const { data } = await apiClient.post<RegisterResponse>('/api/auth/register', {
+    const data = await publicAuthPost<RegisterResponse>('/api/auth/register', {
       ...body,
       tenantIdentifier: normalizeTenantIdentifier(body.tenantIdentifier),
       ownerEmail: normalizeEmail(body.ownerEmail),
@@ -91,7 +138,7 @@ export const authService = {
   },
 
   async verifyEmail(body: { tenantIdentifier: string; email: string; code: string }): Promise<void> {
-    await apiClient.post('/api/auth/verify-email-code', {
+    await publicAuthPost<void>('/api/auth/verify-email-code', {
       ...body,
       tenantIdentifier: normalizeTenantIdentifier(body.tenantIdentifier),
       email: normalizeEmail(body.email),
@@ -99,7 +146,7 @@ export const authService = {
   },
 
   async resendVerificationCode(body: { email: string; tenantIdentifier: string }): Promise<void> {
-    await apiClient.post('/api/auth/resend-email-verification-code', {
+    await publicAuthPost<void>('/api/auth/resend-email-verification-code', {
       ...body,
       tenantIdentifier: normalizeTenantIdentifier(body.tenantIdentifier),
       email: normalizeEmail(body.email),
@@ -107,7 +154,7 @@ export const authService = {
   },
 
   async forgotPassword(body: { email: string; tenantIdentifier: string }): Promise<void> {
-    await apiClient.post('/api/auth/forgot-password', {
+    await publicAuthPost<void>('/api/auth/forgot-password', {
       ...body,
       tenantIdentifier: normalizeTenantIdentifier(body.tenantIdentifier),
       email: normalizeEmail(body.email),
@@ -121,7 +168,7 @@ export const authService = {
     newPassword: string;
     confirmPassword: string;
   }): Promise<void> {
-    await apiClient.post('/api/auth/reset-password', {
+    await publicAuthPost<void>('/api/auth/reset-password', {
       ...body,
       tenantIdentifier: normalizeTenantIdentifier(body.tenantIdentifier),
       email: normalizeEmail(body.email),
@@ -139,16 +186,16 @@ export const authService = {
     password: string;
     confirmPassword: string;
   }): Promise<void> {
-    await apiClient.post('/api/auth/accept-invite', body);
+    await publicAuthPost<void>('/api/auth/accept-invite', body);
   },
 
   async verifyTwoFactor(body: { ticket: string; code: string }): Promise<CurrentUser> {
-    const { data } = await apiClient.post<LoginResponse>('/api/auth/two-factor/verify', body);
+    const data = await publicAuthPost<LoginResponse>('/api/auth/two-factor/verify', body);
     return applyLoginResponse(data);
   },
 
   async resendTwoFactorCode(body: { ticket: string }): Promise<void> {
-    await apiClient.post('/api/auth/two-factor/resend', body);
+    await publicAuthPost<void>('/api/auth/two-factor/resend', body);
   },
 
   async loadCurrentUser(): Promise<CurrentUser | null> {

@@ -45,8 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (request: LoginRequest): Promise<LoginResponse> => {
     const response = await authService.login(request);
     if (!response.requiresTwoFactor) {
-      const u = await authService.loadCurrentUser();
-      setUser(u);
+      setUser(getCurrentUserFromStorage<CurrentUser>());
     }
     return response;
   }, []);
