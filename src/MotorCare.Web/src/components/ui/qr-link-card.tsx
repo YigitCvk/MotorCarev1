@@ -55,7 +55,7 @@ export function QRLinkCard({
               >
                 {value}
               </a>
-              <CopyButton value={value} className="mt-3" />
+              <CopyButton value={value} className="mt-3 print:hidden" />
             </>
           ) : (
             <p className="mt-2 text-sm text-slate-500">{emptyText}</p>

@@ -1,7 +1,6 @@
 'use client';
 
-import { use } from 'react';
-import { useState } from 'react';
+import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -57,10 +56,11 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         engineNumber: values.engineNumber || undefined,
         color: values.color || undefined,
       });
+      await vehiclesQuery.refetch();
       await qc.invalidateQueries({ queryKey: ['customer-vehicles', id] });
       await qc.invalidateQueries({ queryKey: ['customers'] });
       setShowVehicleForm(false);
-      toast.success('Araç eklendi');
+      toast.success('Araç müşteriye başarıyla atandı.');
     } catch (err) {
       toast.error(vehicleDuplicateMessage(err) ?? friendlyError(err, 'Araç eklenemedi.'));
     }
@@ -76,8 +76,8 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div>
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <button onClick={() => router.back()} className="btn-ghost text-sm self-start">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button onClick={() => router.back()} className="btn-ghost self-start text-sm">
           <ArrowLeft size={14} />
           Müşteriler
         </button>
@@ -89,10 +89,10 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">{customer.fullName}</h1>
+      <h1 className="mb-6 text-2xl font-bold text-slate-900">{customer.fullName}</h1>
 
-      <div className="card p-4 sm:p-6 mb-6 max-w-2xl">
-        <div className="grid sm:grid-cols-2 gap-4">
+      <div className="card mb-6 max-w-2xl p-4 sm:p-6">
+        <div className="grid gap-4 sm:grid-cols-2">
           {[
             { label: 'Ad Soyad', value: customer.fullName },
             { label: 'Telefon', value: customer.phone },
@@ -104,31 +104,34 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             .map(({ label, value }) => (
               <div key={label} className={label === 'Notlar' ? 'sm:col-span-2' : undefined}>
                 <p className="text-xs text-slate-400">{label}</p>
-                <p className="text-sm font-medium text-slate-800 break-words">{value}</p>
+                <p className="break-words text-sm font-medium text-slate-800">{value}</p>
               </div>
             ))}
         </div>
       </div>
 
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">Araçlar ({vehicles.length})</h2>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Araçlar</h2>
+          <p className="text-sm text-slate-500">Toplam {vehicles.length} araç</p>
+        </div>
         {canAddVehicle && (
-          <button onClick={() => setShowVehicleForm(true)} className="btn-secondary text-sm self-start sm:self-auto">
+          <button onClick={() => setShowVehicleForm(true)} className="btn-secondary self-start text-sm sm:self-auto">
             <Plus size={14} />
-            Araç Ekle
+            Yeni Araç Ata
           </button>
         )}
       </div>
 
       {canAddVehicle && showVehicleForm && (
-        <div className="card p-4 mb-4 max-w-2xl">
+        <div className="card mb-4 max-w-2xl p-4">
           <VehicleForm
-            submitLabel="Araç Ekle"
+            submitLabel="Yeni Araç Ata"
             submittingLabel="Ekleniyor..."
             onCancel={() => setShowVehicleForm(false)}
             onSubmit={onAddVehicle}
           />
-          <Link href={`/customers/${id}/vehicles/new`} className="text-sm text-brand-700 hover:underline mt-3 inline-block">
+          <Link href={`/customers/${id}/vehicles/new`} className="mt-3 inline-block text-sm text-brand-700 hover:underline">
             Tam sayfada aç
           </Link>
         </div>
@@ -141,29 +144,30 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       {!vehiclesQuery.isLoading && !vehiclesQuery.error && vehicles.length === 0 && (
         <EmptyState
           title="Araç kaydı yok"
-          description="Bu müşteriye ait araç kaydı bulunmuyor."
-          action={canAddVehicle ? { label: 'Araç Ekle', onClick: () => router.push(`/customers/${id}/vehicles/new`) } : undefined}
+          description="Bu müşteriye henüz araç eklenmemiş."
+          action={canAddVehicle ? { label: 'Yeni Araç Ata', onClick: () => setShowVehicleForm(true) } : undefined}
         />
       )}
       {vehicles.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {vehicles.map((vehicle) => (
             <Link
               key={vehicle.id}
               href={`/vehicles/${vehicle.id}`}
-              className="card p-4 hover:border-brand-300 hover:shadow-md transition-all flex items-start gap-3"
+              className="card flex items-start gap-3 p-4 transition-all hover:border-brand-300 hover:shadow-md"
             >
-              <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
                 <Car size={18} className="text-slate-500" />
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-slate-900 font-mono break-all">{getVehiclePlate(vehicle)}</p>
-                <p className="text-sm text-slate-500 truncate">
+                <p className="break-all font-mono font-semibold text-slate-900">{getVehiclePlate(vehicle)}</p>
+                <p className="truncate text-sm text-slate-500">
                   {[vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(' ')}
                 </p>
                 {vehicle.currentKm ? (
                   <p className="text-xs text-slate-400">{vehicle.currentKm.toLocaleString('tr-TR')} km</p>
                 ) : null}
+                {vehicle.vehicleType ? <p className="text-xs text-slate-400">{vehicle.vehicleType}</p> : null}
               </div>
             </Link>
           ))}

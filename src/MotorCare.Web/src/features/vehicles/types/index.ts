@@ -9,10 +9,12 @@ export interface Vehicle {
   model?: string;
   year?: number;
   vehicleDisplay?: string;
+  vehicleType?: string | null;
   chassisNumber?: string | null;
   engineNumber?: string | null;
   color?: string | null;
   currentKm?: number | null;
+  notes?: string | null;
 }
 
 export interface VehicleHistoryEntry {

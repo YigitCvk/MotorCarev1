@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Wrench, Package, Droplets, FileText, Building2, AlertCircle, Loader2, Printer, Car, User } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { CopyButton } from '@/components/ui/copy-button';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText } from '@/shared/utils/format';
 import { publicServiceRecordUrl } from '@/shared/utils/public-links';
+import { isRecord, normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 
 // ─── PII masking ──────────────────────────────────────────────────────────────
 
@@ -39,26 +41,26 @@ function maskName(fullName: string): string {
 
 interface OperationItem {
   description: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
+  quantity?: number;
+  unitPrice?: number;
+  lineTotal?: number;
 }
 
 interface PartItem {
   partName: string;
   partNumber: string | null;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
+  quantity?: number;
+  unitPrice?: number;
+  lineTotal?: number;
 }
 
 interface ConsumableItem {
   category: string;
   productName: string;
   brand: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
+  quantity?: number;
+  unitPrice?: number;
+  lineTotal?: number;
 }
 
 interface PublicServiceRecordDto {
@@ -83,6 +85,31 @@ interface PublicServiceRecordDto {
   partsTotal: number;
   consumablesTotal: number;
   grandTotal: number;
+}
+
+interface PublicServiceRecordApiDto {
+  orderNo?: string;
+  date?: string;
+  maskedCustomerDisplayName?: string | null;
+  vehiclePlate?: string | null;
+  vehicleBrand?: string | null;
+  vehicleModel?: string | null;
+  vehicleKm?: number | string | null;
+  workDescription?: string | null;
+  serviceSummary?: string | null;
+  status?: string;
+  closedAt?: string | null;
+  operations?: unknown;
+  parts?: unknown;
+  consumables?: unknown;
+  totals?: {
+    laborTotal?: number | string;
+    partsTotal?: number | string;
+    consumablesTotal?: number | string;
+    discountTotal?: number | string;
+    grandTotal?: number | string;
+  } | null;
+  businessName?: string | null;
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -137,25 +164,110 @@ function LineItemCard({
 }: {
   title: string;
   subtitle?: string | null;
-  qty: number;
-  unitPrice: number;
-  lineTotal: number;
+  qty?: number;
+  unitPrice?: number;
+  lineTotal?: number;
 }) {
   return (
     <div className="flex items-start justify-between gap-3 py-3 border-b border-slate-100 last:border-0">
       <div className="min-w-0 flex-1">
         <p className="text-sm text-slate-800 break-words">{title}</p>
         {subtitle && <p className="text-xs text-slate-400 font-mono mt-0.5">{subtitle}</p>}
-        <p className="text-xs text-slate-500 mt-0.5">
-          {qty} × {money(unitPrice)}
-        </p>
+        {qty != null && (
+          <p className="text-xs text-slate-500 mt-0.5">
+            {qty}
+            {unitPrice != null ? ` × ${money(unitPrice)}` : ''}
+          </p>
+        )}
       </div>
-      <p className="text-sm font-semibold text-slate-900 shrink-0">{money(lineTotal)}</p>
+      {lineTotal != null && (
+        <p className="text-sm font-semibold text-slate-900 shrink-0">{money(lineTotal)}</p>
+      )}
     </div>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
+function normalizeOperation(value: unknown): OperationItem | null {
+  if (!isRecord(value)) return null;
+  const description = readString(value.description);
+  if (!description) return null;
+
+  return {
+    description,
+    quantity: readNumber(value.quantity),
+    unitPrice: readNumber(value.unitPrice),
+    lineTotal: readNumber(value.lineTotal),
+  };
+}
+
+function normalizePart(value: unknown): PartItem | null {
+  if (!isRecord(value)) return null;
+  const partName = readString(value.partName);
+  if (!partName) return null;
+
+  return {
+    partName,
+    partNumber: readString(value.partNumber) || null,
+    quantity: readNumber(value.quantity),
+    unitPrice: readNumber(value.unitPrice),
+    lineTotal: readNumber(value.lineTotal),
+  };
+}
+
+function normalizeConsumable(value: unknown): ConsumableItem | null {
+  if (!isRecord(value)) return null;
+  const productName = readString(value.productName);
+  if (!productName) return null;
+
+  return {
+    category: readString(value.category),
+    productName,
+    brand: readString(value.brand),
+    quantity: readNumber(value.quantity),
+    unitPrice: readNumber(value.unitPrice),
+    lineTotal: readNumber(value.lineTotal),
+  };
+}
+
+function normalizePublicServiceRecord(value: PublicServiceRecordApiDto & Record<string, unknown>): PublicServiceRecordDto {
+  const totals = isRecord(value.totals) ? value.totals : value;
+  const vehicleDisplay = [readString(value.vehicleBrand), readString(value.vehicleModel)].filter(Boolean).join(' ');
+  const legacyCustomerName = readString(value.customerName);
+
+  return {
+    orderNo: readString(value.orderNo),
+    businessName: readString(value.businessName) || 'GarajPass',
+    businessPhone: readString(value.businessPhone) || null,
+    businessAddress: readString(value.businessAddress) || null,
+    vehiclePlate: readString(value.vehiclePlate),
+    vehicleDisplay: readString(value.vehicleDisplay) || vehicleDisplay || null,
+    vehicleKm: readNumber(value.vehicleKm) ?? 0,
+    customerName:
+      readString(value.maskedCustomerDisplayName) ||
+      (legacyCustomerName ? maskName(legacyCustomerName) : 'Paylaşılmıyor'),
+    status: readString(value.status),
+    statusText: readString(value.statusText) || readString(value.status),
+    openedAt: readString(value.openedAt) || readString(value.date),
+    closedAt: readString(value.closedAt) || null,
+    complaint: readString(value.complaint) || null,
+    workDescription: readString(value.workDescription) || readString(value.serviceSummary) || null,
+    operations: normalizeApiArray(value.operations)
+      .map(normalizeOperation)
+      .filter((item): item is OperationItem => Boolean(item)),
+    parts: normalizeApiArray(value.parts)
+      .map(normalizePart)
+      .filter((item): item is PartItem => Boolean(item)),
+    consumables: normalizeApiArray(value.consumables)
+      .map(normalizeConsumable)
+      .filter((item): item is ConsumableItem => Boolean(item)),
+    laborTotal: readNumber(totals.laborTotal) ?? 0,
+    partsTotal: readNumber(totals.partsTotal) ?? 0,
+    consumablesTotal: readNumber(totals.consumablesTotal) ?? 0,
+    grandTotal: readNumber(totals.grandTotal) ?? 0,
+  };
+}
 
 export default function PublicServiceRecordPage() {
   const params = useParams();
@@ -164,10 +276,10 @@ export default function PublicServiceRecordPage() {
   const { data, isLoading, error } = useQuery<PublicServiceRecordDto>({
     queryKey: ['public-service-record', slug],
     queryFn: async () => {
-      const { data } = await apiClient.get<PublicServiceRecordDto>(
+      const { data } = await apiClient.get<PublicServiceRecordApiDto & Record<string, unknown>>(
         `/api/public/service-record/${encodeURIComponent(slug)}`
       );
-      return data;
+      return normalizePublicServiceRecord(data);
     },
     enabled: Boolean(slug),
     retry: 1,
@@ -265,6 +377,15 @@ export default function PublicServiceRecordPage() {
               </div>
             </div>
 
+            <div className="mb-4">
+              <QRLinkCard
+                href={publicUrl}
+                title="Servis kaydı QR kodu"
+                description="Bu servis kaydını çevrimiçi görüntülemek için QR kodu tarayın."
+                compact
+              />
+            </div>
+
             {/* Print button */}
             <div className="flex flex-wrap justify-end gap-2 mb-1 no-print">
               <CopyButton value={publicUrl} label="Linki Kopyala" />
@@ -299,7 +420,7 @@ export default function PublicServiceRecordPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-4 mb-3">
           <SectionHeader icon={<User size={15} />} title="Müşteri Bilgileri" />
           <dl>
-            <InfoRow label="Müşteri" value={maskName(data.customerName)} />
+            <InfoRow label="Müşteri" value={data.customerName} />
             <InfoRow label="Açılış Tarihi" value={dateText(data.openedAt)} />
             {data.closedAt && (
               <InfoRow label="Kapanış Tarihi" value={dateText(data.closedAt)} />

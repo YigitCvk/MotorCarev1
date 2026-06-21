@@ -42,7 +42,7 @@ export default function CustomerVehicleCreatePage({ params }: { params: Promise<
       });
       await qc.invalidateQueries({ queryKey: ['customer-vehicles', id] });
       await qc.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Araç eklendi');
+      toast.success('Araç müşteriye başarıyla atandı.');
       router.push(`/customers/${id}`);
     } catch (err) {
       toast.error(vehicleDuplicateMessage(err) ?? friendlyError(err, 'Araç eklenemedi.'));
@@ -60,10 +60,10 @@ export default function CustomerVehicleCreatePage({ params }: { params: Promise<
           Geri
         </button>
       </div>
-      <PageHeader title="Araç Ekle" subtitle={customer.fullName} />
-      <div className="card p-4 sm:p-6 max-w-2xl">
+      <PageHeader title="Yeni Araç Ata" subtitle={customer.fullName} />
+      <div className="card max-w-2xl p-4 sm:p-6">
         <VehicleForm
-          submitLabel="Araç Ekle"
+          submitLabel="Yeni Araç Ata"
           submittingLabel="Ekleniyor..."
           onCancel={() => router.back()}
           onSubmit={onSubmit}

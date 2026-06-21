@@ -13,6 +13,7 @@ import {
   inspectionPackageTypeToApi,
   inspectionStatusFromApi,
 } from '@/features/inspections/api-enums';
+import { VehicleDiagram } from '@/features/inspections/components';
 
 interface InspectionFormState {
   customerName: string;
@@ -214,6 +215,9 @@ export default function InspectionEditPage({
             <Bike size={16} />
             Motorsiklet Bilgileri
           </h2>
+          <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <VehicleDiagram zones={[]} vehicleType="motorcycle" />
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">
               <label className="label">Plaka <span className="text-red-500">*</span></label>

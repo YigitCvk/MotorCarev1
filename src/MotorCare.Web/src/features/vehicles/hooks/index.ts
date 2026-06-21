@@ -2,7 +2,7 @@ import type { AxiosError } from 'axios';
 import type { ApiProblem } from '@/shared/types/api.types';
 
 export function normalizePlate(value: string): string {
-  return value.replace(/[\s-]+/g, '').toLocaleUpperCase('tr-TR');
+  return value.replace(/[^a-zA-Z0-9]/g, '').toLocaleUpperCase('tr-TR');
 }
 
 export function getVehiclePlate(vehicle: {
@@ -26,7 +26,7 @@ export function vehicleDuplicateMessage(error: unknown): string | null {
     text.includes('zaten') ||
     text.includes('plaka')
   ) {
-    return 'Bu plaka zaten kayıtlı. Mevcut araç kaydını kontrol edin.';
+    return 'Bu plakaya ait bir araç sistemde zaten kayıtlı.';
   }
 
   return null;

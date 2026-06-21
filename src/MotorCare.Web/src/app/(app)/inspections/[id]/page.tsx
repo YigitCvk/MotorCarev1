@@ -16,7 +16,7 @@ import { canManageInspection } from '@/shared/constants/permissions';
 import { friendlyError } from '@/core/api/errors';
 import { VehicleDiagram } from '@/features/inspections/components';
 import type { DamageZone } from '@/features/inspections/components';
-import { resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
+import { buildDamageZones as buildInspectionDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
 import {
   inspectionCategoryFromApi,
   inspectionResultFromApi,
@@ -118,6 +118,9 @@ function resultColorClass(result: string): string {
 const ISSUE_RESULTS = new Set(['Bad', 'Damaged', 'Scratched', 'Missing', 'Fail', 'Issue', 'Başarısız', 'Sorunlu']);
 
 function buildDamageZones(items: MotorcycleInspectionItemDto[]): DamageZone[] {
+  const sharedZones = buildInspectionDamageZones(items, 'motorcycle');
+  if (sharedZones.length > 0) return sharedZones;
+
   const categoryMap = new Map<string, { category: string; hasIssue: boolean }>();
   for (const item of items) {
     const key = item.categoryText || item.name || item.category || 'Genel';
@@ -346,10 +349,12 @@ export default function InspectionDetailPage({
   const publicAccessErrorMessage = publicAccessError
     ? friendlyError(publicAccessError, 'Paylaşım bilgileri yüklenemedi.')
     : '';
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
+  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
 
   // Build damage zones for the diagram
   const damageZones = buildDamageZones(data.items);
+  const checkedItemCount = data.items.filter((item) => item.result !== 'NotChecked').length;
+  const problemZoneCount = damageZones.filter((zone) => zone.hasIssue).length;
 
   // Group items by category
   const grouped = data.items.reduce<Record<string, MotorcycleInspectionItemDto[]>>((acc, item) => {
@@ -503,6 +508,20 @@ export default function InspectionDetailPage({
       </div>
 
       {actionError && <div className="alert-error mb-4">{actionError}</div>}
+
+      <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
+        {[
+          { label: 'Kontrol kalemi', value: data.items.length },
+          { label: 'İşlenen kalem', value: checkedItemCount },
+          { label: 'Sorunlu bölge', value: problemZoneCount },
+          { label: 'Paket', value: data.packageTypeText },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-xs text-slate-400">{item.label}</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{item.value}</p>
+          </div>
+        ))}
+      </div>
 
       {/* Info cards */}
       <div className="grid sm:grid-cols-2 gap-4 mb-6">

@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { friendlyError } from '@/core/api/errors';
 import { normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 import { inspectionPackageTypeToApi } from '@/features/inspections/api-enums';
+import { VehicleDiagram } from '@/features/inspections/components';
 
 interface CustomerSearchItem {
   id: string;
@@ -437,6 +438,9 @@ export default function InspectionNewPage() {
             <Bike size={16} />
             Motorsiklet Bilgileri
           </h2>
+          <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <VehicleDiagram zones={[]} vehicleType="motorcycle" />
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">
               <label className="label">

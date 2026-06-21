@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, Building2, AlertCircle, Loader2, CheckCircle2, AlertTriangle, XCircle, MinusCircle, Car, User, Printer } from 'lucide-react';
 import apiClient from '@/core/api/client';
 import { CopyButton } from '@/components/ui/copy-button';
+import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
 import { VehicleDiagram } from '@/features/inspections/components';
@@ -228,7 +229,7 @@ export default function PublicInspectionReportPage() {
           categoryText: item.category,
           resultText: item.result,
         })),
-        vehicleType: null,
+        vehicleType: 'motorcycle',
         criticalFindingCount: data.criticalFindingCount,
         resultSummary: data.resultSummary,
         verificationText: data.verificationText,
@@ -278,8 +279,8 @@ export default function PublicInspectionReportPage() {
   const grouped = groupByCategory(data.items ?? []);
   const vehicleLabel = [data.brand, data.model].filter(Boolean).join(' ');
   const publicUrl = publicInspectionReportUrl(slug);
-  const damageZones = buildDamageZones(data.items ?? []);
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
+  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
+  const damageZones = buildDamageZones(data.items ?? [], diagramKind);
 
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-3 sm:px-4 print:bg-white print:py-0">
@@ -334,6 +335,15 @@ export default function PublicInspectionReportPage() {
                 <p className="text-xs text-slate-400 mb-0.5">Rapor No</p>
                 <p className="font-mono text-sm font-semibold text-slate-800">{data.inspectionNo}</p>
               </div>
+            </div>
+
+            <div className="mb-4">
+              <QRLinkCard
+                href={publicUrl}
+                title="Expertiz raporu QR kodu"
+                description="Bu raporu çevrimiçi görüntülemek için QR kodu tarayın."
+                compact
+              />
             </div>
 
             {/* Print button */}

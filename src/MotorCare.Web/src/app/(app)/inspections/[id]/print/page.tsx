@@ -132,8 +132,8 @@ export default function InspectionPrintPage({
     printData.publicAccess?.isActive && printData.publicAccess.slug
       ? publicInspectionReportUrl(printData.publicAccess.slug)
       : null;
-  const damageZones = buildDamageZones(data.items);
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType);
+  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
+  const damageZones = buildDamageZones(data.items, diagramKind);
 
   return (
     <>
