@@ -94,4 +94,5 @@ public sealed record PublicInspectionReportDto(
     string? CosmeticNotes,
     IReadOnlyList<PublicInspectionReportItemDto> Items,
     string? BusinessName,
-    string VerificationText);
+    string VerificationText,
+    string? MotorcycleType = null);

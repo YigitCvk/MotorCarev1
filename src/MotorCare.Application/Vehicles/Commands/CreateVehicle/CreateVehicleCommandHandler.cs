@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using MotorCare.Application.Common;
 using MotorCare.Application.Common.Exceptions;
 using MotorCare.Application.Common.Interfaces;
+using MotorCare.Domain.Enums;
 using MotorCare.Domain.Repositories;
 using MotorCare.Domain.ValueObjects;
 using MotorCare.Domain.Vehicles;
@@ -56,6 +57,12 @@ public class CreateVehicleCommandHandler : IRequestHandler<CreateVehicleCommand,
         var vehicle = new Vehicle(tenantId, plate, request.Brand, request.Model, request.Year);
 
         vehicle.SetTechnicalDetails(request.ChassisNumber, request.EngineNumber, request.Color);
+
+        if (!string.IsNullOrEmpty(request.MotorcycleType) &&
+            Enum.TryParse<MotorcycleType>(request.MotorcycleType, ignoreCase: true, out var motoType))
+        {
+            vehicle.SetMotorcycleType(motoType);
+        }
 
         if (request.CurrentKm.HasValue)
         {

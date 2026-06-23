@@ -9,8 +9,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { money, dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
-import { VehicleDiagram } from '@/features/inspections/components';
-import { buildDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
+import { MotorcycleInspectionDiagram } from '@/features/inspections/components';
+import { buildDamageZones } from '@/features/inspections/utils/diagram';
 
 // ---- DTOs ----------------------------------------------------------------
 
@@ -54,6 +54,7 @@ interface MotorcycleInspectionDto {
   completedAt: string | null;
   items: MotorcycleInspectionItemDto[];
   vehicleType?: string | null;
+  motorcycleType?: string | null;
 }
 
 interface PublicAccessDto {
@@ -132,8 +133,7 @@ export default function InspectionPrintPage({
     printData.publicAccess?.isActive && printData.publicAccess.slug
       ? publicInspectionReportUrl(printData.publicAccess.slug)
       : null;
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
-  const damageZones = buildDamageZones(data.items, diagramKind);
+  const damageZones = buildDamageZones(data.items, 'motorcycle');
 
   return (
     <>
@@ -282,10 +282,11 @@ export default function InspectionPrintPage({
 
         {damageZones.length > 0 && (
           <div className="mb-6 rounded border border-slate-200 p-4">
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
-              {diagramKind === 'motorcycle' ? 'Motosiklet Diyagramı' : 'Araç Diyagramı'}
-            </h2>
-            <VehicleDiagram zones={damageZones} vehicleType={diagramKind} />
+            <MotorcycleInspectionDiagram
+              motorcycleType={data.motorcycleType}
+              zones={damageZones}
+              printable
+            />
           </div>
         )}
 

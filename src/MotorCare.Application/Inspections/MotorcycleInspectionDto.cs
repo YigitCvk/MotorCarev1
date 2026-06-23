@@ -55,7 +55,8 @@ public sealed record MotorcycleInspectionDto(
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
     DateTimeOffset? CompletedAt,
-    IReadOnlyList<MotorcycleInspectionItemDto> Items);
+    IReadOnlyList<MotorcycleInspectionItemDto> Items,
+    string? MotorcycleType = null);
 
 public static class MotorcycleInspectionTextMapper
 {

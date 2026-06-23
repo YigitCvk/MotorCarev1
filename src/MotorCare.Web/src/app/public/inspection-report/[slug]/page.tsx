@@ -8,8 +8,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { QRLinkCard } from '@/components/ui/qr-link-card';
 import { dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
-import { VehicleDiagram } from '@/features/inspections/components';
-import { buildDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
+import { MotorcycleInspectionDiagram } from '@/features/inspections/components';
+import { buildDamageZones } from '@/features/inspections/utils/diagram';
 
 // ─── PII masking ──────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ interface PublicInspectionReportDto {
   generalNotes: string | null;
   items: InspectionItem[];
   vehicleType?: string | null;
+  motorcycleType?: string | null;
   criticalFindingCount: number;
   resultSummary: string;
   verificationText: string;
@@ -76,6 +77,7 @@ interface PublicInspectionReportApiDto {
   }>;
   businessName: string | null;
   verificationText: string;
+  motorcycleType?: string | null;
 }
 
 // ─── Result badge ─────────────────────────────────────────────────────────────
@@ -230,6 +232,7 @@ export default function PublicInspectionReportPage() {
           resultText: item.result,
         })),
         vehicleType: 'motorcycle',
+        motorcycleType: data.motorcycleType ?? null,
         criticalFindingCount: data.criticalFindingCount,
         resultSummary: data.resultSummary,
         verificationText: data.verificationText,
@@ -279,8 +282,7 @@ export default function PublicInspectionReportPage() {
   const grouped = groupByCategory(data.items ?? []);
   const vehicleLabel = [data.brand, data.model].filter(Boolean).join(' ');
   const publicUrl = publicInspectionReportUrl(slug);
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
-  const damageZones = buildDamageZones(data.items ?? [], diagramKind);
+  const damageZones = buildDamageZones(data.items ?? [], 'motorcycle');
 
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-3 sm:px-4 print:bg-white print:py-0">
@@ -393,11 +395,10 @@ export default function PublicInspectionReportPage() {
 
         {damageZones.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-4 mb-3">
-            <SectionHeader
-              icon={<Car size={15} />}
-              title={diagramKind === 'motorcycle' ? 'Motosiklet Diyagramı' : 'Araç Diyagramı'}
+            <MotorcycleInspectionDiagram
+              motorcycleType={data.motorcycleType}
+              zones={damageZones}
             />
-            <VehicleDiagram zones={damageZones} vehicleType={diagramKind} />
           </div>
         )}
 

@@ -13,7 +13,7 @@ import {
   inspectionPackageTypeToApi,
   inspectionStatusFromApi,
 } from '@/features/inspections/api-enums';
-import { VehicleDiagram } from '@/features/inspections/components';
+import { MotorcycleInspectionDiagram } from '@/features/inspections/components';
 
 interface InspectionFormState {
   customerName: string;
@@ -54,6 +54,7 @@ interface MotorcycleInspectionDto {
   customerId: string | null;
   vehicleId: string | null;
   status: string;
+  motorcycleType?: string | null;
 }
 
 const PACKAGE_TYPES: Array<{ value: string; label: string }> = [
@@ -140,6 +141,7 @@ export default function InspectionEditPage({
         generalNotes: form.generalNotes.trim() || undefined,
         testRideNotes: form.testRideNotes.trim() || undefined,
         cosmeticNotes: form.cosmeticNotes.trim() || undefined,
+        motorcycleType: data?.motorcycleType ?? undefined,
       });
       router.push(`/inspections/${id}`);
     } catch (err) {
@@ -215,8 +217,8 @@ export default function InspectionEditPage({
             <Bike size={16} />
             Motorsiklet Bilgileri
           </h2>
-          <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <VehicleDiagram zones={[]} vehicleType="motorcycle" />
+          <div className="mb-5">
+            <MotorcycleInspectionDiagram motorcycleType={data?.motorcycleType} zones={[]} />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">

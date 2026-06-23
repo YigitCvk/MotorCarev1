@@ -300,7 +300,8 @@ public sealed class PublicRecordAccessService : IPublicRecordAccessService
                     x.SortOrder))
                 .ToList(),
             tenantName,
-            VerificationText);
+            VerificationText,
+            inspection.MotorcycleType);
     }
 
     private async Task<PublicRecordAccessDto?> GetOrCreateAsync(

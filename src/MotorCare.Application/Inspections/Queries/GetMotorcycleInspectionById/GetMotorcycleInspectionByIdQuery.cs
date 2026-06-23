@@ -83,6 +83,7 @@ public sealed class GetMotorcycleInspectionByIdQueryHandler : IRequestHandler<Ge
                     MotorcycleInspectionTextMapper.ToText(x.Result),
                     x.Notes,
                     x.SortOrder))
-                .ToList());
+                .ToList(),
+            inspection.MotorcycleType);
     }
 }

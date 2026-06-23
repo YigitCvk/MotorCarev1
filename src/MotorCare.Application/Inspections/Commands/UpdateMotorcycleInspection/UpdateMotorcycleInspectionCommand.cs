@@ -27,7 +27,8 @@ public sealed record UpdateMotorcycleInspectionCommand(
     MotorcycleInspectionPackageType PackageType,
     string? GeneralNotes,
     string? TestRideNotes,
-    string? CosmeticNotes) : IRequest;
+    string? CosmeticNotes,
+    string? MotorcycleType = null) : IRequest;
 
 public sealed class UpdateMotorcycleInspectionCommandValidator : AbstractValidator<UpdateMotorcycleInspectionCommand>
 {
@@ -92,7 +93,8 @@ public sealed class UpdateMotorcycleInspectionCommandHandler : IRequestHandler<U
             request.GeneralNotes,
             request.TestRideNotes,
             request.CosmeticNotes,
-            MotorcycleInspectionTemplateFactory.Create(request.PackageType));
+            MotorcycleInspectionTemplateFactory.Create(request.PackageType),
+            request.MotorcycleType);
 
         _repository.Update(inspection);
         await _repository.SaveChangesAsync(cancellationToken);

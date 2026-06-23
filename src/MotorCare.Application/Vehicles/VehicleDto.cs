@@ -12,4 +12,5 @@ public sealed record VehicleDto(
     string VehicleDisplay,
     string? ChassisNumber,
     string? EngineNumber,
-    int? CurrentKm);
+    int? CurrentKm,
+    string? MotorcycleType);

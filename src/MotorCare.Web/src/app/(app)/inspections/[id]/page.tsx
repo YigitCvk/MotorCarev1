@@ -14,9 +14,9 @@ import { money, dateText } from '@/shared/utils/format';
 import { publicInspectionReportUrl } from '@/shared/utils/public-links';
 import { canManageInspection } from '@/shared/constants/permissions';
 import { friendlyError } from '@/core/api/errors';
-import { VehicleDiagram } from '@/features/inspections/components';
+import { MotorcycleInspectionDiagram } from '@/features/inspections/components';
 import type { DamageZone } from '@/features/inspections/components';
-import { buildDamageZones as buildInspectionDamageZones, resolveVehicleDiagramKind } from '@/features/inspections/utils/diagram';
+import { buildDamageZones as buildInspectionDamageZones } from '@/features/inspections/utils/diagram';
 import {
   inspectionCategoryFromApi,
   inspectionResultFromApi,
@@ -74,6 +74,7 @@ interface MotorcycleInspectionDto {
   completedAt: string | null;
   items: MotorcycleInspectionItemDto[];
   vehicleType?: string | null;
+  motorcycleType?: string | null;
 }
 
 // ---- Constants -----------------------------------------------------------
@@ -349,8 +350,6 @@ export default function InspectionDetailPage({
   const publicAccessErrorMessage = publicAccessError
     ? friendlyError(publicAccessError, 'Paylaşım bilgileri yüklenemedi.')
     : '';
-  const diagramKind = resolveVehicleDiagramKind(data.vehicleType, 'motorcycle');
-
   // Build damage zones for the diagram
   const damageZones = buildDamageZones(data.items);
   const checkedItemCount = data.items.filter((item) => item.result !== 'NotChecked').length;
@@ -608,10 +607,10 @@ export default function InspectionDetailPage({
       {/* Vehicle damage diagram */}
       {damageZones.length > 0 && (
         <div className="card p-5 mb-6">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
-            {diagramKind === 'motorcycle' ? 'Motosiklet Diyagramı' : 'Araç Diyagramı'}
-          </h2>
-          <VehicleDiagram zones={damageZones} vehicleType={diagramKind} />
+          <MotorcycleInspectionDiagram
+            motorcycleType={data.motorcycleType}
+            zones={damageZones}
+          />
         </div>
       )}
 

@@ -11,4 +11,5 @@ public sealed record CreateVehicleCommand(
     string? EngineNumber = null,
     string? Color = null,
     int? CurrentKm = null,
-    Guid? CurrentCustomerId = null) : IRequest<Guid>;
+    Guid? CurrentCustomerId = null,
+    string? MotorcycleType = null) : IRequest<Guid>;

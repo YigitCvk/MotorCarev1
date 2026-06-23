@@ -1,10 +1,17 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { normalizePlate } from '@/features/vehicles/hooks';
 import type { Vehicle } from '@/features/vehicles/types';
+import {
+  MOTORCYCLE_TYPES,
+  motorcycleTypeLabels,
+  motorcycleTypeImages,
+  motorcycleTypeFromApi,
+  motorcycleTypeToApi,
+} from '@/shared/types/motorcycle-types';
 
 export const vehicleSchema = z.object({
   plate: z.string().min(1, 'Plaka zorunludur.').transform(normalizePlate),
@@ -18,6 +25,7 @@ export const vehicleSchema = z.object({
   chassisNumber: z.string().optional(),
   engineNumber: z.string().optional(),
   color: z.string().optional(),
+  motorcycleType: z.string().optional(),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleSchema>;
@@ -44,6 +52,7 @@ export function VehicleForm({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting: formSubmitting },
   } = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleSchema),
@@ -56,10 +65,18 @@ export function VehicleForm({
       chassisNumber: initialValues?.chassisNumber ?? '',
       engineNumber: initialValues?.engineNumber ?? '',
       color: initialValues?.color ?? '',
+      motorcycleType: motorcycleTypeToApi(motorcycleTypeFromApi(initialValues?.motorcycleType)) ?? '',
     },
   });
 
+  const selectedMotorcycleType = useWatch({ control, name: 'motorcycleType' });
   const submitting = isSubmitting ?? formSubmitting;
+
+  const previewType = selectedMotorcycleType
+    ? motorcycleTypeFromApi(selectedMotorcycleType)
+    : null;
+  const previewImage = previewType ? motorcycleTypeImages[previewType] : null;
+  const previewLabel = previewType ? motorcycleTypeLabels[previewType] : null;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -91,14 +108,14 @@ export function VehicleForm({
           <label className="label">
             Marka <span className="text-red-500">*</span>
           </label>
-          <input className="input" placeholder="Toyota" disabled={disabled} {...register('brand')} />
+          <input className="input" placeholder="Honda" disabled={disabled} {...register('brand')} />
           {errors.brand && <p className="text-xs text-red-500 mt-1">{errors.brand.message}</p>}
         </div>
         <div className="form-group">
           <label className="label">
             Model <span className="text-red-500">*</span>
           </label>
-          <input className="input" placeholder="Corolla" disabled={disabled} {...register('model')} />
+          <input className="input" placeholder="CB500F" disabled={disabled} {...register('model')} />
           {errors.model && <p className="text-xs text-red-500 mt-1">{errors.model.message}</p>}
         </div>
         <div className="form-group">
@@ -119,6 +136,42 @@ export function VehicleForm({
           <input className="input" disabled={disabled} {...register('engineNumber')} />
         </div>
       </div>
+
+      <div className="border-t border-slate-100 pt-4">
+        <div className="form-group">
+          <label className="label">Motosiklet Tipi</label>
+          <select
+            className="input"
+            disabled={disabled}
+            {...register('motorcycleType')}
+          >
+            <option value="">— Seçiniz —</option>
+            {MOTORCYCLE_TYPES.map((type) => (
+              <option key={type} value={motorcycleTypeToApi(type) ?? type}>
+                {motorcycleTypeLabels[type]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {previewImage && previewLabel && (
+          <div className="mt-3 flex items-center gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <img
+              src={previewImage}
+              alt={previewLabel}
+              className="h-20 w-auto max-w-[120px] object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <div>
+              <p className="text-xs text-slate-500">Motosiklet tipi</p>
+              <p className="text-sm font-semibold text-slate-800">{previewLabel}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <button type="submit" disabled={disabled || submitting} className="btn-primary">
           {submitting ? submittingLabel : submitLabel}

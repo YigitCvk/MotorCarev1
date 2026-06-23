@@ -82,6 +82,7 @@ public class GetVehicleByPlateQueryHandler : IRequestHandler<GetVehicleByPlateQu
             $"{vehicle.Plate.OriginalValue} - {vehicle.Brand} {vehicle.Model}",
             vehicle.ChassisNumber,
             vehicle.EngineNumber,
-            vehicle.CurrentKm);
+            vehicle.CurrentKm,
+            vehicle.MotorcycleType?.ToString());
     }
 }

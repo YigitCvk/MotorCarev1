@@ -1,4 +1,5 @@
 using MotorCare.Domain.Common;
+using MotorCare.Domain.Enums;
 using MotorCare.Domain.ValueObjects;
 using MotorCare.Domain.Vehicles.Entities;
 
@@ -16,6 +17,7 @@ public class Vehicle : AggregateRoot, ITenantEntity
     public int? CurrentKm { get; private set; }
     public string? Color { get; private set; }
     public Guid? CurrentCustomerId { get; private set; }
+    public MotorcycleType? MotorcycleType { get; private set; }
 
     private readonly List<VehicleNote> _notes = new();
     public IReadOnlyCollection<VehicleNote> Notes => _notes;
@@ -74,6 +76,11 @@ public class Vehicle : AggregateRoot, ITenantEntity
     public void UnassignCustomer()
     {
         CurrentCustomerId = null;
+    }
+
+    public void SetMotorcycleType(MotorcycleType? type)
+    {
+        MotorcycleType = type;
     }
 
     public void AddNote(string content)

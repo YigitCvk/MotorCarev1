@@ -22,6 +22,10 @@ public class VehicleConfiguration : IEntityTypeConfiguration<Vehicle>
         builder.Property(v => v.EngineNumber).HasMaxLength(100);
         builder.Property(v => v.Color).HasMaxLength(50);
 
+        builder.Property(v => v.MotorcycleType)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
         // PlateNumber value object stored in the same Vehicles row
         builder.OwnsOne(v => v.Plate, p =>
         {

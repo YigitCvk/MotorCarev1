@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { friendlyError } from '@/core/api/errors';
 import { normalizeApiArray, readNumber, readString } from '@/shared/utils/api-normalize';
 import { inspectionPackageTypeToApi } from '@/features/inspections/api-enums';
-import { VehicleDiagram } from '@/features/inspections/components';
+import { MotorcycleInspectionDiagram } from '@/features/inspections/components';
 
 interface CustomerSearchItem {
   id: string;
@@ -23,6 +23,7 @@ interface CustomerVehicle {
   brand?: string;
   model?: string;
   year?: number;
+  motorcycleType?: string | null;
 }
 
 interface InspectionFormState {
@@ -43,6 +44,7 @@ interface InspectionFormState {
   generalNotes: string;
   testRideNotes: string;
   cosmeticNotes: string;
+  motorcycleType: string;
 }
 
 const PACKAGE_TYPES: Array<{ value: string; label: string }> = [
@@ -70,6 +72,7 @@ const emptyForm: InspectionFormState = {
   generalNotes: '',
   testRideNotes: '',
   cosmeticNotes: '',
+  motorcycleType: '',
 };
 
 function normalizeCustomer(value: unknown): CustomerSearchItem | null {
@@ -108,6 +111,7 @@ function normalizeVehicle(value: unknown): CustomerVehicle | null {
     brand: readString(record.brand) || undefined,
     model: readString(record.model) || undefined,
     year: readNumber(record.year),
+    motorcycleType: readString(record.motorcycleType) || null,
   };
 }
 
@@ -229,6 +233,7 @@ export default function InspectionNewPage() {
       brand: vehicle.brand ?? '',
       model: vehicle.model ?? '',
       year: vehicle.year ? String(vehicle.year) : '',
+      motorcycleType: vehicle.motorcycleType ?? '',
     }));
   }
 
@@ -267,6 +272,7 @@ export default function InspectionNewPage() {
         generalNotes: form.generalNotes.trim() || undefined,
         testRideNotes: form.testRideNotes.trim() || undefined,
         cosmeticNotes: form.cosmeticNotes.trim() || undefined,
+        motorcycleType: form.motorcycleType || undefined,
       };
       const { data } = await apiClient.post<{ id: string; inspectionNo: string }>(
         '/api/inspections',
@@ -439,7 +445,7 @@ export default function InspectionNewPage() {
             Motorsiklet Bilgileri
           </h2>
           <div className="mb-5 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <VehicleDiagram zones={[]} vehicleType="motorcycle" />
+            <MotorcycleInspectionDiagram motorcycleType={form.motorcycleType} zones={[]} />
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="form-group">

@@ -10,6 +10,7 @@ export interface Vehicle {
   year?: number;
   vehicleDisplay?: string;
   vehicleType?: string | null;
+  motorcycleType?: string | null;
   chassisNumber?: string | null;
   engineNumber?: string | null;
   color?: string | null;

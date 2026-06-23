@@ -44,6 +44,7 @@ public sealed class MotorcycleInspectionConfiguration : IEntityTypeConfiguration
         builder.Property(x => x.GeneralNotes).HasMaxLength(4000);
         builder.Property(x => x.TestRideNotes).HasMaxLength(4000);
         builder.Property(x => x.CosmeticNotes).HasMaxLength(4000);
+        builder.Property(x => x.MotorcycleType).HasMaxLength(30);
 
         builder.Property(x => x.PackageType)
             .HasConversion<string>()

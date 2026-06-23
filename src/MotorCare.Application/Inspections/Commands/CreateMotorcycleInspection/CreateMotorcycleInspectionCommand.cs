@@ -26,7 +26,8 @@ public sealed record CreateMotorcycleInspectionCommand(
     Domain.Enums.MotorcycleInspectionPackageType PackageType,
     string? GeneralNotes,
     string? TestRideNotes,
-    string? CosmeticNotes) : IRequest<Guid>;
+    string? CosmeticNotes,
+    string? MotorcycleType = null) : IRequest<Guid>;
 
 public sealed class CreateMotorcycleInspectionCommandValidator : AbstractValidator<CreateMotorcycleInspectionCommand>
 {
@@ -111,7 +112,8 @@ public sealed class CreateMotorcycleInspectionCommandHandler : IRequestHandler<C
             request.GeneralNotes,
             request.TestRideNotes,
             request.CosmeticNotes,
-            templates);
+            templates,
+            request.MotorcycleType);
 
         await _repository.AddAsync(inspection, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);

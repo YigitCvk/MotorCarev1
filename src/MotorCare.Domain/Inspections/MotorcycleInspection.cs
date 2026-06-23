@@ -29,6 +29,7 @@ public sealed class MotorcycleInspection : AggregateRoot, ITenantEntity
     public string? GeneralNotes { get; private set; }
     public string? TestRideNotes { get; private set; }
     public string? CosmeticNotes { get; private set; }
+    public string? MotorcycleType { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public IReadOnlyCollection<MotorcycleInspectionItem> Items => _items;
 
@@ -56,7 +57,8 @@ public sealed class MotorcycleInspection : AggregateRoot, ITenantEntity
         string? generalNotes,
         string? testRideNotes,
         string? cosmeticNotes,
-        IEnumerable<MotorcycleInspectionItemTemplate> itemTemplates)
+        IEnumerable<MotorcycleInspectionItemTemplate> itemTemplates,
+        string? motorcycleType = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -91,7 +93,8 @@ public sealed class MotorcycleInspection : AggregateRoot, ITenantEntity
             generalNotes,
             testRideNotes,
             cosmeticNotes,
-            itemTemplates);
+            itemTemplates,
+            motorcycleType);
     }
 
     public void UpdateDetails(
@@ -112,7 +115,8 @@ public sealed class MotorcycleInspection : AggregateRoot, ITenantEntity
         string? generalNotes,
         string? testRideNotes,
         string? cosmeticNotes,
-        IEnumerable<MotorcycleInspectionItemTemplate> itemTemplates)
+        IEnumerable<MotorcycleInspectionItemTemplate> itemTemplates,
+        string? motorcycleType = null)
     {
         EnsureEditable();
         Validate(customerId, vehicleId, customerName, phone, plate, packageType, year, mileage);
@@ -136,6 +140,7 @@ public sealed class MotorcycleInspection : AggregateRoot, ITenantEntity
         GeneralNotes = NormalizeOptional(generalNotes);
         TestRideNotes = NormalizeOptional(testRideNotes);
         CosmeticNotes = NormalizeOptional(cosmeticNotes);
+        MotorcycleType = NormalizeOptional(motorcycleType);
 
         if (shouldReplaceTemplate)
         {
